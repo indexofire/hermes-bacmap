@@ -25,8 +25,25 @@ WORKFLOW_DIR = ROOT / "workflows/salmonella"
 RESULTS_DIR = ROOT / "results"
 
 
-def run_snakemake(targets: list[str], cores: int = 8) -> bool:
-    env = {"PATH": f"{PIXI_BIN}:{__import__('os').environ['PATH']}"}
+def validate_sample(sample: str) -> None:
+    import csv
+    samples_tsv = WORKFLOW_DIR / "config/samples.tsv"
+    if not samples_tsv.exists():
+        print(f"❌ samples.tsv not found: {samples_tsv}")
+        sys.exit(1)
+    with samples_tsv.open() as f:
+        valid = {r["sample"] for r in csv.DictReader(f, delimiter="\t")}
+    if sample not in valid:
+        print(f"❌ Unknown sample: {sample}")
+        print(f"   Valid samples: {', '.join(sorted(valid))}")
+        sys.exit(1)
+
+
+def run_snakemake(targets: list[str], cores: int = 8, timeout: int = 7200) -> bool:
+    import os
+    env = dict(os.environ)
+    env["PATH"] = f"{PIXI_BIN}:{env['PATH']}"
+
     cmd = [
         str(PIXI_BIN / "snakemake"),
         "-s", str(WORKFLOW_DIR / "Snakefile"),
@@ -40,21 +57,26 @@ def run_snakemake(targets: list[str], cores: int = 8) -> bool:
     print(f"Cores: {cores}")
     print(f"{'='*60}\n")
 
-    result = subprocess.run(cmd, cwd=str(WORKFLOW_DIR), env=env)
-    return result.returncode == 0
+    try:
+        result = subprocess.run(
+            cmd, cwd=str(WORKFLOW_DIR), env=env, timeout=timeout,
+        )
+        return result.returncode == 0
+    except subprocess.TimeoutExpired:
+        print(f"\n❌ Snakemake 超时 ({timeout}s)。可能卡在锁等待或资源争用。")
+        print(f"   检查: snakemake --unlock (在 {WORKFLOW_DIR} 下)")
+        return False
 
 
 def check_status(sample: str | None = None) -> dict:
-    samples_done = {}
-    samples_in_progress = {}
-    samples_not_started = []
-
     import csv
     samples_tsv = WORKFLOW_DIR / "config/samples.tsv"
     with samples_tsv.open() as f:
         all_samples = [r["sample"] for r in csv.DictReader(f, delimiter="\t")]
 
-    targets = [sample] if sample else all_samples
+    samples_done = {}
+    samples_in_progress = {}
+    samples_not_started = []
 
     for s in all_samples:
         if sample and s != sample:
@@ -63,32 +85,38 @@ def check_status(sample: str | None = None) -> dict:
         summary = RESULTS_DIR / s / "report" / f"{s}_summary.json"
         contigs = RESULTS_DIR / s / "assembly" / "contigs.fasta"
         qc_json = RESULTS_DIR / s / "qc" / f"{s}_fastp.json"
-        species = RESULTS_DIR / s / "species" / "species_verdict.txt"
+        species_json = RESULTS_DIR / s / "species" / "species_id.json"
         mlst = RESULTS_DIR / s / "typing" / "mlst.tsv"
-        amr = RESULTS_DIR / s / "amr" / "amrfinderplus.tsv"
-        report = RESULTS_DIR / s / "report" / f"{s}_summary.json"
+        amr_card = RESULTS_DIR / s / "amr" / "abricate_card.tsv"
 
         steps = {
             "qc": qc_json.exists(),
             "assembly": contigs.exists(),
-            "species": species.exists(),
+            "species": species_json.exists(),
             "mlst": mlst.exists(),
-            "amr": amr.exists(),
-            "report": report.exists(),
+            "amr": amr_card.exists(),
+            "report": summary.exists(),
         }
         done_count = sum(steps.values())
 
-        if report.exists():
+        if summary.exists():
             samples_done[s] = steps
         elif done_count > 0:
             samples_in_progress[s] = steps
         else:
             samples_not_started.append(s)
 
+    snp_treefile = RESULTS_DIR / "snp" / "core.treefile"
+    snp_summary = RESULTS_DIR / "snp" / "snp_summary.json"
+
     return {
         "done": samples_done,
         "in_progress": samples_in_progress,
         "not_started": samples_not_started,
+        "snp_cohort": {
+            "tree": snp_treefile.exists(),
+            "summary": snp_summary.exists(),
+        },
     }
 
 
@@ -138,13 +166,13 @@ def main() -> int:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--sample", type=str, help="Sample ID to analyze")
     group.add_argument("--all", action="store_true", help="Analyze all samples")
+    group.add_argument("--snp", action="store_true", help="Run SNP cohort analysis")
     group.add_argument("--status", action="store_true", help="Check analysis status")
     parser.add_argument("--cores", type=int, default=8)
     args = parser.parse_args()
 
     if args.status:
-        sample = None
-        status = check_status(sample)
+        status = check_status(None)
 
         print(f"\n{'='*60}")
         print("  分析状态")
@@ -166,39 +194,60 @@ def main() -> int:
             for s in status["not_started"]:
                 print(f"     {s}")
 
+        snp = status.get("snp_cohort", {})
+        snp_icon = "✅" if snp.get("summary") else ("🔄" if snp.get("tree") else "⬜")
+        print(f"\n  {snp_icon} SNP Cohort: tree={'yes' if snp.get('tree') else 'no'}, "
+              f"summary={'yes' if snp.get('summary') else 'no'}")
+
         print()
         return 0
 
-    if args.sample:
-        sample = args.sample
+    if args.snp:
+        target = str(ROOT / "results" / "snp" / "snp_summary.json")
+        targets = [target]
+    elif args.sample:
+        validate_sample(args.sample)
+        target = str(ROOT / "results" / args.sample / "report" / f"{args.sample}_summary.json")
+        targets = [target]
     elif args.all:
-        import csv
-        with (WORKFLOW_DIR / "config/samples.tsv").open() as f:
-            all_samples = [r["sample"] for r in csv.DictReader(f, delimiter="\t")]
-        sample = None
+        targets = []
     else:
         return 1
-
-    if sample:
-        target = str(ROOT / "results" / sample / "report" / f"{sample}_summary.json")
-        targets = [target]
-    else:
-        targets = []
 
     success = run_snakemake(targets, args.cores)
 
     if success:
-        if sample:
-            interpret_summary(sample)
+        if args.snp:
+            print(f"\n✅ SNP cohort analysis 完成。")
+            print(f"   Tree: {RESULTS_DIR / 'snp' / 'core.treefile'}")
+            print(f"   Summary: {RESULTS_DIR / 'snp' / 'snp_summary.json'}")
+            print(f"   Report: python scripts/generate_report.py --cohort")
+            print(f"   Ingest: python scripts/ingest_results.py --snp")
+        elif args.sample:
+            interpret_summary(args.sample)
         else:
             import csv
+            failed = []
             with (WORKFLOW_DIR / "config/samples.tsv").open() as f:
                 for r in csv.DictReader(f, delimiter="\t"):
-                    interpret_summary(r["sample"])
+                    sid = r["sample"]
+                    summary = RESULTS_DIR / sid / "report" / f"{sid}_summary.json"
+                    if summary.exists():
+                        interpret_summary(sid)
+                    else:
+                        failed.append(sid)
+                        print(f"  ❌ {sid}: summary not found")
+            if failed:
+                print(f"\n⚠️  {len(failed)} sample(s) failed: {', '.join(failed)}")
+                print(f"\n✅ 部分完成 ({len(failed)} 失败)。")
+                return 1
         print(f"\n✅ 全部完成。")
         return 0
     else:
-        print(f"\n❌ Snakemake 失败。检查 .snakemake/log/ 了解详情。")
+        print(f"\n❌ Snakemake 失败。诊断步骤:")
+        print(f"   1. 检查日志: {WORKFLOW_DIR}/.snakemake/log/")
+        print(f"   2. 解锁: cd {WORKFLOW_DIR} && snakemake --unlock")
+        print(f"   3. 重试: python scripts/run_analysis.py --sample <ID>")
         return 1
 
 

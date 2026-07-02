@@ -2,7 +2,7 @@
 # SPAdes/Shovill 批量组装 6 株 Salmonella Gold standard。
 # 使用 Shovill（封装 SPAdes，含 read correction + contig filtering）。
 
-set -uo pipefail
+set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 export PATH="$PROJECT_ROOT/.pixi/envs/default/bin:$PATH"

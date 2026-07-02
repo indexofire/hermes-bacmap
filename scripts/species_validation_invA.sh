@@ -2,7 +2,7 @@
 # Salmonella 物种验证：用 bwa mem 把 reads 比对到 invA 靶基因。
 # FDA BAM Chapter 5 invA PCR 的 in silico 版（Rahn et al. 1992）。
 
-set -uo pipefail
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"

@@ -181,6 +181,12 @@ def scan(
 
     proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
 
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"blastn failed (exit {proc.returncode}) on database '{db_name}': "
+            f"{proc.stderr.strip()[:500]}"
+        )
+
     result = ScanResult(
         database=db_name,
         input_file=str(contigs),

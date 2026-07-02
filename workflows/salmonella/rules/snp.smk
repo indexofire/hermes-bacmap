@@ -76,10 +76,9 @@ rule phylo_tree:
         "export PATH={params.pixi}:$PATH && "
         "cd {params.outdir} && "
         "iqtree -s core_snps.fasta -m GTR -bb 1000 -alrt 1000 "
-        "-nt AUTO -pre core 2>&1 | tail -3 && "
-        "test -f core.treefile && cp core.treefile {output.tree} && "
-        "cp core.iqtree {output.report} || "
-        "echo '((placeholder));' > {output.tree}"
+        "-nt AUTO -pre core && "
+        "cp core.treefile {output.tree} && "
+        "cp core.iqtree {output.report}"
 
 rule snp_summary:
     input:
