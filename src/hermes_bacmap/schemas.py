@@ -511,3 +511,31 @@ SNP_TREE = {
         "properties": {},
     },
 }
+
+
+SEARCH_SAMPLES = {
+    "name": "bio_search_samples",
+    "description": (
+        "Search across all ingested sample results in the Genome Object "
+        "Model using full-text search. Find samples by organism, serotype, "
+        "MLST ST, AMR gene name, plasmid type, or any keyword. Returns "
+        "matching samples with their key attributes (species, serotype, "
+        "MLST, AMR genes). Use this when the user asks 'which samples "
+        "have X' or 'find all Y' type questions."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "query": {
+                "type": "string",
+                "description": (
+                    "Search query. Can be organism name (Salmonella, E.coli), "
+                    "serotype (Typhimurium, Enteritidis), MLST ST number "
+                    "(ST19, ST11), AMR gene name (blaCTX-M, tetA), or any "
+                    "keyword found in sample results."
+                ),
+            },
+        },
+        "required": ["query"],
+    },
+}

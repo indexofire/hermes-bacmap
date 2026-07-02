@@ -574,6 +574,52 @@ class GenomeObjectService:
             for r in rows
         ]
 
+    def search(
+        self,
+        query: str,
+        object_type: ObjectType | None = None,
+        limit: int = 50,
+    ) -> list[GenomeObject]:
+        """Full-text search across all genome objects using FTS5.
+
+        Searches organism, strain_id, and full payload JSON.
+        Returns latest version per matching object_id.
+        """
+        import sqlite3
+
+        if not query.strip():
+            return []
+
+        fts_query = " OR ".join(
+            f'"{term}"' for term in query.split() if term.strip()
+        )
+
+        sql = """
+            SELECT DISTINCT g.* FROM genome_objects g
+            INNER JOIN (
+                SELECT rowid, object_id, MAX(version) AS max_v
+                FROM genome_objects
+                GROUP BY object_id
+            ) latest ON g.object_id = latest.object_id AND g.version = latest.max_v
+            INNER JOIN genome_objects_fts fts ON fts.rowid = g.rowid
+            WHERE genome_objects_fts MATCH ?
+        """
+        params: list[Any] = [fts_query]
+
+        if object_type is not None:
+            sql += " AND g.object_type = ?"
+            params.append(object_type.value)
+
+        sql += " ORDER BY g.created_at DESC LIMIT ?"
+        params.append(limit)
+
+        try:
+            rows = self._conn.execute(sql, params).fetchall()
+        except sqlite3.OperationalError:
+            return []
+
+        return [self._row_to_go(r) for r in rows]
+
     def close(self) -> None:
         if hasattr(self, "_conn") and self._conn is not None:
             self._conn.close()
