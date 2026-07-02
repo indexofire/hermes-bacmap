@@ -80,3 +80,15 @@ rule phylo_tree:
         "test -f core.treefile && cp core.treefile {output.tree} && "
         "cp core.iqtree {output.report} || "
         "echo '((placeholder));' > {output.tree}"
+
+rule snp_summary:
+    input:
+        tree = str(WORKDIR) + "/snp/core.treefile",
+        fasta = str(WORKDIR) + "/snp/core_snps.fasta"
+    output:
+        summary = str(WORKDIR) + "/snp/snp_summary.json"
+    params:
+        script = str(PROJECT_ROOT / "workflows/salmonella/scripts/generate_snp_summary.py"),
+        python = str(PROJECT_ROOT / ".venv/bin/python")
+    shell:
+        "{params.python} {params.script} {input.tree} {input.fasta} {output.summary}"

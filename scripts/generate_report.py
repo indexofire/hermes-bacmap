@@ -187,12 +187,125 @@ td.label {{ font-weight: bold; width: 180px; background: #f8f9fa; }}
     output_path.write_text(html, encoding="utf-8")
 
 
+def _distance_color(d: int, max_d: int) -> str:
+    if max_d == 0:
+        return "#ffffff"
+    ratio = d / max_d
+    r = int(255 * ratio)
+    g = int(255 * (1 - ratio))
+    return f"rgb({r},{g},80)"
+
+
+def generate_cohort_html(snp_summary: dict, output_path: Path):
+    import json as _json
+
+    newick = snp_summary.get("tree_newick", "")
+    n_sites = snp_summary.get("n_snp_sites", 0)
+    n_samples = snp_summary.get("n_samples", 0)
+    missing = snp_summary.get("missing_rate", 0)
+    samples = snp_summary.get("samples", [])
+    distances = snp_summary.get("pairwise_distances", {})
+
+    max_d = max(distances.values()) if distances else 1
+
+    dist_header = "".join(f"<th>{s}</th>" for s in samples)
+    dist_rows = ""
+    for i, s1 in enumerate(samples):
+        cells = f"<td class='label'>{s1}</td>"
+        for j, s2 in enumerate(samples):
+            if i == j:
+                cells += "<td style='text-align:center;color:#aaa;'>—</td>"
+            elif i < j:
+                key = f"{s1}|{s2}"
+                d = distances.get(key, 0)
+                color = _distance_color(d, max_d)
+                cells += f"<td style='background:{color};text-align:right;'>{d}</td>"
+            else:
+                key = f"{s2}|{s1}"
+                d = distances.get(key, 0)
+                color = _distance_color(d, max_d)
+                cells += f"<td style='background:{color};text-align:right;opacity:0.5;'>{d}</td>"
+        dist_rows += f"<tr>{cells}</tr>\n"
+
+    newick_escaped = newick.replace("\\", "\\\\").replace("'", "\\'")
+
+    html = f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><title>SNP 系统发育分析报告</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://raw.githack.com/rdvelin/phylotree.js/master/dist/phylotree.js"></script>
+<link rel="stylesheet" href="https://raw.githack.com/rdvelin/phylotree.js/master/dist/phylotree.css">
+<style>
+body {{ font-family: -apple-system, "Segoe UI", Roboto, sans-serif; max-width: 1100px; margin: 2em auto; padding: 0 1em; color: #333; }}
+h1 {{ color: #1a5276; border-bottom: 3px solid #2980b9; padding-bottom: 0.3em; }}
+h2 {{ color: #2874a6; margin-top: 1.5em; }}
+table {{ border-collapse: collapse; width: 100%; margin: 0.5em 0; font-size: 0.85em; }}
+th, td {{ border: 1px solid #ddd; padding: 4px 8px; text-align: left; }}
+th {{ background: #ebf5fb; }}
+td.label {{ font-weight: bold; background: #f8f9fa; }}
+.stats-box {{ display: flex; gap: 20px; margin: 1em 0; }}
+.stat-card {{ background: #ebf5fb; padding: 12px 24px; border-radius: 8px; text-align: center; }}
+.stat-card .value {{ font-size: 1.8em; font-weight: bold; color: #2980b9; }}
+.stat-card .label {{ font-size: 0.85em; color: #666; }}
+#tree-container {{ background: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 10px; min-height: 400px; }}
+.fallback-tree {{ font-family: monospace; white-space: pre; font-size: 0.8em; background: #f8f9fa; padding: 1em; overflow-x: auto; }}
+</style></head>
+<body>
+<h1>🌲 SNP 系统发育分析报告</h1>
+<p>生成时间：{datetime.now().strftime("%Y-%m-%d %H:%M")}</p>
+
+<div class="stats-box">
+<div class="stat-card"><div class="value">{n_samples}</div><div class="label">样本数</div></div>
+<div class="stat-card"><div class="value">{n_sites:,}</div><div class="label">SNP 位点数</div></div>
+<div class="stat-card"><div class="value">{missing*100:.1f}%</div><div class="label">缺失率</div></div>
+<div class="stat-card"><div class="value">{len(distances)}</div><div class="label">比较对数</div></div>
+</div>
+
+<h2>🌳 系统发育树 (Maximum Likelihood, GTR+UFBoot1000)</h2>
+<div id="tree-container"></div>
+<div class="fallback-tree" id="fallback">{newick}</div>
+
+<h2>📊 SNP 距离矩阵</h2>
+<table>
+<tr><th>样本</th>{dist_header}</tr>
+{dist_rows}
+</table>
+
+<script>
+if (typeof d3 !== 'undefined' && typeof phylotree !== 'undefined') {{
+    var tree = d3.layout.phylotree()
+        .svg(d3.select("#tree-container").append("svg:svg"))
+        .options({{'selectable': false, 'collapsible': false}});
+    tree({newick_escaped});
+    tree.layout();
+    document.getElementById('fallback').style.display = 'none';
+}}
+</script>
+
+</body></html>"""
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(html, encoding="utf-8")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="生成 HTML 分析报告")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--sample", type=str)
     group.add_argument("--all", action="store_true")
+    group.add_argument("--cohort", action="store_true")
     args = parser.parse_args()
+
+    if args.cohort:
+        snp_path = RESULTS_DIR / "snp" / "snp_summary.json"
+        if not snp_path.exists():
+            print(f"  ✗ {snp_path} not found. Run snp_summary rule first.")
+            return 1
+        snp_summary = json.loads(snp_path.read_text())
+        output = RESULTS_DIR / "snp" / "cohort_report.html"
+        generate_cohort_html(snp_summary, output)
+        print(f"  ✅ Cohort report: {output}")
+        return 0
 
     v = DeterministicVerifier()
 

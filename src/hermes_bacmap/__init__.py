@@ -95,6 +95,12 @@ def register(ctx):
         schema=schemas.GENE_SCAN,
         handler=tools.gene_scan,
     )
+    ctx.register_tool(
+        name="bio_snp_tree",
+        toolset="bioinfo",
+        schema=schemas.SNP_TREE,
+        handler=tools.snp_tree,
+    )
 
     # Bundle skills with common pipeline guidance.
     # Skills live at <project_root>/skills/ — two levels up from this file
@@ -108,4 +114,4 @@ def register(ctx):
             if child.is_dir() and skill_md.exists():
                 ctx.register_skill(child.name, skill_md)
 
-    logger.info("hermes_bacmap plugin registered 14 tools")
+    logger.info("hermes_bacmap plugin registered 15 tools")

@@ -494,3 +494,20 @@ GENE_SCAN = {
         "required": ["contigs_path", "database"],
     },
 }
+
+
+SNP_TREE = {
+    "name": "bio_snp_tree",
+    "description": (
+        "Retrieve the cohort-level SNP phylogenetic tree and pairwise "
+        "distance matrix. Returns Newick tree string, sample list, "
+        "SNP site count, missing rate, and all pairwise SNP distances. "
+        "Use this when the user asks about genetic relatedness, "
+        "outbreak clusters, phylogenetic relationships, or SNP distances "
+        "between samples."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {},
+    },
+}

@@ -1362,3 +1362,20 @@ def gene_scan(args: dict, **kwargs) -> str:
         return json.dumps({"error": str(e)})
     except Exception as e:
         return json.dumps({"error": f"gene_scan failed: {e}"})
+
+
+def snp_tree(args: dict, **kwargs) -> str:
+    """Retrieve cohort-level SNP phylogenetic tree and distance matrix."""
+    snp_json = _RESULTS_DIR / "snp" / "snp_summary.json"
+    if not snp_json.exists():
+        return json.dumps({
+            "error": "SNP tree not available. Run the SNP pipeline first "
+            "(snp_calling -> joint_variant_calling -> snp_matrix -> "
+            "phylo_tree -> snp_summary)."
+        })
+
+    try:
+        summary = json.loads(snp_json.read_text())
+        return json.dumps(summary, ensure_ascii=False)
+    except Exception as e:
+        return json.dumps({"error": f"Failed to read SNP summary: {e}"})
