@@ -1,6 +1,12 @@
 ---
 name: interpret-results
-description: "Pathogen genome analysis result interpretation: serotype, MLST, AMR, virulence, SNP phylogenetics"
+description: >
+  Pathogen genome result interpretation: serotype (Kauffmann-White), MLST ST
+  clinical significance, AMR gene classification (ESBL/carbapenemase/AmpC),
+  SNP distance outbreak thresholds (0-5=transmission chain, 6-15=possible),
+  virulence gene database. Load when user asks "what does ST19 mean", "is
+  this resistant", "are these related", or any result interpretation question.
+  Trigger words: 解读, interpret, 意味, resistant, 耐药, 关系, related, ST, serotype.
 version: 0.1.0
 metadata:
   hermes:

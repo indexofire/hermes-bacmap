@@ -1,6 +1,11 @@
 ---
 name: bioinfo-analysis
-description: Common bioinformatics analysis pipelines and decision tree for choosing tools.
+description: >
+  Generic bioinformatics analysis pipelines and decision tree for choosing tools
+  (variant calling, RNA-seq, long-read, sequence identification). Load when user
+  asks about analysis types NOT covered by the pathogen pipeline, or needs help
+  choosing between bio_blast/bio_align/bio_variant/bio_samtools tools.
+  Trigger words: pipeline, variant calling, RNA-seq, long-read, minimap2, bwa.
 version: 0.1.0
 metadata:
   hermes:

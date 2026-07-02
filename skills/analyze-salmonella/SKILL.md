@@ -1,6 +1,10 @@
 ---
 name: analyze-salmonella
-description: "Salmonella WGS end-to-end analysis (9-step pipeline)"
+description: >
+  Salmonella WGS 9-step pipeline (QC→assembly→species→MLST→serotype→AMR→SNP→report).
+  Load when user mentions Salmonella, typhi, typhimurium, enteritidis, infantis,
+  newport, serotyping, MLST, or requests bacterial genome analysis pipeline execution.
+  Trigger words: 分析, analyze, pipeline, 沙门菌, 血清型, 耐药.
 version: 0.1.0
 platforms: [linux]
 metadata:

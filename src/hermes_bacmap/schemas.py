@@ -393,7 +393,9 @@ ANALYZE_SALMONELLA = {
         "identification via invA/uidA/ipaH three-gene routing, MLST, "
         "serotyping, AMR, virulence, plasmid, DEC pathotype, report). "
         "Works for Salmonella, DEC (E. coli), Shigella, EIEC — species "
-        "routing is automatic. Returns a summary of results."
+        "routing is automatic. Returns a summary of results. "
+        "For pipeline guidance and troubleshooting, load skill: "
+        "skill_view('hermes_bacmap:analyze-salmonella')."
     ),
     "parameters": {
         "type": "object",
@@ -410,7 +412,9 @@ GET_RESULT = {
     "description": (
         "Retrieve analysis summary for a completed sample. Returns species "
         "type (Salmonella/E.coli/Shigella), MLST ST, serotype, ipaH status, "
-        "DEC pathotype, AMR/virulence/plasmid gene counts."
+        "DEC pathotype, AMR/virulence/plasmid gene counts. "
+        "For result interpretation, load skill: "
+        "skill_view('hermes_bacmap:interpret-results')."
     ),
     "parameters": {
         "type": "object",
@@ -425,7 +429,9 @@ VERIFY_RESULT = {
     "name": "bio_verify_result",
     "description": (
         "Run deterministic verification on results. Checks species, MLST, "
-        "serotype, AMR. Flags critical resistance for human review."
+        "serotype, AMR. Flags critical resistance (CTX-M/NDM/KPC/mcr-1) "
+        "for human review. For understanding verification rules, load skill: "
+        "skill_view('hermes_bacmap:interpret-results')."
     ),
     "parameters": {
         "type": "object",
@@ -469,7 +475,9 @@ GENE_SCAN = {
         "Scan assembled contigs against a gene database (card/vfdb/ecoh/"
         "plasmidfinder/resfinder) to detect AMR, virulence, serotype, or "
         "plasmid genes. Returns JSON with gene list, identity, coverage. "
-        "Supports multi-database scanning in one call."
+        "Supports multi-database scanning in one call. "
+        "For AMR gene clinical significance (ESBL/carbapenemase/AmpC), "
+        "load skill: skill_view('hermes_bacmap:interpret-results')."
     ),
     "parameters": {
         "type": "object",
@@ -504,7 +512,9 @@ SNP_TREE = {
         "SNP site count, missing rate, and all pairwise SNP distances. "
         "Use this when the user asks about genetic relatedness, "
         "outbreak clusters, phylogenetic relationships, or SNP distances "
-        "between samples."
+        "between samples. For SNP distance interpretation thresholds "
+        "(0-5=outbreak, 6-15=possibly related), load skill: "
+        "skill_view('hermes_bacmap:interpret-results')."
     ),
     "parameters": {
         "type": "object",
@@ -549,7 +559,8 @@ ANNOTATE = {
         "via blastp against Prokka protein databases (sprot, IS, AMR), and "
         "outputs structured JSON optimized for AI interpretation. Use this "
         "when the user asks to annotate a genome, find genes, or identify "
-        "gene functions in assembled contigs."
+        "gene functions in assembled contigs. For gene function interpretation, "
+        "load skill: skill_view('hermes_bacmap:interpret-results')."
     ),
     "parameters": {
         "type": "object",
