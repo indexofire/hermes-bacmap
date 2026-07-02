@@ -6,9 +6,7 @@
 
 | 文件 | 内容 |
 |------|------|
+| [**features.md**](features.md) | **完整功能文档**（16 tools + 21 rules + GOM + SNP + 检索 + 验证 + 数据库） |
 | [getting-started.md](getting-started.md) | 从零搭建开发环境 (uv + pixi) |
-
-后续可按需添加:
-- `architecture.md` — 插件架构设计
-- `deployment.md` — 部署到 Hermes 的方法
-- `tools-reference.md` — 工具 API 详解
+| [gom-architecture.md](gom-architecture.md) | Genome Object Model 架构设计（588 行） |
+| [hermes-chat-guide.md](hermes-chat-guide.md) | Hermes Agent 交互指南（196 行） |
