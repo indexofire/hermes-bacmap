@@ -1,0 +1,30 @@
+# Hermes-bacmap Salmonella 端到端分析流程
+# project.md §7.1 核心 9 步 pipeline
+
+import pandas as pd
+from pathlib import Path
+
+configfile: "config/config.yaml"
+
+PROJECT_ROOT = Path(config["project_root"]).resolve()
+WORKDIR = PROJECT_ROOT / config["workdir"]
+SAMPLES_DF = pd.read_csv(config["samples_file"], sep="\t").set_index("sample")
+SAMPLES = SAMPLES_DF.index.tolist()
+
+def r1_path(wc):
+    return str(PROJECT_ROOT / SAMPLES_DF.loc[wc.sample, "R1"])
+
+def r2_path(wc):
+    return str(PROJECT_ROOT / SAMPLES_DF.loc[wc.sample, "R2"])
+
+rule all:
+    input:
+        expand(str(WORKDIR) + "/{sample}/report/{sample}_summary.json", sample=SAMPLES)
+
+include: "rules/qc.smk"
+include: "rules/assembly.smk"
+include: "rules/species.smk"
+include: "rules/typing_amr.smk"
+include: "rules/dec_shigella.smk"
+include: "rules/vpara.smk"
+include: "rules/report.smk"

@@ -1,0 +1,77 @@
+[project]
+name = "hermes-bacmap"
+version = "0.1.0"
+description = "Bacterial genome mapping plugin for Hermes Agent"
+requires-python = ">=3.11,<3.14"
+authors = [
+    { name = "indexofire", email = "indexofire@gmail.com" },
+]
+
+# 运行时依赖 — 这些包最终也要装到 Hermes venv
+dependencies = [
+    "biopython>=1.83",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+# 开发依赖 — 只在开发环境需要, 不装到 Hermes venv
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "pre-commit>=3.7",
+    "types-python-dateutil",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# 插件代码直接作为包暴露, 方便 editable install
+packages = ["src/hermes_bacmap"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers"
+
+[tool.coverage.run]
+source = ["src/hermes_bacmap"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+fail_under = 80
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = ["Bio.*"]
+ignore_missing_imports = true

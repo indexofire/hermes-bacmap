@@ -1,0 +1,10 @@
+name: seqsero2
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - seqsero2>=1.1.1
+  - samtools>=1.17
+  - bwa>=0.7.17
+  - sra-toolkit>=2.9
+  - python>=3.6

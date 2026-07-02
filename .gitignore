@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# uv
+.venv/
+uv.lock
+
+# pixi
+.pixi/
+
+# IDE
+.vscode/
+.idea/
+
+# Test
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Data — too large for git
+data/
+results/
+tests/fixtures/gold_standard/salmonella/data/
+external/
+
+# Databases
+*.fasta.bwt
+*.fasta.pac
+*.fasta.ann
+*.fasta.amb
+*.fasta.sa
+*_blastdb.*
+
+# SQLite
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
+# ECTyper MASH DB
+*.msh
+
+# venv / pixi
+.venv/
+.venv-gmlst/
+.pixi/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.snakemake/
+
+# Logs
+logs/

@@ -1,0 +1,47 @@
+# Hermes-bacmap Salmonella 分析流程配置
+# project.md §7.1 核心 9 步 pipeline
+
+threads: 8
+workdir: "results"
+project_root: "../.."
+
+samples_file: "config/samples.tsv"
+
+databases:
+  invA_ref: "../../data/reference/salmonella_invA.fasta"
+  amrfinderplus_db: "../../data/db/amrfinderplus"
+  vfdb: "vfdb"
+  card: "card"
+  plasmidfinder: "plasmidfinder"
+  resfinder: "resfinder"
+
+tools:
+  fastp:
+    qualified_quality_phred: 20
+    length_required: 50
+    detect_adapter_for_pe: true
+  spades:
+    min_contig_len: 200
+    cov_cutoff: 2
+  shovill:
+    minlen: 500
+    ram: 8
+    depth: 100
+  blastn:
+    evalue: 1e-50
+    word_size: 28
+    min_identity: 90
+    min_coverage: 80
+  mlst:
+    scheme: "auto"
+  sistr:
+    threads: 4
+  seqsero2:
+    mapping_mode: "a"
+    analysis_mode: "a"
+  amrfinderplus:
+    organism: "Salmonella"
+    min_coverage: 0.5
+  abricate:
+    minid: 80
+    mincov: 60
