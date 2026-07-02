@@ -27,9 +27,21 @@ hermes chat
 | 病原 | 物种鉴定靶基因 | 血清型 | MLST | AMR | 状态 |
 |---|---|---|---|---|---|
 | **Salmonella** | invA | SISTR | gmlst (salmonella_2) | abricate (CARD/VFDB/PlasmidFinder) | ✅ V0.1 |
-| **DEC** (E. coli) | uidA | ECTyper | gmlst | abricate | ✅ V0.2 |
-| **Shigella / EIEC** | ipaH | ECTyper + ipaH | gmlst | abricate | ✅ V0.2 |
-| **V. parahaemolyticus** | — | VPsero | — | abricate | ⬜ V0.4 |
+| **DEC** (E. coli) | uidA | ecoh_serotyper (Python) | gmlst | abricate | ✅ V0.2 |
+| **Shigella / EIEC** | ipaH | shigella_serotyper (58 serotypes) | gmlst | abricate | ✅ V0.2 |
+| **V. parahaemolyticus** | toxR + tlh | — | — | abricate | ✅ V0.4 (物种鉴定) |
+
+## 核心模块
+
+| 模块 | 行数 | 功能 |
+|---|---|---|
+| `genome_object_service.py` | 598 | GOM（SQLite + 版本管理 + 事件 + 文件产物） |
+| `gene_scanner.py` | 394 | 通用 BLAST 引擎（任意 abricate 格式数据库） |
+| `deterministic_verifier.py` | 186 | 确定性规则校验（species/MLST/serotype/AMR） |
+| `ecoh_serotyper.py` | 121 | E. coli O:H 血清型（委托 gene_scanner） |
+| `shigella_serotyper.py` | 175 | Shigella 血清型（移植 ShigATyper） |
+| `species_identifier.py` | 120 | 统一物种鉴定（invA/uidA/ipaH/toxR/tlh） |
+| `tools.py` | 1327 | Hermes 插件 14 个 tool handler |
 
 ## 项目结构
 

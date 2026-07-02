@@ -1,8 +1,10 @@
-# Hermes-bacmap 开发计划（V0.3）
+# Hermes-bacmap 开发计划（V0.4）
 
 项目代号：Hermes-bacmap
-文档版本：V0.3（2026-06-28，V0.1 完成 + V0.2 DEC/Shigella 扩展完成）
+文档版本：V0.4（2026-07-02，V0.2 完成 + 架构精简 + V0.4 V.para 物种鉴定）
 
+> **V0.3 → V0.4 关键变更**：(1) 物种鉴定统一为 species_identifier（invA/uidA/ipaH/toxR/tlh 合并为 1 个 BLAST DB，4 个 rule → 1 个）；(2) ecoh_serotyper 瘦身（330→121 行，委托 gene_scanner）；(3) shigella_serotyper 移植（ShigATyper 58 种血清型，纯 Python）；(4) gene_scanner 通用 BLAST 引擎（替代 abricate 概念，支持任意数据库）；(5) 血清型分流逻辑（Shigella→shigella_serotyper，DEC/EIEC→ecoh_serotyper）；(6) bio_gene_scan Hermes tool（14 个 tool）。
+>
 > **V0.2 → V0.3 关键变更**：(1) V0.1 Salmonella MVP 全部完成（6 株端到端 + Hermes 插件 + 87 测试）；(2) 新增靶基因物种鉴定体系：invA(Salmonella) + uidA(E.coli/DEC) + ipaH(Shigella/EIEC)；(3) V0.2 DEC 分析模块：ECTyper + pathotype 判断 + uidA 靶基因；(4) V0.2 Shigella 模块：ipaH 靶基因（替代 ShigEiFinder）；(5) Hermes 插件 13 tools 全部验证通过。
 >
 > **V0.1 → V0.2 关键变更**：(1) 放弃 HPC/SLURM 部署，改为个人 Linux 工作站/普通服务器；(2) 放弃 Nextflow，改用 Snakemake（Python DSL）；(3) 放弃 MongoDB + MinIO，改为 SQLite + 本地文件系统；(4) 明确 4 种目标病原与 V0.1 MVP 范围；(5) 引入三层 AI 防御机制应对公卫合规要求；(6) 引入"分层信任"理念区分固定 pipeline 与 AI 探索区。

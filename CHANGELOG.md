@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — V0.4 架构精简
+
+- **物种鉴定统一**：species_identifier.py 合并 4 个独立 rule（invA/ipaH/vpara/uidA）→ 1 个 BLAST 调用（species_markers.fasta，5 条序列）
+- **ecoh_serotyper 瘦身**：330→121 行，BLAST 逻辑委托给 gene_scanner（零代码重复）
+- **shigella_serotyper 新增**：移植 ShigATyper（CFSAN），支持 58 种 Shigella 血清型（S. flexneri 1a-7b/Y/Yv, S. sonnei, S. dysenteriae 1-15, S. boydii 1-20）
+- **gene_scanner 框架**：通用 BLAST 引擎（替代 abricate 概念），支持任意 abricate 格式数据库
+- **血清型分流**：Shigella→shigella_serotyper，DEC/EIEC→ecoh_serotyper，Salmonella→SISTR（collect_summary.py 中 primary_serotype 字段）
+- **bio_gene_scan Hermes tool**：LLM 可直接扫描任意数据库
+- **代码审计**：9 个 subprocess.run 加 timeout，SHA256 改分块读取，scripts/_common.py 提取共享路径
+- **10/10 株全量数据刷新**：所有 summary.json 统一为最新格式（species_id + ecoh_serotype + shigella_serotype + pathotype）
+
 ### Changed — V0.2 完成标记
 
 - **V0.2 DEC + Shigella 扩展全部完成**：
