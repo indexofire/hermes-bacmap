@@ -19,7 +19,8 @@ def r2_path(wc):
 
 rule all:
     input:
-        expand(str(WORKDIR) + "/{sample}/report/{sample}_summary.json", sample=SAMPLES)
+        expand(str(WORKDIR) + "/{sample}/report/{sample}_summary.json", sample=SAMPLES),
+        str(WORKDIR) + "/snp/core.treefile"
 
 include: "rules/qc.smk"
 include: "rules/assembly.smk"
@@ -27,4 +28,5 @@ include: "rules/species.smk"
 include: "rules/typing_amr.smk"
 include: "rules/dec_shigella.smk"
 include: "rules/vpara.smk"
+include: "rules/snp.smk"
 include: "rules/report.smk"
