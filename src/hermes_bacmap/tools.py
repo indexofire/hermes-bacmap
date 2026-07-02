@@ -1366,16 +1366,48 @@ def gene_scan(args: dict, **kwargs) -> str:
 
 def snp_tree(args: dict, **kwargs) -> str:
     """Retrieve cohort-level SNP phylogenetic tree and distance matrix."""
+    db_path = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
+    if db_path.exists():
+        try:
+            import sys
+            sys.path.insert(0, str(_PROJECT_ROOT / "src"))
+            from hermes_bacmap.genome_object_service import GenomeObjectService, ObjectType
+
+            with GenomeObjectService(db_path) as gos:
+                cohort_objs = [
+                    o for o in gos.list_by_type(ObjectType.ANALYSIS)
+                    if o.strain_id == "cohort:salmonella-snp"
+                ]
+                if cohort_objs:
+                    latest = max(cohort_objs, key=lambda o: o.version)
+                    result = {
+                        "analysis_type": latest.payload.get("analysis_type"),
+                        "samples": latest.payload.get("samples", []),
+                        "n_samples": latest.payload.get("n_samples", 0),
+                        "n_snp_sites": latest.payload.get("n_snp_sites", 0),
+                        "missing_rate": latest.payload.get("missing_rate", 0),
+                        "tree_newick": latest.payload.get("tree_newick", ""),
+                        "pairwise_distances": latest.payload.get("pairwise_distances", {}),
+                        "source": "gom",
+                        "object_id": latest.object_id,
+                        "version": latest.version,
+                    }
+                    return json.dumps(result, ensure_ascii=False)
+        except Exception:
+            pass
+
     snp_json = _RESULTS_DIR / "snp" / "snp_summary.json"
     if not snp_json.exists():
         return json.dumps({
             "error": "SNP tree not available. Run the SNP pipeline first "
             "(snp_calling -> joint_variant_calling -> snp_matrix -> "
-            "phylo_tree -> snp_summary)."
+            "phylo_tree -> snp_summary), then ingest via "
+            "'python scripts/ingest_results.py --snp'."
         })
 
     try:
         summary = json.loads(snp_json.read_text())
+        summary["source"] = "disk"
         return json.dumps(summary, ensure_ascii=False)
     except Exception as e:
         return json.dumps({"error": f"Failed to read SNP summary: {e}"})
