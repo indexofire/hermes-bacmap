@@ -107,6 +107,12 @@ def register(ctx):
         schema=schemas.SEARCH_SAMPLES,
         handler=tools.search_samples,
     )
+    ctx.register_tool(
+        name="bio_annotate",
+        toolset="bioinfo",
+        schema=schemas.ANNOTATE,
+        handler=tools.annotate_genome,
+    )
 
     # Bundle skills with common pipeline guidance.
     # Skills live at <project_root>/skills/ — two levels up from this file
@@ -120,4 +126,4 @@ def register(ctx):
             if child.is_dir() and skill_md.exists():
                 ctx.register_skill(child.name, skill_md)
 
-    logger.info("hermes_bacmap plugin registered 16 tools")
+    logger.info("hermes_bacmap plugin registered 17 tools")

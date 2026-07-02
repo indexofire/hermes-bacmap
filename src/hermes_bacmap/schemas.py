@@ -539,3 +539,34 @@ SEARCH_SAMPLES = {
         "required": ["query"],
     },
 }
+
+
+ANNOTATE = {
+    "name": "bio_annotate",
+    "description": (
+        "Annotate assembled contigs using a Python-native Prokka replacement. "
+        "Predicts CDS with pyrodigal (same algorithm as Prodigal), annotates "
+        "via blastp against Prokka protein databases (sprot, IS, AMR), and "
+        "outputs structured JSON optimized for AI interpretation. Use this "
+        "when the user asks to annotate a genome, find genes, or identify "
+        "gene functions in assembled contigs."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "contigs_path": {
+                "type": "string",
+                "description": "Path to assembled contigs FASTA file.",
+            },
+            "sample_id": {
+                "type": "string",
+                "description": "Sample identifier for locus_tag prefix (optional, auto-detected from path if omitted).",
+            },
+            "output_path": {
+                "type": "string",
+                "description": "Output JSON path (optional, default: {sample}/annotation/annotation.json).",
+            },
+        },
+        "required": ["contigs_path"],
+    },
+}

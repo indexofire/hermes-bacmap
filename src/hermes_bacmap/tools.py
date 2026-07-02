@@ -1532,3 +1532,41 @@ def search_samples(args: dict, **kwargs) -> str:
             }, ensure_ascii=False)
     except Exception as e:
         return json.dumps({"error": f"Search failed: {e}"})
+
+
+def annotate_genome(args: dict, **kwargs) -> str:
+    """Annotate assembled contigs with pyrodigal + Prokka DBs."""
+    contigs_path = args.get("contigs_path", "")
+    sample_id = args.get("sample_id", "")
+    output_path = args.get("output_path", "")
+
+    contigs = Path(contigs_path)
+    if not contigs.exists():
+        return json.dumps({"error": f"Contigs not found: {contigs_path}"})
+
+    if not sample_id:
+        sample_id = contigs.parent.parent.name
+
+    if not output_path:
+        output_path = str(_RESULTS_DIR / sample_id / "annotation" / "annotation.json")
+
+    try:
+        import sys
+        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
+        from hermes_bacmap.genome_annotator import annotate
+
+        result = annotate(contigs_path, sample_id)
+        result.save(output_path)
+
+        summary = result.summary
+        return json.dumps({
+            "sample_id": sample_id,
+            "output": output_path,
+            "summary": summary,
+            "top_genes": [
+                {"gene": f.gene, "product": f.product, "identity": f.identity, "source": f.source}
+                for f in result.features if f.gene and f.identity >= 80
+            ][:20],
+        }, ensure_ascii=False)
+    except Exception as e:
+        return json.dumps({"error": f"Annotation failed: {e}"})
