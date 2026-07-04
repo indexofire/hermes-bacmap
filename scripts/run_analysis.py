@@ -244,10 +244,23 @@ def main() -> int:
         print(f"\n✅ 全部完成。")
         return 0
     else:
-        print(f"\n❌ Snakemake 失败。诊断步骤:")
-        print(f"   1. 检查日志: {WORKFLOW_DIR}/.snakemake/log/")
-        print(f"   2. 解锁: cd {WORKFLOW_DIR} && snakemake --unlock")
-        print(f"   3. 重试: python scripts/run_analysis.py --sample <ID>")
+        import sys as _sys
+        _sys.path.insert(0, str(ROOT / "src"))
+        from hermes_bacmap.failure_diagnostics import diagnose_from_log
+
+        diag = diagnose_from_log(str(WORKFLOW_DIR / ".snakemake/log"))
+
+        print(f"\n❌ Snakemake 失败。诊断结果:")
+        print(f"   类型: {diag.error_type}")
+        print(f"   原因: {diag.details}")
+        if diag.rule_name:
+            print(f"   规则: {diag.rule_name}")
+        print(f"   修复: {diag.suggested_fix}")
+        if diag.recovery_commands:
+            print(f"   命令:")
+            for cmd in diag.recovery_commands:
+                print(f"     $ {cmd}")
+        print(f"\n   手动检查: {WORKFLOW_DIR}/.snakemake/log/")
         return 1
 
 

@@ -1497,3 +1497,24 @@ def annotate_genome(args: dict, **kwargs) -> str:
         }, ensure_ascii=False)
     except Exception as e:
         return json.dumps({"error": f"Annotation failed: {e}"})
+
+
+def diagnose_failure(args: dict, **kwargs) -> str:
+    """Diagnose pipeline failure from Snakemake log or stderr text."""
+    import sys
+    sys.path.insert(0, str(_PROJECT_ROOT / "src"))
+    from hermes_bacmap.failure_diagnostics import diagnose, diagnose_from_log
+
+    stderr_text = args.get("stderr_text", "")
+    log_path = args.get("log_path", "")
+
+    if stderr_text:
+        result = diagnose(stderr_text)
+    elif log_path:
+        result = diagnose_from_log(log_path)
+    else:
+        result = diagnose_from_log(
+            str(_PROJECT_ROOT / "workflows/salmonella/.snakemake/log")
+        )
+
+    return json.dumps(result.to_dict(), ensure_ascii=False)

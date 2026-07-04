@@ -581,3 +581,28 @@ ANNOTATE = {
         "required": ["contigs_path"],
     },
 }
+
+
+DIAGNOSE = {
+    "name": "bio_diagnose",
+    "description": (
+        "Diagnose pipeline failures by parsing Snakemake logs. Returns error "
+        "type, root cause, affected rule, and suggested recovery commands. "
+        "Use this when analysis fails or the user reports pipeline errors. "
+        "Handles OOM, lock conflicts, missing tools, missing databases, "
+        "missing input files, disk full, and Snakemake version issues."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "log_path": {
+                "type": "string",
+                "description": "Path to Snakemake log file. If omitted, reads the latest log automatically.",
+            },
+            "stderr_text": {
+                "type": "string",
+                "description": "Raw stderr text to diagnose (alternative to log_path).",
+            },
+        },
+    },
+}
