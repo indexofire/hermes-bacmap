@@ -16,26 +16,23 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
-logger = logging.getLogger(__name__)
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-# ---------------------------------------------------------------------------
-# Dependency helpers
-# ---------------------------------------------------------------------------
+from hermes_bacmap.engine._env import PIXI_BIN, VENV_BIN, VENV_GMLST, _PROJECT_ROOT  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 _BIOPYTHON_AVAILABLE: bool | None = None
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[2]
 _RESULTS_DIR = _PROJECT_ROOT / "results"
-_PIXI_BIN = str(_PROJECT_ROOT / ".pixi/envs/default/bin")
-_VENV_BIN = str(_PROJECT_ROOT / ".venv/bin")
-_VENV_GMLST = str(_PROJECT_ROOT / ".venv-gmlst/bin")
 _PIXI_ENV: dict[str, str] = dict(os.environ)
-_PIXI_ENV["PATH"] = ":".join([_PIXI_BIN, _VENV_GMLST, _VENV_BIN, _PIXI_ENV.get("PATH", "")])
+_PIXI_ENV["PATH"] = ":".join([PIXI_BIN, VENV_GMLST, VENV_BIN, _PIXI_ENV.get("PATH", "")])
 
 
 def _run_project_script(script_name: str, args: list[str], timeout: int = 3600) -> str:
@@ -795,7 +792,6 @@ def align(args: dict, **kwargs) -> str:
 
     try:
         import sys
-        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
         from hermes_bacmap.engine import ReadMapper
 
         result = ReadMapper.map(
@@ -1100,8 +1096,6 @@ def _count_vcf_records(path: str) -> int:
 # High-level analysis tools (project.md §7 Salmonella pipeline)
 # ---------------------------------------------------------------------------
 
-_RESULTS_DIR = _PROJECT_ROOT / "results"
-
 
 def analyze_salmonella(args: dict, **kwargs) -> str:
     """Trigger full analysis pipeline via Snakemake.
@@ -1200,7 +1194,6 @@ def verify_result(args: dict, **kwargs) -> str:
 
     try:
         import sys
-        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
         from hermes_bacmap.deterministic_verifier import DeterministicVerifier
         v = DeterministicVerifier()
         result = v.verify_all(summary)
@@ -1269,7 +1262,6 @@ def gene_scan(args: dict, **kwargs) -> str:
 
     try:
         import sys
-        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
         from hermes_bacmap.gene_scanner import scan, scan_multi
 
         if len(db_list) == 1:
@@ -1297,7 +1289,6 @@ def snp_tree(args: dict, **kwargs) -> str:
     if db_path.exists():
         try:
             import sys
-            sys.path.insert(0, str(_PROJECT_ROOT / "src"))
             from hermes_bacmap.genome_object_service import GenomeObjectService, ObjectType
 
             with GenomeObjectService(db_path) as gos:
@@ -1355,7 +1346,6 @@ def search_samples(args: dict, **kwargs) -> str:
 
     try:
         import sys
-        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
         from hermes_bacmap.genome_object_service import GenomeObjectService, ObjectType
 
         with GenomeObjectService(db_path) as gos:
@@ -1479,7 +1469,6 @@ def annotate_genome(args: dict, **kwargs) -> str:
 
     try:
         import sys
-        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
         from hermes_bacmap.genome_annotator import annotate
 
         result = annotate(contigs_path, sample_id)
@@ -1502,7 +1491,6 @@ def annotate_genome(args: dict, **kwargs) -> str:
 def diagnose_failure(args: dict, **kwargs) -> str:
     """Diagnose pipeline failure from Snakemake log or stderr text."""
     import sys
-    sys.path.insert(0, str(_PROJECT_ROOT / "src"))
     from hermes_bacmap.failure_diagnostics import diagnose, diagnose_from_log
 
     stderr_text = args.get("stderr_text", "")

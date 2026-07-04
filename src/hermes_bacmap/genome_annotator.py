@@ -20,9 +20,9 @@ from typing import Any
 
 import pyrodigal
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+from hermes_bacmap.engine._env import _PROJECT_ROOT
+
 _REF_DIR = _PROJECT_ROOT / "data" / "reference"
-_PIXI_BIN = _PROJECT_ROOT / ".pixi" / "envs" / "default" / "bin"
 
 _MIN_CONTIG_LEN = 200
 _SINGLE_MODE_THRESHOLD = 100_000
