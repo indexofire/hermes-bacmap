@@ -88,7 +88,7 @@ class BlastBackend:
         ]
 
         for key, value in kwargs.items():
-            if value is None:
+            if value is None or key in ("num_threads", "threads"):
                 continue
             mapped = _PARAM_MAP.get(key, key)
             if isinstance(value, bool):

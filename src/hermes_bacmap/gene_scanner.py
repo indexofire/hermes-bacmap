@@ -169,23 +169,18 @@ def scan(
 
     db_path = _find_db(db_name)
 
-    cmd = [
-        "blastn",
-        "-query", str(contigs),
-        "-db", str(db_path),
-        "-outfmt", "6 qseqid sseqid pident length slen qstart qend evalue bitscore",
-        "-evalue", str(_EVALUE),
-        "-word_size", str(_WORD_SIZE),
-        "-num_threads", str(threads),
-    ]
+    from hermes_bacmap.engine import SequenceMatcher
 
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-
-    if proc.returncode != 0:
-        raise RuntimeError(
-            f"blastn failed (exit {proc.returncode}) on database '{db_name}': "
-            f"{proc.stderr.strip()[:500]}"
-        )
+    hits = SequenceMatcher.match(
+        query=str(contigs),
+        db_prefix=str(db_path),
+        mode="blastn",
+        min_identity=0.0,
+        min_coverage=0.0,
+        evalue=_EVALUE,
+        word_size=_WORD_SIZE,
+        num_threads=threads,
+    )
 
     result = ScanResult(
         database=db_name,
@@ -194,44 +189,25 @@ def scan(
         min_coverage=min_coverage,
     )
 
-    for line in proc.stdout.strip().split("\n"):
-        if not line.strip():
-            continue
-        parts = line.split("\t")
-        if len(parts) < 9:
-            continue
+    for hit in hits:
+        gene, accession, product, _ = _parse_db_header(hit.subject_id)
 
-        qseqid = parts[0]
-        sseqid = parts[1]
-        pident = float(parts[2])
-        aln_len = int(parts[3])
-        slen = int(parts[4])
-        qstart = int(parts[5])
-        qend = int(parts[6])
-        evalue = float(parts[7])
-        bitscore = float(parts[8])
-
-        coverage = (aln_len / slen * 100) if slen > 0 else 0
-
-        if pident < min_identity or coverage < min_coverage:
+        if hit.identity < min_identity or hit.subject_coverage < min_coverage:
             continue
 
-        gene, accession, product, _ = _parse_db_header(sseqid)
-        strand = "+" if qstart <= qend else "-"
-
-        hit = GeneHit(
+        gene_hit = GeneHit(
             gene=gene,
-            identity=round(pident, 2),
-            coverage=round(coverage, 1),
-            contig=qseqid,
-            start=min(qstart, qend),
-            end=max(qstart, qend),
-            strand=strand,
+            identity=round(hit.identity, 2),
+            coverage=round(hit.subject_coverage, 1),
+            contig=hit.query_id,
+            start=min(hit.query_start, hit.query_end),
+            end=max(hit.query_start, hit.query_end),
+            strand=hit.strand,
             accession=accession,
             product=product,
             database=db_name,
         )
-        result.genes.append(hit)
+        result.genes.append(gene_hit)
 
     result.genes.sort(key=lambda h: (-h.identity, h.gene))
     result.total_hits = len(result.genes)

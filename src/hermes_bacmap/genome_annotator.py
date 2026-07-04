@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -155,53 +154,37 @@ def _run_blastp(
     evalue: float,
     min_coverage: float,
 ) -> dict[str, dict[str, Any]]:
-    blastp = str(_PIXI_BIN / "blastp")
+    from hermes_bacmap.engine import SequenceMatcher
+
     db_path = str(_REF_DIR / db_prefix)
 
-    cmd = [
-        blastp,
-        "-query", str(proteins_faa),
-        "-db", db_path,
-        "-evalue", str(evalue),
-        "-qcov_hsp_perc", str(min_coverage),
-        "-num_threads", "4",
-        "-num_descriptions", "1",
-        "-num_alignments", "1",
-        "-seg", "no",
-        "-outfmt", "6 qseqid sseqid pident length slen qstart qend evalue bitscore",
-    ]
+    raw_hits = SequenceMatcher.match(
+        query=str(proteins_faa),
+        db_prefix=db_path,
+        mode="blastp",
+        query_type="prot",
+        min_identity=0.0,
+        min_coverage=0.0,
+        evalue=evalue,
+        max_targets=1,
+        qcov_hsp_perc=min_coverage,
+        seg="no",
+    )
 
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=_BLASTP_TIMEOUT)
-
-    if proc.returncode != 0:
-        raise RuntimeError(
-            f"blastp failed (exit {proc.returncode}) on '{db_prefix}': "
-            f"{proc.stderr.strip()[:500]}"
-        )
-
+    seen: set[str] = set()
     hits: dict[str, dict[str, Any]] = {}
-    for line in proc.stdout.strip().split("\n"):
-        if not line.strip():
+    for hit in raw_hits:
+        if hit.query_id in seen:
             continue
-        parts = line.split("\t")
-        if len(parts) < 9:
-            continue
-        query_id = parts[0]
-        sseqid = parts[1]
-        pident = float(parts[2])
-        aln_len = int(parts[3])
-        slen = int(parts[4])
-        e_val = float(parts[7])
+        seen.add(hit.query_id)
 
-        coverage = (aln_len / slen * 100) if slen > 0 else 0
-
-        gene, product = _parse_prokka_header(sseqid)
-        hits[query_id] = {
+        gene, product = _parse_prokka_header(hit.subject_id)
+        hits[hit.query_id] = {
             "gene": gene,
             "product": product,
-            "identity": pident,
-            "coverage": coverage,
-            "evalue": e_val,
+            "identity": hit.identity,
+            "coverage": hit.subject_coverage,
+            "evalue": hit.evalue,
         }
 
     return hits
