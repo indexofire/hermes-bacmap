@@ -21,7 +21,7 @@ Load the appropriate skill below based on what the user needs.
 
 | Skill | Load Command | When to Use |
 |---|---|---|
-| **analyze-salmonella** | `skill_view("hermes_bacmap:analyze-salmonella")` | Running Salmonella WGS pipeline (QC → assembly → species → MLST → serotype → AMR → SNP → report) |
+| **run-pipeline** | `skill_view("hermes_bacmap:run-pipeline")` | Running pathogen WGS pipeline (QC → assembly → species → MLST → serotype → AMR → SNP → report). Supports Salmonella, DEC, Shigella, V. para. |
 | **interpret-results** | `skill_view("hermes_bacmap:interpret-results")` | Interpreting any result: "what does ST19 mean?", "is blaCTX-M dangerous?", "are these 2 samples related?" |
 | **bioinfo-analysis** | `skill_view("hermes_bacmap:bioinfo-analysis")` | Planning a new type of analysis not covered by the pipeline (e.g., long-read, RNA-seq) |
 
@@ -32,7 +32,7 @@ User says...
 │
 ├── "分析 / analyze" + sample name
 │   → Call tool: bio_analyze_salmonella
-│   → Load skill: hermes_bacmap:analyze-salmonella (for pipeline details)
+│   → Load skill: hermes_bacmap:run-pipeline (for pipeline details)
 │
 ├── "注释 / annotate" + contigs
 │   → Call tool: bio_annotate

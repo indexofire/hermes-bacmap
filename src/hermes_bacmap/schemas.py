@@ -395,7 +395,7 @@ ANALYZE_SALMONELLA = {
         "Works for Salmonella, DEC (E. coli), Shigella, EIEC — species "
         "routing is automatic. Returns a summary of results. "
         "For pipeline guidance and troubleshooting, load skill: "
-        "skill_view('hermes_bacmap:analyze-salmonella')."
+        "skill_view('hermes_bacmap:run-pipeline')."
     ),
     "parameters": {
         "type": "object",
