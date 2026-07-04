@@ -12,6 +12,7 @@
 | **Z.AI (当前)** | GLM-5.2 | 0 (cloud) | ~200 tok/s | 日常使用，需网络 |
 | **Ollama** | Qwen3-14B | ~9 GB | ~124 tok/s | 离线、数据不出境 |
 | **vLLM** | Qwen3-14B/32B | 9-19 GB | ~150 tok/s | 高吞吐、多并发 |
+| **llama.cpp** | Qwen3-14B Q4 | ~9 GB | ~80-120 tok/s | 轻量、CPU/GPU 混合推理 |
 
 ---
 
@@ -63,8 +64,6 @@ model:
 
 ## 2. vLLM 安装与配置
 
-### 安装
-
 ```bash
 # 需要 CUDA 12.1+ 和 Python 3.10+
 pip install vllm
@@ -107,7 +106,84 @@ model:
 
 ---
 
-## 3. Provider 管理
+## 3. llama.cpp 安装与配置
+
+### 安装
+
+```bash
+# 方式 A: 预编译二进制（推荐）
+# 从 https://github.com/ggerganov/llama.cpp/releases 下载对应平台
+# 放到 ~/.local/bin/ 或 /usr/local/bin/
+
+# 方式 B: 从源码编译（GPU 加速）
+git clone https://github.com/ggml-org/llama.cpp
+cd llama.cpp
+cmake -B build -DGGML_CUDA=ON
+cmake --build build --config Release -j 8
+cp build/bin/llama-server ~/.local/bin/
+cp build/bin/llama-cli ~/.local/bin/
+
+# 下载 GGUF 模型
+# Hugging Face: https://huggingface.co/Qwen/Qwen3-14B-Instruct-GGUF
+huggingface-cli download Qwen/Qwen3-14B-Instruct-GGUF \
+    qwen3-14b-instruct-q4_k_m.gguf \
+    --local-dir ~/models
+```
+
+### 启动 llama.cpp 服务
+
+```bash
+# GPU 推理（RTX 5060 Ti 16GB）
+llama-server \
+    -m ~/models/qwen3-14b-instruct-q4_k_m.gguf \
+    --port 8080 \
+    --n-gpu-layers 99 \
+    --ctx-size 8192 \
+    --host 0.0.0.0
+
+# CPU 推理（无 GPU 或 VRAM 不足）
+llama-server \
+    -m ~/models/qwen3-14b-instruct-q4_k_m.gguf \
+    --port 8080 \
+    --threads 8 \
+    --ctx-size 4096
+
+# 验证（OpenAI 兼容 API）
+curl http://localhost:8080/v1/models
+```
+
+### 切换 Hermes 到 llama.cpp
+
+```bash
+python scripts/switch_llm.py llamacpp
+hermes chat
+```
+
+切换后 Hermes 配置变为：
+```yaml
+model:
+  default: qwen3-14b-instruct
+  provider: custom
+  base_url: http://localhost:8080/v1
+  api_key: llamacpp
+```
+
+### llama.cpp vs Ollama vs vLLM
+
+| 特性 | llama.cpp | Ollama | vLLM |
+|---|---|---|---|
+| 安装复杂度 | 中（编译或下载） | 低（一键脚本） | 中（pip + CUDA） |
+| GPU 支持 | ✅ CUDA / Metal | ✅ 自动检测 | ✅ 仅 CUDA |
+| CPU 推理 | ✅ 原生支持 | ✅（慢） | ❌ |
+| 量化格式 | GGUF (Q4/Q5/Q8) | GGUF (自动选) | AWQ/GPTQ/FP16 |
+| OpenAI API | ✅ /v1/ | ✅ /v1/ | ✅ /v1/ |
+| 显存效率 | 最高（Q4 量化） | 高 | 中（FP16） |
+| 吞吐量 | 中 | 中 | 最高 |
+| 适合场景 | 单用户、低资源 | 易用性首选 | 多并发生产 |
+
+---
+
+## 4. Provider 管理
 
 ### 查看当前 provider
 
@@ -137,7 +213,7 @@ hermes chat
 
 ---
 
-## 4. 模型选择建议
+## 5. 模型选择建议
 
 | GPU VRAM | 推荐模型 | 参数量 | 说明 |
 |---|---|---|---|
@@ -162,25 +238,38 @@ ollama pull qwen3:32b    # 24GB VRAM, ~18.6GB download
 --model Qwen/Qwen3-32B
 ```
 
+### llama.cpp GGUF 模型
+
+```bash
+# Hugging Face 下载（Q4_K_M 量化推荐）
+huggingface-cli download Qwen/Qwen3-14B-Instruct-GGUF qwen3-14b-instruct-q4_k_m.gguf --local-dir ~/models
+huggingface-cli download Qwen/Qwen3-7B-Instruct-GGUF qwen3-7b-instruct-q4_k_m.gguf --local-dir ~/models
+
+# llama-server 启动时用 -m 指定
+llama-server -m ~/models/qwen3-14b-instruct-q4_k_m.gguf --port 8080 --n-gpu-layers 99
+```
+
 ---
 
-## 5. 故障排查
+## 6. 故障排查
 
 | 问题 | 原因 | 修复 |
 |---|---|---|
-| `Connection refused` at localhost:11434 | Ollama 服务未启动 | `ollama serve &` |
-| `CUDA out of memory` | VRAM 不足 | 换更小模型或减小 `--gpu-memory-utilization` |
-| Tool calling 不工作 | 模型不支持 function calling | 确保 Qwen3 系列（支持 tool calling） |
-| 响应速度慢 | CPU 推理（无 GPU） | 确认 `nvidia-smi` 可用；Ollama 自动用 GPU |
-| `model not found` | 模型未拉取 | `ollama pull qwen3:14b` |
+| `Connection refused` at :11434 | Ollama 未启动 | `ollama serve &` |
+| `Connection refused` at :8080 | llama.cpp 未启动 | `llama-server -m <model> --port 8080 &` |
+| `CUDA out of memory` | VRAM 不足 | 更小模型；llama.cpp 减 `--n-gpu-layers`；vLLM 减 `--gpu-memory-utilization` |
+| Tool calling 不工作 | 模型不支持 | 确保 Qwen3 系列 |
+| 响应速度慢 | CPU 推理 | `nvidia-smi` 确认 GPU；llama.cpp 加 `--n-gpu-layers 99` |
+| `model not found` | 未拉取 | Ollama: `ollama pull`; llama.cpp: 检查 `-m` 路径 |
 
 ---
 
-## 6. 安全与合规
+## 7. 安全与合规
 
 | 场景 | 推荐 provider |
 |---|---|
 | 开发/测试 | Z.AI (cloud) |
-| 临床数据（数据不出境） | Ollama/vLLM (local) |
+| 临床数据（数据不出境） | Ollama/vLLM/llama.cpp (local) |
 | 多用户共享 | vLLM (API server) |
-| 离线环境 | Ollama |
+| 离线环境 / 无 GPU | llama.cpp (CPU 模式) |
+| 低资源工作站 | llama.cpp Q4 量化 |

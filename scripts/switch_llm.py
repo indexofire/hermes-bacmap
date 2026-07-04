@@ -38,6 +38,17 @@ PROVIDERS = {
         "api_key": "vllm",
         "note": "Local vLLM. Needs: python -m vllm.entrypoints.openai.api_server --model Qwen/Qwen3-14B",
     },
+    "llamacpp": {
+        "default": "qwen3-14b-instruct",
+        "provider": "custom",
+        "base_url": "http://localhost:8080/v1",
+        "api_key": "llamacpp",
+        "note": (
+            "Local llama.cpp server. Needs: "
+            "llama-server -m qwen3-14b-instruct-q4_k_m.gguf --port 8080 "
+            "--n-gpu-layers 99"
+        ),
+    },
 }
 
 
@@ -143,7 +154,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Switch Hermes LLM provider")
     parser.add_argument(
         "provider",
-        choices=["zai", "ollama", "vllm", "status"],
+        choices=["zai", "ollama", "vllm", "llamacpp", "status"],
         help="Provider to switch to",
     )
     args = parser.parse_args()
