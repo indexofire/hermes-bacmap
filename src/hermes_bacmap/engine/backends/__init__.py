@@ -13,7 +13,9 @@ _BUILTINS = {
     "blastp": ("hermes_bacmap.engine.backends.blast", "BlastBackend"),
     "blastx": ("hermes_bacmap.engine.backends.blast", "BlastBackend"),
     "tblastn": ("hermes_bacmap.engine.backends.blast", "BlastBackend"),
-    "minimap2": ("hermes_bacmap.engine.backends.blast", "MinimapBackend"),
+    "minimap2": ("hermes_bacmap.engine.backends.minimap2", "MinimapBackend"),
+    "mash": ("hermes_bacmap.engine.backends.kmer", "MashBackend"),
+    "sourmash": ("hermes_bacmap.engine.backends.kmer", "SourmashBackend"),
 }
 
 
