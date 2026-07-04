@@ -29,14 +29,14 @@ Engine  (engine/)             ← 工具封装：BlastEngine/BlastAligner/Minima
 | **Config-driven orchestration** | `plan/*.json` 定义物种分析流程 | ❌ 用 Snakemake 代替 |
 | **统一 finder 契约** | `find_hits(genome, config, engine_manager) → list[dict]` | ❌ gene_scanner 绑死 blastn |
 
-### 两代 Engine 并存
+### 两代 Engine — 只保留新一代
 
-| 代次 | 文件 | 特征 |
+| 代次 | 文件 | 决策 |
 |---|---|---|
-| 旧 (EngineManager) | `engine/blast.py`, `engine/base.py`, `engine/manager.py` | ABC + 懒加载工厂，只有 BlastEngine |
-| 新 (Aligner) | `engine/align.py` | BlastAligner (blastn/blastp/diamond) + MinimapAligner，返回 dataclass |
+| 旧 (EngineManager) | `engine/blast.py`, `engine/base.py`, `engine/manager.py` | **丢弃**（过于贫血/硬编码） |
+| 新 (Aligner) | `engine/align.py` | **保留移植**（BlastAligner + MinimapAligner） |
 
-**新一代更成熟**：支持多后端、返回强类型 `BlastHit`/`MinimapHit`、参数别名映射。
+新一代更成熟：支持多后端（blastn/blastp/blastx/diamond + minimap2）、返回强类型 `BlastHit`/`MinimapHit`、参数别名映射。**seqops 只基于 align.py 构建。**
 
 ---
 
@@ -52,18 +52,16 @@ Engine  (engine/)             ← 工具封装：BlastEngine/BlastAligner/Minima
 | `engine/align.py: MinimapHit` | 142 | `seqops/hits.py: Hit` | PAF 解析器（含 NM/AS/MD/cg 标签） |
 | `engine/align.py: BlastAligner` | 187 | `seqops/backends/blast.py` | blastn/blastp/diamond 多模式 + 参数别名 |
 | `engine/align.py: MinimapAligner` | 73 | `seqops/backends/minimap2.py` | minimap2 PAF 对齐 |
-| `engine/blast.py: _parse_blast_output` | 24 | `seqops/backends/blast.py` | 自描述 TSV 解析器 |
-| `engine/serotype._merge_coverage` | 29 | `seqops/utils.py: merge_intervals` | HSP 区间合并（代码库中重复 4 次，统一） |
+| `module/serotyping._merge_subject_coverage` | 29 | `seqops/utils.py: merge_intervals` | HSP 区间合并（代码库中重复 4 次，统一） |
 
 ### Tier 2 — 改编移植（需适配 hermes 架构）
 
 | 源文件 | 行数 | 移植目标 | 改动 |
 |---|---|---|---|
-| `engine/serotype._confidence` | 11 | `seqops/utils.py: confidence_tier` | Kaptive 5 级置信度评分 |
+| `engine/serotype._confidence` | 11 | `seqops/utils.py: confidence_tier` | 通用 5 级质量评分（不限于 Kaptive） |
 | `engine/mlst._classify_allele` | 19 | `seqops/utils.py: classify_allele` | 4 级等位基因分类（exact/novel/partial/missing） |
 | `engine/mlst._ensure_db` | 10 | `seqops/backends/blast.py: ensure_index` | 自动建索引（缺 .nhr 时自动 makeblastdb） |
 | `module/genotyping: gene_synonyms` | 34 | `gene_scanner.py` | 基因名别名归一化（{canonical: [aliases]} 和 {alias: canonical} 双格式） |
-| `module/serotyping: vpa_kaptive_like_strategy` | 220 | 新模块 `vpa_serotyper.py` | V. para O/K 血清型（Kaptive-like，含 GBK 解析 + 基因完整性 + 置信度） |
 | `pipeline._resolve_config_paths` | 12 | `seqops/config.py` | 递归路径解析（`*_path`/`*_file` 后缀自动补全为绝对路径） |
 
 ### Tier 3 — 借鉴思想（不直接移植代码）
@@ -78,9 +76,13 @@ Engine  (engine/)             ← 工具封装：BlastEngine/BlastAligner/Minima
 
 | 源文件 | 原因 |
 |---|---|
+| `engine/blast.py` (BlastEngine) | 旧一代，被 `engine/align.py: BlastAligner` 取代 |
+| `engine/base.py` (BaseEngine ABC) | 过于贫血（只有 check_dependencies） |
+| `engine/manager.py` (EngineManager) | 硬编码引擎表，用 Registry 代替 |
 | `analyzers/` (整个目录) | 死代码（导入不存在的 `bacmap.modules.*`） |
 | `engine/_mlst.py`, `engine/_serotype.py` | 完全重复（diff 确认） |
 | `module/serotyping_old.py` | 已被 serotyping.py 取代 |
+| `module/serotyping: vpa_kaptive_like_strategy` | **自行开发 V. para 血清型工具，不采用 Kaptive 方案** |
 | `engine/mlst.py` (standalone) | 被 `module/mlst.py` 取代；hermes 用 gmlst |
 | `engine/serotype.py` (standalone) | 被 `module/serotyping.py` 取代 |
 | `reporting/renderer.py` | hermes 有 `generate_report.py` (HTML) |
@@ -218,7 +220,8 @@ bam_path = ReadMapper.map(reads, reference, mode="auto")
 
 ### 新增：vpa_serotyper.py
 
-移植 `module/serotyping.vpa_kaptive_like_strategy`，实现 V. parahaemolyticus O/K 血清型预测（当前 hermes-bacmap 缺失此功能）。
+**自行开发**（不采用 Kaptive 方案）。bacmap 的 `vpa_kaptive_like_strategy` 仅作参考，
+了解 O/K 基因簇比对的思路（区间合并、基因完整性检查），但实现完全独立。
 
 ---
 
@@ -242,9 +245,9 @@ bam_path = ReadMapper.map(reads, reference, mode="auto")
   └── tools.py bio_align → 委托 seqops.ReadMapper
 
 阶段 4（新增功能）
-  ├── vpa_serotyper.py（移植 Kaptive-like 策略）
   ├── gene_synonyms 归一化（移植到 gene_scanner）
-  └── classify_allele / confidence_tier（用于 MLST 和血清型质量评分）
+  ├── classify_allele / confidence_tier（用于 MLST 和血清型质量评分）
+  └── vpa_serotyper.py（自行开发，不采用 Kaptive）
 ```
 
 ---
@@ -269,5 +272,5 @@ bam_path = ReadMapper.map(reads, reference, mode="auto")
 | gene_scanner.py | 0 | ~50（委托 seqops） | 改编 |
 | genome_annotator.py | 0 | ~30（委托 seqops） | 改编 |
 | tools.py | 0 | ~40（bio_align 委托） | 改编 |
-| vpa_serotyper.py | ~200 | 0 | 移植 |
+| vpa_serotyper.py | ~200 | 0 | 自行开发（不移植 bacmap） |
 | **合计** | **~600** | **~120** | |
