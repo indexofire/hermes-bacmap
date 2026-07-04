@@ -30,7 +30,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -314,11 +313,9 @@ def setup_db(db_name: str, fasta_source: Path | str | None = None, output_dir: P
     import shutil
     shutil.copy2(fasta_source, local_fasta)
 
-    subprocess.run([
-        "makeblastdb", "-in", str(local_fasta),
-        "-dbtype", "nucl", "-out", str(db_prefix),
-        "-parse_seqids",
-    ], check=True, capture_output=True)
+    from hermes_bacmap.engine.backends.blast import BlastBackend
+    backend = BlastBackend(tool="blastn")
+    backend.make_db(local_fasta, db_prefix, db_type="nucl")
 
     print(f"✓ BLAST DB '{db_name}' created at {db_prefix}")
     return db_prefix

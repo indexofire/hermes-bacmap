@@ -3,7 +3,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from .._env import PIXI_BIN, pixi_path, which
+from .._env import which
 from ..hits import Hit
 
 _BLAST_OUTFMT = (
@@ -102,7 +102,7 @@ class BlastBackend:
             )
 
         hits: list[Hit] = []
-        for line in proc.stdout.strip().split("\n"):
+        for line in proc.stdout.splitlines():
             if not line.strip():
                 continue
             try:
@@ -162,7 +162,7 @@ class MinimapBackend:
             )
 
         hits: list[Hit] = []
-        for line in proc.stdout.strip().split("\n"):
+        for line in proc.stdout.splitlines():
             if not line.strip():
                 continue
             try:
