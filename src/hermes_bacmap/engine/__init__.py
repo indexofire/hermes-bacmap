@@ -17,11 +17,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from .backends import available, get_backend
 from .hits import Hit
-from .backends import get_backend, available
-from .utils import merge_intervals, confidence_tier, classify_allele
-from .registry import Registry
 from .read_mapper import ReadMapper
+from .utils import classify_allele, confidence_tier, merge_intervals
 
 __all__ = [
     "Hit",

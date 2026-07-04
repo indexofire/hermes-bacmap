@@ -1155,7 +1155,7 @@ def get_result(args: dict, **kwargs) -> str:
     dec = steps.get("dec", {}) if isinstance(steps.get("dec", {}), dict) else {}
     ipah = dec.get("ipaH", "N/A")
     pathotype = dec.get("pathotype", "N/A")
-    ectyper = dec.get("ectyper", "N/A")
+    dec.get("ectyper", "N/A")
 
     species_type = "unknown"
     if verdict == "Salmonella":

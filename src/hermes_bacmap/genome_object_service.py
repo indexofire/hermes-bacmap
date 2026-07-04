@@ -16,14 +16,13 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
-from pathlib import Path
 import sqlite3
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from enum import StrEnum
+from pathlib import Path
 from typing import Any, Literal
 from uuid import uuid4
-
 
 _SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+(?:[-+][a-zA-Z0-9.]+)?$")
 
@@ -46,7 +45,7 @@ class GOMImmutableError(Exception):
     pass
 
 
-class ObjectType(str, Enum):
+class ObjectType(StrEnum):
     SAMPLE = "sample"
     ANALYSIS = "analysis"
     REPORT = "report"
@@ -522,7 +521,7 @@ class GenomeObjectService:
             raise
 
         event_id = str(uuid4())
-        timestamp = datetime.now(timezone.utc).replace(tzinfo=None)
+        timestamp = datetime.now(UTC).replace(tzinfo=None)
         event = Event(
             event_id=event_id,
             object_id=object_id,

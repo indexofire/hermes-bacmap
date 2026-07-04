@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from .hits import Hit
 
 
-def merge_intervals(hits: Sequence[Hit]) -> tuple[float, float]:
+def merge_intervals(hits: Sequence[Hit], subject_length: int = 0) -> tuple[float, float]:
     """Merge subject intervals across multiple HSPs for one subject.
 
     Returns (merged_coverage_pct, length_weighted_identity).
@@ -13,14 +13,9 @@ def merge_intervals(hits: Sequence[Hit]) -> tuple[float, float]:
     if not hits:
         return 0.0, 0.0
 
-    slen = max(abs(h.subject_end - h.subject_start) for h in hits)
-    if slen == 0:
-        first = hits[0]
-        ref_len = 0
-        for h in hits:
-            ref_len = max(ref_len, abs(h.subject_end - h.subject_start) + 1)
-        slen = ref_len
-    if slen <= 0:
+    if subject_length <= 0:
+        subject_length = max(max(h.subject_start, h.subject_end) for h in hits)
+    if subject_length <= 0:
         return 0.0, 0.0
 
     intervals: list[tuple[int, int]] = []
@@ -48,7 +43,7 @@ def merge_intervals(hits: Sequence[Hit]) -> tuple[float, float]:
             merged[-1] = (merged[-1][0], max(merged[-1][1], e))
 
     covered = sum(e - s for s, e in merged)
-    coverage = (covered / slen) * 100.0
+    coverage = min((covered / subject_length) * 100.0, 100.0)
     avg_id = (id_sum / total_aln) if total_aln > 0 else 0.0
     return round(coverage, 2), round(avg_id, 2)
 

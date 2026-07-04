@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Callable, Dict
+from collections.abc import Callable
 
 
 class Registry:
     """Name → callable registry with lowercase keys and lazy loading."""
 
     def __init__(self) -> None:
-        self._store: Dict[str, Callable] = {}
+        self._store: dict[str, Callable] = {}
 
     def register(self, name: str, func: Callable) -> None:
         key = (name or "").strip().lower()
@@ -21,7 +21,7 @@ class Registry:
             raise KeyError(f"Registry: '{name}' is not registered")
         return self._store[key]
 
-    def available(self) -> Dict[str, Callable]:
+    def available(self) -> dict[str, Callable]:
         return dict(self._store)
 
     def has(self, name: str) -> bool:

@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
-import tempfile
 from pathlib import Path
-from typing import Optional
 
 from ..hits import Hit
 
@@ -51,7 +49,7 @@ class BlastBackend:
         if not makeblastdb:
             raise RuntimeError("makeblastdb not found")
         cmd = [makeblastdb, "-in", str(fasta_file), "-dbtype", db_type, "-out", str(db_path)]
-        subprocess.run(cmd, check=True, capture_output=True)
+        subprocess.run(cmd, check=True, capture_output=True, timeout=120)
 
     def ensure_index(self, db_prefix: str, db_type: str = "nucl") -> None:
         ext = ".phr" if db_type == "prot" else ".nhr"
@@ -141,7 +139,7 @@ class MinimapBackend:
         target: Path,
         min_identity: float = 0.0,
         min_coverage: float = 0.0,
-        preset: Optional[str] = None,
+        preset: str | None = None,
         **kwargs,
     ) -> list[Hit]:
         use_preset = preset or self.preset

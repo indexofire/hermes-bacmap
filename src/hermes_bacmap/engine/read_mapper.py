@@ -4,7 +4,6 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional
 
 from .registry import Registry
 
@@ -18,7 +17,7 @@ def _pixi_path() -> str:
     return f"{_PIXI_BIN}:{os.environ.get('PATH', '')}"
 
 
-def _which(name: str) -> Optional[str]:
+def _which(name: str) -> str | None:
     return shutil.which(name, path=_pixi_path())
 
 

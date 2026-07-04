@@ -10,7 +10,6 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-
 _KNOWN_SEROGROUPS = frozenset({
     "A", "B", "C1", "C2-C3", "D1", "D2", "E1", "E4",
     "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "R", "S", "T", "U", "V", "W", "X", "Z", "51", "53", "54", "55", "56", "57", "58", "59", "60", "61", "65", "66",
@@ -168,7 +167,7 @@ class DeterministicVerifier:
         header = lines[0].split("\t")
         data = lines[-1].split("\t")
 
-        loci_map = {l.lower(): l for l in _MLST_LOCI}
+        loci_map = {locus.lower(): locus for locus in _MLST_LOCI}
 
         st = ""
         alleles: dict[str, str] = {}

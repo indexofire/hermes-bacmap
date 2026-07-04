@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -110,4 +110,4 @@ class Hit:
         )
 
     def to_dict(self) -> dict[str, Any]:
-        return {k: v for k, v in self.__dict__.items() if v != "" and v != 0}
+        return {k: v for k, v in self.__dict__.items() if v != ""}

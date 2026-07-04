@@ -13,7 +13,6 @@ Supports 58 Shigella serotypes:
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -136,10 +135,14 @@ def serotype(contigs_fasta: str | Path, **kwargs) -> ShigellaSerotypeResult:
     has_ecoli = "EclacY" in detected
 
     species_hits = []
-    if has_sf: species_hits.append("flexneri")
-    if has_ss: species_hits.append("sonnei")
-    if has_sd: species_hits.append("dysenteriae")
-    if has_sb: species_hits.append("boydii")
+    if has_sf:
+        species_hits.append("flexneri")
+    if has_ss:
+        species_hits.append("sonnei")
+    if has_sd:
+        species_hits.append("dysenteriae")
+    if has_sb:
+        species_hits.append("boydii")
 
     if len(species_hits) == 0:
         result.species = "No Shigella serotype determinants"
