@@ -1,12 +1,15 @@
 name: hermes_bacmap
-version: 0.1.0
+version: 0.5.0
 author: indexofire <indexofire@gmail.com>
 description: >
-  Bioinformatics analysis plugin for Hermes. Provides sequence parsing,
-  quality control, sequence operations, BLAST search, read alignment
-  (BWA/minimap2), SAM/BAM manipulation (samtools), and variant calling
-  (bcftools). Python-level tools use Biopython; CLI wrappers detect and
-  degrade gracefully when external binaries are absent.
+  AI-native pathogen genome analysis platform. Supports Salmonella, DEC
+  (E. coli), Shigella/EIEC, and V. parahaemolyticus with automatic species
+  routing. Provides 18 tools: sequence operations (BLAST/align/samtools/
+  variant), pipeline orchestration (Snakemake), genome annotation
+  (pyrodigal + Prokka DBs), SNP phylogenetics, GOM persistence (SQLite),
+  natural language sample search, and failure diagnostics. Engine layer
+  abstracts CLI tools (blastn/blastp/minimap2/bwa) behind unified
+  SequenceMatcher and ReadMapper interfaces.
 provides_tools:
   - bio_seq_stats
   - bio_seq_ops
@@ -22,5 +25,12 @@ provides_tools:
   - bio_generate_report
   - bio_list_samples
   - bio_gene_scan
+  - bio_snp_tree
+  - bio_search_samples
+  - bio_annotate
+  - bio_diagnose
 provides_skills:
+  - bio-router
+  - run-pipeline
+  - interpret-results
   - bioinfo-analysis
