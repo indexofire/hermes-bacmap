@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hermes-bacmap | Genome Analysis Platform</title>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1a5276',
+            success: '#27ae60',
+            error: '#e74c3c',
+            warning: '#f39c12',
+            slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-700">
+  <div id="root"></div>
+
+  <script type="text/babel" data-type="module" data-presets="react">
+    import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
+    import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+    import * as d3 from 'https://esm.sh/d3@7';
+
+    const API_BASE = '';
+
+    function parseHash(hash) {
+      const h = hash.replace(/^#/, '') || '/';
+      const [path, qs] = h.split('?');
+      const params = new URLSearchParams(qs || '');
+      if (path === '/' || path === '') return { view: 'dashboard', params };
+      if (path.startsWith('/sample/')) return { view: 'sample', id: path.replace('/sample/', ''), params };
+      if (path === '/snp') return { view: 'snp', params };
+      if (path === '/search') return { view: 'search', params };
+      if (path === '/about') return { view: 'about', params };
+      return { view: 'dashboard', params };
+    }
+
+    function useHash() {
+      const [hash, setHash] = useState(window.location.hash);
+      useEffect(() => {
+        const handler = () => setHash(window.location.hash);
+        window.addEventListener('hashchange', handler);
+        return () => window.removeEventListener('hashchange', handler);
+      }, []);
+      return hash;
+    }
+
+    async function fetchJSON(path) {
+      const res = await fetch(`${API_BASE}${path}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      return res.json();
+    }
+
+    function Spinner() {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          <span className="ml-3 text-slate-500">Loading 加载中...</span>
+        </div>
+      );
+    }
+
+    function ErrorBox({ message }) {
+      return (
+        <div className="rounded-lg border border-error/30 bg-error/10 p-4 text-error">
+          <p className="font-semibold">Error 错误</p>
+          <p className="text-sm">{message}</p>
+        </div>
+      );
+    }
+
+    function StatusBadge({ status }) {
+      const s = (status || '').toLowerCase();
+      if (s === 'completed') {
+        return <span className="inline-flex items-center rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-medium text-success">✅ Completed</span>;
+      }
+      if (s === 'in-progress' || s === 'in_progress' || s === 'inprogress') {
+        return <span className="inline-flex items-center rounded-full bg-warning/10 px-2.5 py-0.5 text-xs font-medium text-warning">🔄 In Progress</span>;
+      }
+      if (s === 'not-started' || s === 'not_started' || s === 'notstarted') {
+        return <span className="inline-flex items-center rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-medium text-slate-600">⬜ Not Started</span>;
+      }
+      return <span className="inline-flex items-center rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-medium text-slate-600">{status || 'Unknown'}</span>;
+    }
+
+    function Card({ children, className = '' }) {
+      return <div className={`rounded-xl border border-slate-200 bg-white shadow-sm ${className}`}>{children}</div>;
+    }
+
+    function Nav({ hash }) {
+      const { view } = parseHash(hash);
+      const [q, setQ] = useState('');
+      const onSubmit = (e) => {
+        e.preventDefault();
+        if (q.trim()) window.location.hash = `#/search?q=${encodeURIComponent(q.trim())}`;
+      };
+      const linkClass = (v) =>
+        `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+          view === v ? 'bg-white/15 text-white' : 'text-slate-100 hover:bg-white/10 hover:text-white'
+        }`;
+      return (
+        <nav className="bg-primary shadow-md">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 items-center justify-between">
+              <div className="flex items-center gap-8">
+                <a href="#/" className="flex items-center gap-2 text-lg font-bold text-white">
+                  <span>🧬</span>
+                  <span>Hermes-bacmap</span>
+                </a>
+                <div className="hidden md:flex items-center gap-1">
+                  <a href="#/" className={linkClass('dashboard')}>Dashboard</a>
+                  <a href="#/snp" className={linkClass('snp')}>SNP Tree</a>
+                  <a href="#/search" className={linkClass('search')}>Search</a>
+                  <a href="#/about" className={linkClass('about')}>About</a>
+                </div>
+              </div>
+              <form onSubmit={onSubmit} className="hidden sm:flex items-center">
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  type="search"
+                  placeholder="搜索菌株 / Search strains"
+                  className="w-56 rounded-l-md border-0 px-3 py-1.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/50"
+                />
+                <button type="submit" className="rounded-r-md bg-warning px-3 py-1.5 text-sm font-semibold text-white hover:bg-warning/90">Go</button>
+              </form>
+            </div>
+          </div>
+          <div className="flex md:hidden justify-around border-t border-white/10 px-4 pb-2">
+            <a href="#/" className={linkClass('dashboard')}>Dashboard</a>
+            <a href="#/snp" className={linkClass('snp')}>SNP Tree</a>
+            <a href="#/search" className={linkClass('search')}>Search</a>
+            <a href="#/about" className={linkClass('about')}>About</a>
+          </div>
+        </nav>
+      );
+    }
+
+    function Dashboard() {
+      const [status, setStatus] = useState(null);
+      const [samples, setSamples] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState(null);
+
+      useEffect(() => {
+        let cancelled = false;
+        setLoading(true);
+        Promise.all([fetchJSON('/api/status'), fetchJSON('/api/samples')])
+          .then(([st, sm]) => {
+            if (cancelled) return;
+            setStatus(st);
+            setSamples(sm.samples || []);
+          })
+          .catch((e) => setError(e.message))
+          .finally(() => setLoading(false));
+        return () => { cancelled = true; };
+      }, []);
+
+      if (loading) return <Spinner />;
+      if (error) return <ErrorBox message={error} />;
+
+      const statCards = [
+        { label: 'Total Samples 总样本', value: status?.total_samples ?? 0, color: 'text-primary', bg: 'bg-primary/10' },
+        { label: 'Completed 已完成', value: status?.completed ?? 0, color: 'text-success', bg: 'bg-success/10' },
+        { label: 'In Progress 进行中', value: status?.in_progress ?? 0, color: 'text-warning', bg: 'bg-warning/10' },
+        { label: 'Not Started 未开始', value: status?.not_started ?? 0, color: 'text-slate-500', bg: 'bg-slate-200' },
+        { label: 'SNP Available SNP可用', value: status?.snp_available ? 'Yes' : 'No', color: status?.snp_available ? 'text-success' : 'text-slate-500', bg: status?.snp_available ? 'bg-success/10' : 'bg-slate-200' },
+      ];
+
+      return (
+        <div className="space-y-6 animate-fadeIn">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
+            <p className="text-sm text-slate-500">实验室样本总览与实时状态监控</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            {statCards.map((c) => (
+              <Card key={c.label} className="p-4">
+                <p className="text-xs font-medium text-slate-500">{c.label}</p>
+                <p className={`mt-1 text-3xl font-bold ${c.color}`}>{c.value}</p>
+              </Card>
+            ))}
+          </div>
+          <Card>
+            <div className="border-b border-slate-200 px-4 py-3">
+              <h2 className="font-semibold text-slate-800">Sample List 样本列表</h2>
+              <p className="text-xs text-slate-500">点击行查看详细信息</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-slate-100 text-slate-600">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Sample ID</th>
+                    <th className="px-4 py-3 font-medium">Species 物种</th>
+                    <th className="px-4 py-3 font-medium">MLST ST</th>
+                    <th className="px-4 py-3 font-medium">Serotype 血清型</th>
+                    <th className="px-4 py-3 font-medium">Status 状态</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {samples.map((s) => (
+                    <tr
+                      key={s.sample_id}
+                      className="cursor-pointer transition-colors hover:bg-slate-50"
+                      onClick={() => window.location.hash = `#/sample/${encodeURIComponent(s.sample_id)}`}
+                    >
+                      <td className="px-4 py-3 font-medium text-primary">{s.sample_id}</td>
+                      <td className="px-4 py-3">{s.species_detected || s.species_configured || '-'}</td>
+                      <td className="px-4 py-3">{s.mlst_st || '-'}</td>
+                      <td className="px-4 py-3">{s.serotype || '-'}</td>
+                      <td className="px-4 py-3"><StatusBadge status={s.status} /></td>
+                    </tr>
+                  ))}
+                  {samples.length === 0 && (
+                    <tr><td colSpan="5" className="px-4 py-6 text-center text-slate-500">No samples found 暂无样本</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
+      );
+    }
+
+    function SampleDetail({ id }) {
+      const [sample, setSample] = useState(null);
+      const [annotation, setAnnotation] = useState(null);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState(null);
+      const [annError, setAnnError] = useState(null);
+
+      useEffect(() => {
+        let cancelled = false;
+        setLoading(true);
+        setError(null);
+        setAnnError(null);
+        const load = async () => {
+          try {
+            const d = await fetchJSON(`/api/samples/${encodeURIComponent(id)}`);
+            if (cancelled) return;
+            setSample(d);
+            try {
+              const a = await fetchJSON(`/api/samples/${encodeURIComponent(id)}/annotation`);
+              if (!cancelled) setAnnotation(a);
+            } catch (ea) {
+              if (!cancelled) setAnnError(ea.message);
+            }
+          } catch (e) {
+            if (!cancelled) setError(e.message);
+          } finally {
+            if (!cancelled) setLoading(false);
+          }
+        };
+        load();
+        return () => { cancelled = true; };
+      }, [id]);
+
+      if (loading) return <Spinner />;
+      if (error) return <ErrorBox message={error} />;
+
+      const st = sample.steps || {};
+      const species = st.species || {};
+      const mlstText = st.mlst || '';
+      const mlstGenes = typeof mlstText === 'string' ? mlstText.split(/[\s,]+/).filter(Boolean) : [];
+      const serotype = st.serotype || {};
+      const amr = (st.amr && st.amr.abricate_card) || [];
+      const dec = st.dec || {};
+      const features = (annotation && annotation.features) || [];
+      const topFeatures = [...features]
+        .sort((a, b) => (parseFloat(b.identity) || 0) - (parseFloat(a.identity) || 0))
+        .slice(0, 10);
+
+      return (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800">Sample Detail</h1>
+              <p className="text-sm text-slate-500">样本 {id} 的基因组分析结果</p>
+            </div>
+            <a href="#/" className="rounded-md bg-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-300">Back 返回</a>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card className="p-5">
+              <h2 className="mb-3 font-semibold text-slate-800">Species Verdict 物种判定</h2>
+              <div className="space-y-2 text-sm">
+                <p><span className="text-slate-500">Species:</span> <span className="font-medium text-slate-800">{species.species || '-'}</span></p>
+                <p><span className="text-slate-500">Confidence:</span> <span className="font-medium">{species.confidence || '-'}</span></p>
+              </div>
+            </Card>
+            <Card className="p-5">
+              <h2 className="mb-3 font-semibold text-slate-800">Serotype 血清型</h2>
+              <div className="space-y-2 text-sm">
+                <p><span className="text-slate-500">Sistr:</span> <span className="font-medium text-slate-800">{serotype.sistr || '-'}</span></p>
+                <p><span className="text-slate-500">Serogroup:</span> <span className="font-medium">{serotype.serogroup || '-'}</span></p>
+              </div>
+            </Card>
+          </div>
+
+          <Card className="p-5">
+            <h2 className="mb-3 font-semibold text-slate-800">MLST Sequence Type</h2>
+            {mlstGenes.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {mlstGenes.map((g) => (
+                  <span key={g} className="rounded-md bg-primary/10 px-2.5 py-1 text-sm font-medium text-primary">{g}</span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">No MLST data available 无 MLST 数据</p>
+            )}
+          </Card>
+
+          <Card>
+            <div className="border-b border-slate-200 px-5 py-3">
+              <h2 className="font-semibold text-slate-800">AMR Genes 耐药基因</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-slate-100 text-slate-600">
+                  <tr>
+                    <th className="px-5 py-3 font-medium">Gene</th>
+                    <th className="px-5 py-3 font-medium">% Identity</th>
+                    <th className="px-5 py-3 font-medium">% Coverage</th>
+                    <th className="px-5 py-3 font-medium">Database</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {amr.length > 0 ? amr.map((row, i) => (
+                    <tr key={i} className="hover:bg-slate-50">
+                      <td className="px-5 py-3 font-medium text-slate-800">{row.GENE || row.gene || '-'}</td>
+                      <td className="px-5 py-3">{row['%IDENTITY'] || row.identity || row.pident || '-'}</td>
+                      <td className="px-5 py-3">{row['%COVERAGE'] || row.coverage || row.pcoverage || '-'}</td>
+                      <td className="px-5 py-3">{row.DATABASE || row.database || 'CARD'}</td>
+                    </tr>
+                  )) : (
+                    <tr><td colSpan="4" className="px-5 py-6 text-center text-slate-500">No AMR genes detected 未检测到耐药基因</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card className="p-5">
+              <h2 className="mb-3 font-semibold text-slate-800">Virulence Genes 毒力基因</h2>
+              {st.virulence ? (
+                <pre className="overflow-x-auto rounded-md bg-slate-100 p-3 text-xs">{JSON.stringify(st.virulence, null, 2)}</pre>
+              ) : (
+                <p className="text-sm text-slate-500">No virulence data available 无数据</p>
+              )}
+            </Card>
+            <Card className="p-5">
+              <h2 className="mb-3 font-semibold text-slate-800">Plasmid & DEC Pathotype</h2>
+              <div className="space-y-2 text-sm">
+                <p><span className="text-slate-500">Plasmid:</span> {st.plasmid ? JSON.stringify(st.plasmid) : 'None detected 未检出'}</p>
+                <p><span className="text-slate-500">Pathotype:</span> <span className="font-medium text-slate-800">{dec.pathotype || '-'}</span></p>
+                <p><span className="text-slate-500">Ecoh serotype:</span> {dec.ecoh_serotype || '-'}</p>
+                <p><span className="text-slate-500">Primary serotype:</span> {dec.primary_serotype || '-'}</p>
+              </div>
+            </Card>
+          </div>
+
+          <Card>
+            <div className="border-b border-slate-200 px-5 py-3 flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-slate-800">Annotation 基因注释</h2>
+                <p className="text-xs text-slate-500">Top 10 annotated genes by identity 按一致性排序前 10</p>
+              </div>
+              {annotation && annotation.summary && (
+                <div className="text-right text-xs text-slate-500">
+                  <p>CDS: {annotation.summary.total_CDS}</p>
+                  <p>Annotated: {annotation.summary.annotated_CDS}</p>
+                  <p>Rate: {(annotation.summary.annotation_rate * 100).toFixed(1)}%</p>
+                </div>
+              )}
+            </div>
+            {annError ? <div className="p-4"><ErrorBox message={annError} /></div> : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="bg-slate-100 text-slate-600">
+                    <tr>
+                      <th className="px-5 py-3 font-medium">Locus Tag</th>
+                      <th className="px-5 py-3 font-medium">Gene</th>
+                      <th className="px-5 py-3 font-medium">Product</th>
+                      <th className="px-5 py-3 font-medium">Identity</th>
+                      <th className="px-5 py-3 font-medium">Source</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {topFeatures.length > 0 ? topFeatures.map((f, i) => (
+                      <tr key={i} className="hover:bg-slate-50">
+                        <td className="px-5 py-3 font-mono text-xs">{f.locus_tag || '-'}</td>
+                        <td className="px-5 py-3 font-medium text-slate-800">{f.gene || '-'}</td>
+                        <td className="px-5 py-3">{f.product || '-'}</td>
+                        <td className="px-5 py-3">{f.identity != null ? Number(f.identity).toFixed(1) : '-'}</td>
+                        <td className="px-5 py-3">{f.source || '-'}</td>
+                      </tr>
+                    )) : (
+                      <tr><td colSpan="5" className="px-5 py-6 text-center text-slate-500">No annotation data 无注释数据</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+        </div>
+      );
+    }
+
+    function parseNewick(s) {
+      let i = 0;
+      function parseNode() {
+        const node = {};
+        while (s[i] && /\s/.test(s[i])) i++;
+        if (s[i] === '(') {
+          i++;
+          node.children = [];
+          while (true) {
+            node.children.push(parseNode());
+            while (s[i] && /\s/.test(s[i])) i++;
+            if (s[i] === ',') { i++; continue; }
+            if (s[i] === ')') { i++; break; }
+            if (!s[i] || s[i] === ';') break;
+          }
+        }
+        let name = '';
+        while (i < s.length && !'(),:;'.includes(s[i])) {
+          name += s[i];
+          i++;
+        }
+        node.name = name.trim();
+        while (s[i] && /\s/.test(s[i])) i++;
+        if (s[i] === ':') {
+          i++;
+          let len = '';
+          while (i < s.length && !'(),;'.includes(s[i])) {
+            len += s[i];
+            i++;
+          }
+          node.length = parseFloat(len) || 0;
+        } else {
+          node.length = 0;
+        }
+        return node;
+      }
+      return parseNode();
+    }
+
+    function SNPTree() {
+      const [data, setData] = useState(null);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState(null);
+      const treeRef = useRef(null);
+
+      useEffect(() => {
+        fetchJSON('/api/snp')
+          .then((d) => setData(d))
+          .catch((e) => setError(e.message))
+          .finally(() => setLoading(false));
+      }, []);
+
+      useEffect(() => {
+        if (!data || !treeRef.current) return;
+        treeRef.current.innerHTML = '';
+        const width = treeRef.current.clientWidth || 800;
+        const height = 520;
+        const margin = { top: 30, right: 110, bottom: 30, left: 30 };
+        const svg = d3.select(treeRef.current)
+          .append('svg')
+          .attr('width', width)
+          .attr('height', height)
+          .attr('viewBox', [0, 0, width, height]);
+
+        let rootData;
+        try {
+          rootData = parseNewick(data.tree_newick || '();');
+        } catch (e) {
+          rootData = { name: 'Error', children: [] };
+        }
+
+        const root = d3.hierarchy(rootData, d => d.children);
+        const tree = d3.cluster().size([height - margin.top - margin.bottom, width - margin.left - margin.right]);
+        tree(root);
+
+        const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+        g.selectAll('path.link')
+          .data(root.links())
+          .enter()
+          .append('path')
+          .attr('class', 'link')
+          .attr('fill', 'none')
+          .attr('stroke', '#1a5276')
+          .attr('stroke-width', 1.5)
+          .attr('d', d3.linkHorizontal().x(d => d.y).y(d => d.x));
+
+        const node = g.selectAll('g.node')
+          .data(root.descendants())
+          .enter()
+          .append('g')
+          .attr('class', 'node')
+          .attr('transform', d => `translate(${d.y},${d.x})`);
+
+        node.append('circle')
+          .attr('r', d => d.children ? 4 : 3)
+          .attr('fill', d => d.children ? '#1a5276' : '#27ae60')
+          .attr('stroke', '#fff')
+          .attr('stroke-width', 1);
+
+        node.append('text')
+          .attr('dy', '0.31em')
+          .attr('x', d => d.children ? -8 : 8)
+          .attr('text-anchor', d => d.children ? 'end' : 'start')
+          .text(d => d.data.name || '')
+          .attr('font-size', '12px')
+          .attr('fill', '#334155');
+      }, [data]);
+
+      if (loading) return <Spinner />;
+      if (error) return <ErrorBox message={error} />;
+
+      const samples = data.samples || [];
+      const distances = data.pairwise_distances || {};
+      const maxDist = Math.max(1, ...Object.values(distances).map(Number));
+
+      return (
+        <div className="space-y-6 animate-fadeIn">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">SNP Tree</h1>
+            <p className="text-sm text-slate-500">基于 SNP 位点的系统发育树与样本距离热图</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <Card className="p-4"><p className="text-xs text-slate-500">Samples 样本数</p><p className="text-2xl font-bold text-primary">{data.n_samples}</p></Card>
+            <Card className="p-4"><p className="text-xs text-slate-500">SNP Sites 位点数</p><p className="text-2xl font-bold text-primary">{data.n_snp_sites}</p></Card>
+            <Card className="p-4"><p className="text-xs text-slate-500">Missing Rate 缺失率</p><p className="text-2xl font-bold text-warning">{(data.missing_rate * 100).toFixed(2)}%</p></Card>
+            <Card className="p-4"><p className="text-xs text-slate-500">Pairs 配对数</p><p className="text-2xl font-bold text-success">{Object.keys(distances).length}</p></Card>
+          </div>
+          <Card>
+            <div className="border-b border-slate-200 px-5 py-3">
+              <h2 className="font-semibold text-slate-800">Phylogenetic Tree 系统发育树</h2>
+            </div>
+            <div ref={treeRef} className="w-full overflow-x-auto p-4" />
+          </Card>
+          <Card>
+            <div className="border-b border-slate-200 px-5 py-3">
+              <h2 className="font-semibold text-slate-800">Pairwise Distance Heatmap 两两距离热图</h2>
+            </div>
+            <div className="overflow-x-auto p-4">
+              <table className="min-w-full border-collapse text-xs">
+                <thead>
+                  <tr>
+                    <th className="border border-slate-200 bg-slate-100 px-2 py-1"></th>
+                    {samples.map(s => <th key={s} className="border border-slate-200 bg-slate-100 px-2 py-1 font-medium text-slate-700">{s}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {samples.map(row => (
+                    <tr key={row}>
+                      <th className="border border-slate-200 bg-slate-100 px-2 py-1 font-medium text-slate-700">{row}</th>
+                      {samples.map(col => {
+                        const key = `${row}|${col}`;
+                        const dist = distances[key];
+                        const ratio = dist != null ? Math.min(1, dist / maxDist) : 0;
+                        return (
+                          <td key={col} className="border border-slate-200 px-1 py-1 text-center" style={{ backgroundColor: `rgba(26,82,118,${0.08 + ratio * 0.82})`, color: ratio > 0.5 ? '#fff' : '#1e293b' }}>
+                            {dist != null ? dist : '-'}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
+      );
+    }
+
+    function Search({ q }) {
+      const [query, setQuery] = useState(q || '');
+      const [results, setResults] = useState([]);
+      const [count, setCount] = useState(0);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState(null);
+
+      useEffect(() => {
+        setQuery(q || '');
+        if (!q) { setResults([]); setCount(0); return; }
+        setLoading(true);
+        setError(null);
+        fetchJSON(`/api/search?q=${encodeURIComponent(q)}`)
+          .then((d) => { setResults(d.results || []); setCount(d.count || 0); })
+          .catch((e) => setError(e.message))
+          .finally(() => setLoading(false));
+      }, [q]);
+
+      const onSubmit = (e) => {
+        e.preventDefault();
+        if (query.trim()) window.location.hash = `#/search?q=${encodeURIComponent(query.trim())}`;
+      };
+
+      return (
+        <div className="space-y-6 animate-fadeIn">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">Search</h1>
+            <p className="text-sm text-slate-500">按血清型、MLST、基因或菌株 ID 搜索</p>
+          </div>
+          <Card className="p-5">
+            <form onSubmit={onSubmit} className="flex gap-3">
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                type="search"
+                placeholder="例如 Typhimurium、ST19、amr 基因..."
+                className="flex-1 rounded-md border border-slate-300 px-4 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+              <button type="submit" className="rounded-md bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-primary/90">Search 搜索</button>
+            </form>
+          </Card>
+          {loading && <Spinner />}
+          {error && <ErrorBox message={error} />}
+          {!loading && !error && q && (
+            <Card>
+              <div className="border-b border-slate-200 px-5 py-3 flex items-center justify-between">
+                <h2 className="font-semibold text-slate-800">Results 搜索结果</h2>
+                <span className="text-xs text-slate-500">{count} match(es)</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="bg-slate-100 text-slate-600">
+                    <tr>
+                      <th className="px-5 py-3 font-medium">Strain ID</th>
+                      <th className="px-5 py-3 font-medium">Organism</th>
+                      <th className="px-5 py-3 font-medium">Serotype</th>
+                      <th className="px-5 py-3 font-medium">MLST ST</th>
+                      <th className="px-5 py-3 font-medium">Match Score</th>
+                      <th className="px-5 py-3 font-medium">Matched Fields</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {results.length > 0 ? results.map((r, i) => (
+                      <tr key={i} className="hover:bg-slate-50">
+                        <td className="px-5 py-3 font-medium text-primary">{r.strain_id || '-'}</td>
+                        <td className="px-5 py-3">{r.organism || '-'}</td>
+                        <td className="px-5 py-3">{r.serotype || '-'}</td>
+                        <td className="px-5 py-3">{r.mlst_st || '-'}</td>
+                        <td className="px-5 py-3 font-semibold text-success">{r.match_score}</td>
+                        <td className="px-5 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {(r.matched_fields || []).map((f, j) => (
+                              <span key={j} className="rounded bg-slate-200 px-1.5 py-0.5 text-xs text-slate-700">{f}</span>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )) : (
+                      <tr><td colSpan="6" className="px-5 py-6 text-center text-slate-500">No results found 未找到结果</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
+        </div>
+      );
+    }
+
+    function About() {
+      return (
+        <div className="space-y-6 animate-fadeIn">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">About</h1>
+            <p className="text-sm text-slate-500">关于 Hermes-bacmap 平台</p>
+          </div>
+          <Card className="p-6 leading-relaxed text-slate-700">
+            <p className="mb-4">
+              <strong>Hermes-bacmap</strong> is an integrated bioinformatics platform designed for public health laboratories to perform rapid bacterial genome characterization.
+              It supports species identification, MLST typing, serotype prediction, antimicrobial resistance (AMR) screening, virulence profiling, and SNP-based phylogenetic analysis.
+            </p>
+            <p className="mb-4">
+              Hermes-bacmap 是一个面向公共卫生实验室的综合生物信息学平台，用于快速细菌基因组特征分析。平台整合物种鉴定、多位点序列分型（MLST）、血清型预测、耐药基因筛查、毒力基因分析及 SNP 系统发育分析等功能。
+            </p>
+            <h3 className="mb-2 mt-6 font-semibold text-slate-800">Supported Pathogens 支持病原体</h3>
+            <ul className="mb-4 list-disc space-y-1 pl-5">
+              <li>Salmonella enterica — 沙门氏菌</li>
+              <li>Escherichia coli / DEC — 大肠杆菌 / 致泻性大肠杆菌</li>
+              <li>Shigella spp. — 志贺氏菌</li>
+              <li>EIEC — 肠侵袭性大肠杆菌</li>
+            </ul>
+            <h3 className="mb-2 mt-6 font-semibold text-slate-800">Analysis Modules 分析模块</h3>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {['Species identification 物种鉴定', 'MLST typing MLST 分型', 'Serotype prediction 血清型预测', 'AMR gene screening 耐药基因筛查', 'Virulence profiling 毒力分析', 'Plasmid detection 质粒检测', 'DEC pathotyping 致泻性大肠杆菌分型', 'SNP phylogeny SNP 系统发育'].map((m) => (
+                <div key={m} className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">{m}</div>
+              ))}
+            </div>
+            <p className="mt-6 text-sm text-slate-500">Tool count: 8+ integrated modules · Analysis triggered via CLI · Results served through REST API</p>
+          </Card>
+        </div>
+      );
+    }
+
+    function App() {
+      const hash = useHash();
+      const { view, id, params } = parseHash(hash);
+      return (
+        <div className="min-h-screen">
+          <Nav hash={hash} />
+          <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            {view === 'dashboard' && <Dashboard />}
+            {view === 'sample' && <SampleDetail id={id} />}
+            {view === 'snp' && <SNPTree />}
+            {view === 'search' && <Search q={params.get('q') || ''} />}
+            {view === 'about' && <About />}
+          </main>
+          <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
+            🧬 Hermes-bacmap · Public Health Bioinformatics Platform · 公共卫生生物信息学平台
+          </footer>
+        </div>
+      );
+    }
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+  <style>
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fadeIn { animation: fadeIn 0.35s ease-out both; }
+  </style>
+</body>
+</html>
