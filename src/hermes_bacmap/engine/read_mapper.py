@@ -10,7 +10,7 @@ from .registry import Registry
 _REG = Registry()
 _BUILTINS: dict[str, tuple[str, str]] = {}
 
-_PIXI_BIN = str(Path(__file__).resolve().parents[2] / ".pixi" / "envs" / "default" / "bin")
+_PIXI_BIN = str(Path(__file__).resolve().parents[3] / ".pixi" / "envs" / "default" / "bin")
 
 
 def _pixi_path() -> str:
@@ -26,7 +26,7 @@ def _ensure_bwa_index(ref: str) -> None:
         bwa = _which("bwa")
         if not bwa:
             raise RuntimeError("bwa not found")
-        subprocess.run([bwa, "index", ref], capture_output=True, timeout=120)
+        subprocess.run([bwa, "index", ref], check=True, capture_output=True, timeout=120)
 
 
 def _sort_and_index(sam_stdout: str, out_bam: str, threads: int) -> None:
@@ -44,7 +44,7 @@ def _sort_and_index(sam_stdout: str, out_bam: str, threads: int) -> None:
     if proc.returncode != 0:
         raise RuntimeError(f"samtools sort failed: {proc.stderr[:500]}")
 
-    subprocess.run([samtools, "index", out_bam], capture_output=True, timeout=120)
+    subprocess.run([samtools, "index", out_bam], check=True, capture_output=True, timeout=120)
 
 
 class BwaReadMapper:

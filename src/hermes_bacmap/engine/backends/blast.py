@@ -14,7 +14,6 @@ _BLAST_OUTFMT = (
 _PARAM_MAP = {
     "pident": "perc_identity",
     "perc_identity": "perc_identity",
-    "qcovs": "qcov_hsp_perc",
     "qcov_hsp_perc": "qcov_hsp_perc",
     "threads": "num_threads",
     "num_threads": "num_threads",
@@ -86,7 +85,10 @@ class BlastBackend:
         ]
 
         for key, value in kwargs.items():
-            if value is None or key in ("num_threads", "threads"):
+            if value is None or key in ("threads",):
+                continue
+            if key == "num_threads":
+                cmd[cmd.index("-num_threads") + 1] = str(value)
                 continue
             mapped = _PARAM_MAP.get(key, key)
             if isinstance(value, bool):

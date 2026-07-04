@@ -49,7 +49,7 @@ def merge_intervals(hits: Sequence[Hit], subject_length: int = 0) -> tuple[float
 
 
 def confidence_tier(coverage: float, identity: float) -> str:
-    """5-tier quality scoring (perfect/very_high/high/good/low/none)."""
+    """6-tier quality scoring: perfect/very_high/high/good/low/none."""
     if coverage >= 99.0 and identity >= 99.0:
         return "perfect"
     if coverage >= 99.0 and identity >= 95.0:
@@ -66,7 +66,6 @@ def confidence_tier(coverage: float, identity: float) -> str:
 def classify_allele(
     identity: float,
     coverage: float,
-    subject_length: int,
     min_identity: float = 95.0,
     min_coverage: float = 98.0,
 ) -> tuple[str, int]:
