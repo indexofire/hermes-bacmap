@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import shutil
 import subprocess
 from pathlib import Path
 
+from .._env import PIXI_BIN, pixi_path, which
 from ..hits import Hit
 
 _BLAST_OUTFMT = (
@@ -22,8 +22,6 @@ _PARAM_MAP = {
     "max_target_seqs": "max_target_seqs",
 }
 
-_PIXI_BIN = str(Path(__file__).resolve().parents[4] / ".pixi" / "envs" / "default" / "bin")
-
 
 class BlastBackend:
     """BLAST+ backend supporting blastn, blastp, blastx, tblastn, tblastx."""
@@ -34,9 +32,7 @@ class BlastBackend:
         self._bin = self._find_binary()
 
     def _find_binary(self) -> str:
-        import os
-        path = f"{_PIXI_BIN}:{os.environ.get('PATH', '')}"
-        binary = shutil.which(self.tool, path=path)
+        binary = which(self.tool)
         if not binary:
             raise RuntimeError(f"{self.tool} not found in PATH")
         return binary
@@ -44,7 +40,7 @@ class BlastBackend:
     def make_db(
         self, fasta_file: Path, db_path: Path, db_type: str = "nucl"
     ) -> None:
-        makeblastdb = shutil.which("makeblastdb", path=_PIXI_BIN) or shutil.which("makeblastdb")
+        makeblastdb = which("makeblastdb")
         if not makeblastdb:
             raise RuntimeError("makeblastdb not found")
         cmd = [makeblastdb, "-in", str(fasta_file), "-dbtype", db_type, "-out", str(db_path)]
@@ -128,9 +124,7 @@ class MinimapBackend:
         self._bin = self._find_binary()
 
     def _find_binary(self) -> str:
-        import os
-        path = f"{_PIXI_BIN}:{os.environ.get('PATH', '')}"
-        binary = shutil.which("minimap2", path=path)
+        binary = which("minimap2")
         if not binary:
             raise RuntimeError("minimap2 not found in PATH")
         return binary

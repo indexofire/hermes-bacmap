@@ -1,36 +1,26 @@
 from __future__ import annotations
 
 import os
-import shutil
 import subprocess
 from pathlib import Path
+from typing import Optional
 
-from .registry import Registry
-
-_REG = Registry()
-_BUILTINS: dict[str, tuple[str, str]] = {}
-
-_PIXI_BIN = str(Path(__file__).resolve().parents[3] / ".pixi" / "envs" / "default" / "bin")
+from ._env import PIXI_BIN, pixi_path, which
 
 
-def _pixi_path() -> str:
-    return f"{_PIXI_BIN}:{os.environ.get('PATH', '')}"
-
-
-def _which(name: str) -> str | None:
-    return shutil.which(name, path=_pixi_path())
+from ._env import PIXI_BIN, pixi_path, which
 
 
 def _ensure_bwa_index(ref: str) -> None:
     if not Path(ref + ".bwt").exists():
-        bwa = _which("bwa")
+        bwa = which("bwa")
         if not bwa:
             raise RuntimeError("bwa not found")
         subprocess.run([bwa, "index", ref], check=True, capture_output=True, timeout=120)
 
 
 def _sort_and_index(sam_stdout: str, out_bam: str, threads: int) -> None:
-    samtools = _which("samtools")
+    samtools = which("samtools")
     if not samtools:
         raise RuntimeError("samtools not found")
 
@@ -54,7 +44,7 @@ class BwaReadMapper:
 
         _ensure_bwa_index(reference)
 
-        bwa = _which("bwa")
+        bwa = which("bwa")
         if not bwa:
             raise RuntimeError("bwa not found")
 
@@ -85,7 +75,7 @@ class Minimap2ReadMapper:
         preset = kwargs.get("preset", "map-ont")
         extra = kwargs.get("extra_args", "")
 
-        mm2 = _which("minimap2")
+        mm2 = which("minimap2")
         if not mm2:
             raise RuntimeError("minimap2 not found")
 
@@ -110,9 +100,6 @@ class Minimap2ReadMapper:
         }
 
 
-_BUILTINS["bwa"] = ("__main__", "BwaReadMapper")
-_BUILTINS["bwa-mem"] = ("__main__", "BwaReadMapper")
-_BUILTINS["minimap2"] = ("__main__", "Minimap2ReadMapper")
 
 
 def _get_mapper(name: str):
