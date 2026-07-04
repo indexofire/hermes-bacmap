@@ -1,0 +1,77 @@
+site_name: Hermes-bacmap
+site_description: AI Native 病原微生物基因组智能分析平台
+site_author: indexofire
+site_url: https://github.com/indexofire/hermes-bacmap
+
+repo_name: indexofire/hermes-bacmap
+repo_url: https://github.com/indexofire/hermes-bacmap
+
+theme:
+  name: material
+  language: zh
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+  palette:
+    - scheme: default
+      primary: blue
+      toggle:
+        icon: material/weather-night
+        name: 暗色模式
+    - scheme: slate
+      primary: blue
+      toggle:
+        icon: material/weather-sunny
+        name: 亮色模式
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - 首页: index.md
+  - 安装指南:
+    - 环境准备: installation/environment.md
+    - 快速安装: installation/quick-start.md
+    - 本地 LLM 配置: installation/local-llm.md
+  - 使用指南:
+    - 命令行工具: usage/cli.md
+    - Hermes Agent: usage/hermes-agent.md
+    - Web UI: usage/web-ui.md
+  - 架构设计:
+    - 系统概览: architecture/overview.md
+    - Engine 引擎层: architecture/engine.md
+    - GOM 数据模型: architecture/gom.md
+    - Snakemake 管线: architecture/pipeline.md
+    - Skills 技能系统: architecture/skills.md
+  - 病原分析:
+    - Salmonella: pathogens/salmonella.md
+    - DEC / E.coli: pathogens/dec.md
+    - Shigella / EIEC: pathogens/shigella.md
+    - V. parahaemolyticus: pathogens/vpara.md
+  - 案例介绍:
+    - 单株分析: cases/single-sample.md
+    - 暴发调查: cases/outbreak.md
+    - 批量监测: cases/batch-surveillance.md
+  - 参考:
+    - 工具列表: reference/tools.md
+    - 参考数据库: reference/databases.md
+    - 故障排查: reference/troubleshooting.md
+    - 更新日志: reference/changelog.md
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      linenums: true
+  - tables
