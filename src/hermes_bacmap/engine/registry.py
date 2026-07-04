@@ -1,0 +1,28 @@
+from __future__ import annotations
+
+from typing import Callable, Dict
+
+
+class Registry:
+    """Name → callable registry with lowercase keys and lazy loading."""
+
+    def __init__(self) -> None:
+        self._store: Dict[str, Callable] = {}
+
+    def register(self, name: str, func: Callable) -> None:
+        key = (name or "").strip().lower()
+        if not key:
+            raise ValueError("Registry.register: name must be non-empty")
+        self._store[key] = func
+
+    def get(self, name: str) -> Callable:
+        key = (name or "").strip().lower()
+        if key not in self._store:
+            raise KeyError(f"Registry: '{name}' is not registered")
+        return self._store[key]
+
+    def available(self) -> Dict[str, Callable]:
+        return dict(self._store)
+
+    def has(self, name: str) -> bool:
+        return (name or "").strip().lower() in self._store
