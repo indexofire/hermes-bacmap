@@ -36,10 +36,12 @@ hermes chat
 
 | 模块 | 行数 | 功能 |
 |---|---|---|
-| `tools.py` | 1534 | 16 个 Hermes tool handler |
+| `tools.py` | 1572 | 17 个 Hermes tool handler |
 | `genome_object_service.py` | 644 | GOM（SQLite + 版本管理 + 事件 + 文件产物 + FTS5 搜索） |
-| `schemas.py` | 541 | 16 个 tool JSON Schema 定义 |
-| `gene_scanner.py` | 400 | 通用 BLAST 引擎（任意 abricate 格式数据库） |
+| `schemas.py` | 575 | 17 个 tool JSON Schema 定义 |
+| `genome_annotator.py` | 288 | 基因组注释（pyrodigal + Prokka DBs，Python 原生） |
+| `engine/` | 800 | 算法抽象层（SequenceMatcher + ReadMapper + Hit） |
+| `gene_scanner.py` | 420 | 基因扫描引擎（委托 engine.SequenceMatcher） |
 | `shigella_serotyper.py` | 207 | Shigella 血清型（移植 ShigATyper） |
 | `deterministic_verifier.py` | 186 | 确定性规则校验（species/MLST/serotype/AMR） |
 | `species_identifier.py` | 121 | 统一物种鉴定（invA/uidA/ipaH/toxR/tlh） |
@@ -50,7 +52,7 @@ hermes chat
 ```
 hermes-bacmap/
 ├── src/hermes_bacmap/           Hermes 插件 Python 包
-│   ├── __init__.py             插件注册（16 tools + 3 skills）
+│   ├── __init__.py             插件注册（17 tools + 4 skills）
 │   ├── schemas.py              Tool JSON Schema 定义
 │   ├── tools.py                Tool handler 实现
 │   ├── genome_object_service.py  GOM（SQLite + 版本管理）
@@ -66,10 +68,11 @@ hermes-bacmap/
 │   ├── generate_report.py      HTML 报告（--sample/--all/--cohort）
 │   ├── download_gold_standard.py  ENA FASTQ 下载
 │   └── ...
-├── skills/                      Hermes Skills（3 个）
-│   ├── analyze-salmonella/     操作流程指南
+├── skills/                      Hermes Skills（4 个）
+│   ├── bio-router/             始终加载的 skill 路由器
+│   ├── run-pipeline/           跨病原管线操作指南 + 5 个 references
 │   ├── bioinfo-analysis/       通用生信决策树
-│   └── interpret-results/      结果解读知识库
+│   └── interpret-results/      结果解读知识库 + 2 个 references
 ├── tests/                       测试（96 tests）
 │   ├── unit/                   GOM + Verifier + Cohort TDD
 │   ├── conftest.py             共享 fixtures

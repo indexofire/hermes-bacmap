@@ -84,28 +84,28 @@
 
 ## 架构决策待定
 
-### A1. P3 Skill 组织架构
-
-- **文档**: `docs/p3-skill-architecture.md`
-- **状态**: 等待 seqops/engine 稳定后执行
-- **推荐**: 方案 C（rename + references 分离）
-
-### A2. V. parahaemolyticus 血清型
+### A1. V. parahaemolyticus 血清型
 
 - **状态**: 自行开发，不采用 Kaptive
 - **参考**: `docs/bacmap-migration-plan.md` 中的 `vpa_kaptive_like_strategy` 仅作思路参考
 
-### A3. AMRFinderPlus 集成
+### A2. AMRFinderPlus 集成
 
 - **状态**: config.yaml 有配置但无 .smk 规则。实际只用 abricate (CARD/VFDB/PlasmidFinder)
 - **优先级**: 低
 
-### A4. R ggtree 可视化环境
+### A3. R ggtree 可视化环境
 
 - **状态**: pixi solver 与现有依赖冲突；系统 R 4.6 cpp11 不兼容
 - **替代方案**: conda create -n r-viz -c bioconda -c conda-forge r-base=4.4 r-ggplot2 bioconductor-ggtree
 
-### A5. 端到端集成测试（CI）
+### A4. 端到端集成测试（CI）
 
 - **状态**: CI 只跑 96 个 unit tests，无 Snakemake DAG 端到端测试
 - **优先级**: 中
+
+### A5. Tool 重命名（可选）
+
+- **状态**: `bio_analyze_salmonella` → `bio_analyze_pathogen`？名称暗示只支持 Salmonella，但实际支持 4 种病原
+- **风险**: 低（LLM 每次会话重新读 schema）
+- **优先级**: 低
