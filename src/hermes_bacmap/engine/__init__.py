@@ -21,10 +21,12 @@ from .hits import Hit
 from .backends import get_backend, available
 from .utils import merge_intervals, confidence_tier, classify_allele
 from .registry import Registry
+from .read_mapper import ReadMapper
 
 __all__ = [
     "Hit",
     "SequenceMatcher",
+    "ReadMapper",
     "available",
     "merge_intervals",
     "confidence_tier",

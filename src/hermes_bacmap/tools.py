@@ -774,113 +774,40 @@ def align(args: dict, **kwargs) -> str:
     if not out_bam:
         return json.dumps({"error": "Need 'output_bam'."})
 
-    if aligner == "bwa-mem":
-        return _align_bwa(ref_path, reads, out_bam, extra)
-    elif aligner == "minimap2":
-        return _align_minimap2(ref_path, reads, out_bam,
-                                args.get("preset", "map-ont"), extra)
-    elif aligner == "star":
-        return _align_star(ref_path, reads, out_bam, extra)
-    return json.dumps({"error": f"Unknown aligner: {aligner}"})
-
-
-def _align_bwa(ref: str, reads: list[str], out_bam: str, extra: str) -> str:
-    bwa = _which_or_error("bwa")
-    samtools = _which_or_error("samtools")
-    if not bwa:
+    if aligner == "star":
         return json.dumps({
-            "error": "bwa not found. Install: conda install -c bioconda bwa"
+            "error": "STAR alignment is complex (requires a genome index directory). "
+                     "Use the terminal tool to run STAR directly with appropriate --genomeDir.",
+            "reference": ref_path, "reads": reads,
         })
-    if not samtools:
-        return json.dumps({
-            "error": "samtools not found. "
-            "Install: conda install -c bioconda samtools"
-        })
-
-    # Index reference if needed
-    if not os.path.exists(ref + ".bwt"):
-        r = _run_cmd(["bwa", "index", ref])
-        if r["returncode"] != 0:
-            return json.dumps({"error": "bwa index failed", "stderr": r["stderr"]})
 
     read_args = [_resolve_path(r) for r in reads]
     for r in read_args:
         if not os.path.isfile(r):
             return json.dumps({"error": f"Read file not found: {r}"})
 
-    cmd = ["bwa", "mem", "-t", str(os.cpu_count() or 4)]
+    mode = aligner if aligner in ("bwa-mem", "bwa", "minimap2") else "auto"
+    mapper_kwargs = {}
     if extra:
-        cmd += extra.split()
-    cmd += [ref] + read_args
+        mapper_kwargs["extra_args"] = extra
+    if aligner == "minimap2" and args.get("preset"):
+        mapper_kwargs["preset"] = args["preset"]
 
-    if len(read_args) == 2:
-        # paired-end
-        pass
+    try:
+        import sys
+        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
+        from hermes_bacmap.engine import ReadMapper
 
-    r = _run_cmd(cmd)
-    if r["returncode"] != 0:
-        return json.dumps({"error": "bwa mem failed", "stderr": r["stderr"]})
-
-    # Pipe through samtools sort
-    sort_cmd = ["samtools", "sort", "-@", str(os.cpu_count() or 4), "-o", out_bam, "-"]
-    proc = subprocess.run(sort_cmd, input=r["stdout"], capture_output=True, text=True, timeout=600)
-    if proc.returncode != 0:
-        return json.dumps({"error": "samtools sort failed", "stderr": proc.stderr})
-
-    # Index
-    subprocess.run(["samtools", "index", out_bam], capture_output=True, timeout=120)
-    return json.dumps({
-        "aligner": "bwa-mem", "reference": ref, "reads": read_args,
-        "output_bam": out_bam, "paired_end": len(read_args) == 2,
-        "indexed": os.path.exists(out_bam + ".bai"),
-    })
-
-
-def _align_minimap2(ref: str, reads: list[str], out_bam: str,
-                     preset: str, extra: str) -> str:
-    mm2 = _which_or_error("minimap2")
-    samtools = _which_or_error("samtools")
-    if not mm2:
-        return json.dumps({
-            "error": "minimap2 not found. "
-            "Install: conda install -c bioconda minimap2"
-        })
-    if not samtools:
-        return json.dumps({"error": "samtools not found."})
-
-    read_args = [_resolve_path(r) for r in reads]
-    cmd = ["minimap2", "-ax", preset, "--secondary=no", "-Y"]
-    if extra:
-        cmd += extra.split()
-    cmd += [ref] + read_args
-
-    r = _run_cmd(cmd)
-    if r["returncode"] != 0:
-        return json.dumps({"error": "minimap2 failed", "stderr": r["stderr"]})
-
-    sort_cmd = ["samtools", "sort", "-@", str(os.cpu_count() or 4), "-o", out_bam, "-"]
-    proc = subprocess.run(sort_cmd, input=r["stdout"], capture_output=True, text=True, timeout=600)
-    if proc.returncode != 0:
-        return json.dumps({"error": "samtools sort failed", "stderr": proc.stderr})
-
-    subprocess.run(["samtools", "index", out_bam], capture_output=True, timeout=120)
-    return json.dumps({
-        "aligner": "minimap2", "preset": preset,
-        "reference": ref, "reads": read_args, "output_bam": out_bam,
-        "indexed": os.path.exists(out_bam + ".bai"),
-    })
-
-
-def _align_star(ref: str, reads: list[str], out_bam: str, extra: str) -> str:
-    star = _which_or_error("STAR")
-    if not star:
-        return json.dumps({"error": "STAR not found. Install: conda install -c bioconda star"})
-    return json.dumps({
-        "error": "STAR alignment is complex (requires a genome index directory). "
-                 "Use the terminal tool to run STAR directly with appropriate --genomeDir. "
-                 "Reference FASTA provided.",
-        "reference": ref, "reads": reads,
-    })
+        result = ReadMapper.map(
+            reads=read_args,
+            reference=ref_path,
+            out_bam=out_bam,
+            mode=mode,
+            **mapper_kwargs,
+        )
+        return json.dumps(result, ensure_ascii=False)
+    except Exception as e:
+        return json.dumps({"error": f"Alignment failed: {e}"})
 
 
 # ---------------------------------------------------------------------------

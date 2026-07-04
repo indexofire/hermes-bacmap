@@ -43,6 +43,44 @@ _WORD_SIZE = 28
 _HEADER_RE = re.compile(r">(\S+?)(?:~~~(.+?))?(?:~~~(.+?))?(?:~~~\s*(.+))?")
 
 
+def normalize_synonyms(raw: dict[str, Any]) -> dict[str, list[str]]:
+    """Normalize gene synonym mappings from two input formats.
+
+    Format 1 (canonical → aliases): {"stx1": ["stx1a", "stxA1"]}
+    Format 2 (alias → canonical): {"stx1a": "stx1", "stxA1": "stx1"}
+
+    Returns unified Format 1 with lowercase keys.
+    """
+    if not raw:
+        return {}
+
+    result: dict[str, list[str]] = {}
+    for key, value in raw.items():
+        k = key.strip().lower()
+        if isinstance(value, list):
+            result[k] = [v.strip().lower() for v in value]
+        elif isinstance(value, str):
+            canonical = value.strip().lower()
+            result.setdefault(canonical, []).append(k)
+        else:
+            result[k] = []
+
+    return result
+
+
+def resolve_gene_name(raw_name: str, synonyms: dict[str, list[str]] | None = None) -> str:
+    """Resolve a gene name to its canonical form using synonym mapping."""
+    if not synonyms:
+        return raw_name
+
+    name_lower = raw_name.lower()
+    for canonical, aliases in synonyms.items():
+        if name_lower == canonical or name_lower in aliases:
+            return canonical
+
+    return raw_name
+
+
 @dataclass
 class GeneHit:
     gene: str
