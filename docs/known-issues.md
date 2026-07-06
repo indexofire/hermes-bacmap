@@ -89,7 +89,13 @@
 - **状态**: 自行开发，不采用 Kaptive
 - **参考**: `docs/bacmap-migration-plan.md` 中的 `vpa_kaptive_like_strategy` 仅作思路参考
 
-### A2. AMRFinderPlus 集成
+### A2. GBrain embedding 待配置
+
+- **状态**: GBrain v0.42.57.0 已安装，PGLite 已初始化，10 页面已导入
+- **待办**: 配置 embedding（推荐 `ollama:nomic-embed-text`），启用向量搜索和 `gbrain think` 综合回答
+- **文档**: `docs/architecture/gbrain.md`
+
+### A3. AMRFinderPlus 集成
 
 - **状态**: config.yaml 有配置但无 .smk 规则。实际只用 abricate (CARD/VFDB/PlasmidFinder)
 - **优先级**: 低

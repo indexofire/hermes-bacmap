@@ -1,7 +1,7 @@
 # Hermes-bacmap 功能文档
 
-> **版本**: V0.5 (2026-07-04)
-> **状态**: 17 Hermes tools · 21 Snakemake rules · 96 tests · 4 skills · engine 抽象层 · 10 株验证数据集
+> **版本**: V0.5 (2026-07-06)
+> **状态**: 18 Hermes tools · 22 Snakemake rules · 96 tests · 4 skills · engine 抽象层 · GBrain 知识层 · 10 株验证数据集
 
 ---
 
@@ -585,6 +585,106 @@ result = v.verify_all(summary_dict)
 ### 注册机制
 
 `__init__.py` 自动发现 `skills/*/SKILL.md`，通过 `ctx.register_skill()` 注册到 Hermes。
+
+---
+
+## 13.5 GBrain 知识大脑层（替代 §8.3 RAG）
+
+project.md §8.3 原计划三层 RAG（向量库 + 知识图谱 + BM25）。实际采用 [GBrain](https://github.com/garrytan/gbrain)（25.2K stars）作为知识层，零自研代码。
+
+### 架构分工
+
+```
+用户："SAM-TYP-001 有 blaCMY-2，临床意义？"
+  │
+  ├── hermes_bacmap (GOM/SQLite) → "SAM-TYP-001 检出 blaCMY-2" (事实查询)
+  │
+  └── GBrain (PGLite) → "blaCMY-2 是 AmpC β-内酰胺酶..." (知识综合 + 引用)
+```
+
+| 层 | 系统 | 回答什么 | 技术 |
+|---|---|---|---|
+| **事实层** | GOM (SQLite) | "样本 X 检出了什么？" | SQL 精确查询，零幻觉 |
+| **知识层** | GBrain (PGLite) | "这意味什么？" | 混合搜索 + 综合回答 + 引用 + 缺口分析 |
+
+### GBrain 核心能力
+
+| 能力 | 说明 |
+|---|---|
+| **综合回答** (`gbrain think`) | 不返回页面列表，返回带引用的综合答案 + 缺口分析 |
+| **自连线知识图谱** | `[[wiki]]` 引用自动建边（零 LLM 调用），支持多跳遍历 |
+| **混合搜索** (`gbrain search`) | HNSW 向量 + BM25 关键词 + RRF 融合 + reranker |
+| **Cron 夜间整理** | 自动去重、修复引用、评分、发现矛盾 |
+| **MCP 集成** | 30+ 工具，stdio/HTTP，Hermes 原生支持 |
+
+### 安装与配置
+
+```bash
+# 1. 安装 Bun + GBrain
+curl -fsSL https://bun.sh/install | bash
+export PATH="$HOME/.bun/bin:$PATH"
+git clone --depth 1 https://github.com/garrytan/gbrain.git ~/gbrain
+cd ~/gbrain && bun install && bun link
+ln -sf ~/gbrain/src/cli.ts ~/.bun/bin/gbrain
+
+# 2. 初始化（本地 PGLite，2 秒）
+gbrain init --pglite --no-embedding  # 延迟配置 embedding
+
+# 3. 导入生信知识种子
+gbrain import ~/repo/github/hermes-bacmap/skills/interpret-results/
+gbrain import ~/repo/github/hermes-bacmap/skills/interpret-results/references/
+gbrain import ~/repo/github/hermes-bacmap/skills/run-pipeline/references/
+
+# 4. 配置本地 embedding（零成本）
+ollama pull nomic-embed-text
+gbrain init --force --pglite \
+  --embedding-model ollama:nomic-embed-text \
+  --embedding-dimensions 768
+gbrain import ~/repo/github/hermes-bacmap/skills/  # 重新导入并生成向量
+
+# 5. 连接 Hermes（MCP）
+gbrain serve  # stdio MCP，Hermes 自动发现
+```
+
+### Embedding 模型选项
+
+| Provider | 模型 | 维度 | 成本 | 说明 |
+|---|---|---|---|---|
+| **Ollama** (推荐) | nomic-embed-text | 768 | 免费 | GPU 加速，~300MB VRAM |
+| **Ollama** | mxbai-embed-large | 1024 | 免费 | 更高精度 |
+| **llama.cpp** | 任意 GGUF | 用户指定 | 免费 | 最灵活 |
+| OpenAI | text-embedding-3-small | 1536 | $0.02/1M | 云端 |
+| ZeroEntropy | zembed-1 | 2560 | $0.05/1M | GBrain 默认 |
+
+### Hermes 集成
+
+GBrain 接入 **Hermes 平台层**（非 hermes-bacmap 插件层）：
+
+```yaml
+# ~/.hermes/config.yaml
+mcp_servers:
+  gbrain:
+    command: gbrain
+    args: ["serve"]
+```
+
+安装后 **hermes-bacmap 零改动**。LLM 自然编排：
+- `bio_search_samples` → 查 GOM 事实
+- `gbrain think` → 查 GBrain 知识
+- 两者结果综合 → 完整解读
+
+### 导入的知识内容（10 页面）
+
+| 页面 | 来源 |
+|---|---|
+| interpret-results skill | 血清型/MLST/AMR/SNP 解读指南 |
+| amr-gene-reference | β-内酰胺酶分级 + 报告语言 |
+| snp-distance-thresholds | 暴发判定阈值 + 读树指南 |
+| salmonella | SISTR/invA/MLST/SNP 参考 |
+| dec-shigella | ecoh/shigella_serotyper/pathotype |
+| vpara | toxR/tlh/tdh/trh 毒力检测 |
+| pipeline-params | 参数 + 质量阈值 + 耗时 |
+| troubleshooting | 常见错误 + 修复步骤 |
 
 ---
 
