@@ -54,7 +54,7 @@ def _get_annotation(sample_id: str) -> dict | None:
 
 
 @app.get("/api/samples")
-async def list_samples() -> dict:
+def list_samples() -> dict:
     samples = []
     for row in _read_samples_tsv():
         sid = row.get("sample", "")
@@ -98,7 +98,7 @@ async def list_samples() -> dict:
 
 
 @app.get("/api/samples/{sample_id}")
-async def get_sample(sample_id: str) -> dict:
+def get_sample(sample_id: str) -> dict:
     summary = _get_summary(sample_id)
     if not summary:
         return JSONResponse({"error": f"Sample {sample_id} not found"}, status_code=404)
@@ -106,7 +106,7 @@ async def get_sample(sample_id: str) -> dict:
 
 
 @app.get("/api/samples/{sample_id}/annotation")
-async def get_annotation(sample_id: str) -> dict:
+def get_annotation(sample_id: str) -> dict:
     ann = _get_annotation(sample_id)
     if not ann:
         return JSONResponse({"error": f"Annotation for {sample_id} not found"}, status_code=404)
@@ -114,7 +114,7 @@ async def get_annotation(sample_id: str) -> dict:
 
 
 @app.get("/api/snp")
-async def get_snp_tree() -> dict:
+def get_snp_tree() -> dict:
     p = _RESULTS_DIR / "snp" / "snp_summary.json"
     if not p.exists():
         return JSONResponse({"error": "SNP tree not available"}, status_code=404)
@@ -122,14 +122,14 @@ async def get_snp_tree() -> dict:
 
 
 @app.get("/api/search")
-async def search_samples(q: str = Query(..., description="Search query")) -> dict:
+def search_samples(q: str = Query(..., description="Search query")) -> dict:
     from hermes_bacmap.tools import search_samples as _do_search
     result = _do_search({"query": q})
     return json.loads(result)
 
 
 @app.get("/api/status")
-async def pipeline_status() -> dict:
+def pipeline_status() -> dict:
     samples = _read_samples_tsv()
     done = sum(1 for r in samples if _get_summary(r.get("sample", "")))
     total = len(samples)
@@ -152,5 +152,5 @@ async def pipeline_status() -> dict:
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index() -> str:
+def index() -> str:
     return (Path(__file__).parent / "templates" / "index.html").read_text()

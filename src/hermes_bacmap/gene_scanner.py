@@ -159,12 +159,13 @@ def _find_db(db_name: str) -> Path:
     for base in _DB_SEARCH_PATHS:
         for pattern in [f"{db_name}_blastdb", db_name, f"{db_name}/sequences"]:
             p = base / pattern
-            if p.with_suffix(".ndb").exists():
+            if (base / f"{pattern}.ndb").exists() or (base / f"{pattern}.nhr").exists():
                 return p
-            if p.is_file() and p.exists():
+            if (base / f"{pattern}.phr").exists():
                 return p
     raise FileNotFoundError(
-        f"Database '{db_name}' not found. Searched: {[str(p) for p in _DB_SEARCH_PATHS]}. "
+        f"Database '{db_name}' not found (no BLAST index). Searched: "
+        f"{[str(p) for p in _DB_SEARCH_PATHS]}. "
         f"Run gene_scanner.setup_db('{db_name}') to create it."
     )
 
