@@ -38,7 +38,7 @@ _PIXI_ENV["PATH"] = ":".join([PIXI_BIN, VENV_GMLST, VENV_BIN, _PIXI_ENV.get("PAT
 def _run_project_script(script_name: str, args: list[str], timeout: int = 3600) -> str:
     """Run a script from scripts/ with pixi PATH injected. Returns stdout or error JSON."""
     env = dict(_PIXI_ENV)
-    cmd = [f"{_VENV_BIN}/python", str(_PROJECT_ROOT / "scripts" / script_name)] + args
+    cmd = [f"{VENV_BIN}/python", str(_PROJECT_ROOT / "scripts" / script_name)] + args
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
     if result.returncode != 0:
         return json.dumps({"error": f"{script_name} failed", "stderr": result.stderr[-500:]})

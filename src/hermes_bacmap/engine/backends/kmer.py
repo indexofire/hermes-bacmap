@@ -96,16 +96,25 @@ class MashBackend:
             if len(parts) < 5:
                 continue
             try:
-                ref_id, query_id, dist, pval, shared = parts[0], parts[1], parts[2], parts[3], parts[4]
-                total_match = parts[5] if len(parts) > 5 else "0/0"
-                total = int(total_match.split("/")[-1]) if "/" in total_match else 0
+                ref_id = parts[0]
+                query_id = parts[1]
+                dist = float(parts[2])
+                pval = float(parts[3])
+                hash_field = parts[4]
+                if "/" in hash_field:
+                    shared, total = hash_field.split("/", 1)
+                    shared_hashes = int(shared)
+                    total_hashes = int(total)
+                else:
+                    shared_hashes = int(hash_field)
+                    total_hashes = int(parts[5]) if len(parts) > 5 else 0
                 results.append(KmerDistance(
                     query_id=query_id,
                     reference_id=ref_id,
-                    distance=float(dist),
-                    pvalue=float(pval),
-                    shared_hashes=int(shared),
-                    total_hashes=total,
+                    distance=dist,
+                    pvalue=pval,
+                    shared_hashes=shared_hashes,
+                    total_hashes=total_hashes,
                 ))
             except (ValueError, IndexError):
                 continue
@@ -171,6 +180,7 @@ class SourmashBackend:
             str(reference_sig),
             "--threshold", str(threshold),
             "-o", "/dev/stdout",
+            "--csv",
         ]
 
         proc = subprocess.run(
@@ -183,6 +193,36 @@ class SourmashBackend:
 
         results: list[KmerDistance] = []
         lines = proc.stdout.strip().splitlines()
+
+        header_skipped = False
+        for line in lines:
+            if not line.strip():
+                continue
+            parts = line.split(",")
+            if not header_skipped:
+                if parts[0].strip() in ("query_name", "intersect_bp", "name"):
+                    header_skipped = True
+                    continue
+                header_skipped = True
+            if len(parts) < 5:
+                continue
+            try:
+                q_name = parts[0].strip() if len(parts) > 6 else ""
+                ref_name = parts[3].strip() if len(parts) > 4 else parts[1].strip()
+                containment = float(parts[-2]) if len(parts) >= 2 else 0.0
+                results.append(KmerDistance(
+                    query_id=q_name,
+                    reference_id=ref_name,
+                    distance=round(1.0 - containment, 6),
+                    pvalue=0.0,
+                    shared_hashes=int(containment * self.scaled),
+                    total_hashes=self.scaled,
+                    backend="sourmash",
+                ))
+            except (ValueError, IndexError):
+                continue
+
+        return results
         for line in lines:
             if line.startswith("#") or not line.strip():
                 continue
