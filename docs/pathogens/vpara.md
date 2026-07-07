@@ -27,8 +27,12 @@
 
 ## 血清型
 
-- **Status**: 自行开发中，不采用 Kaptive
-- **Target**: 基于组装基因组预测 O/K 血清型
+- **Status**: ✅ 已实现（VpaSerotyper，移植自 vpautils）
+- **Method**: minimap2 比对 + sourmash k-mer + 基因级别验证
+- **Database**: `data/reference/vpa_serotype/`（195 个 locus: 32 O + 163 K）
+- **Pipeline**: 提取 locus contigs → k-mer 排序 → 基因覆盖/一致性 → 置信度分级
+- **Output**: O/K 血清型（如 O3:K6），置信度（Perfect/High/Medium/Low/Unknown）
+- **Hermes tool**: `bio_vpa_serotype`
 
 ## MLST
 

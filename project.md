@@ -473,7 +473,7 @@ V0.1 不从零写 Snakemake workflow。起点是 [FBi-ANSES/BacWORK](https://git
 
 | 能力 | 工具 | Snakemake 集成 |
 |---|---|---|
-| O/K 血清型 | 自行开发中（不采用 Kaptive） | ✍️ **开发中** |
+| O/K 血清型 | VpaSerotyper（移植自 vpautils） | ✅ 已实现 |
 | 毒力（tdh/trh/tlh/toxR） | abricate 自定义库 | ✅ 已实现 |
 
 **这是 Hermes-bacmap 的差异化价值点**——BacWORK 显式声明 *V. parahaemolyticus* "no specific steps"，本项目补全生态空白。

@@ -606,3 +606,29 @@ DIAGNOSE = {
         },
     },
 }
+
+
+VPA_SEROTYPE = {
+    "name": "bio_vpa_serotype",
+    "description": (
+        "Predict V. parahaemolyticus O/K serotype from assembled contigs. "
+        "Uses minimap2 alignment + sourmash k-mer containment + gene-level "
+        "verification (Kaptive-style). Returns predicted serotype (e.g. O3:K6), "
+        "confidence level, coverage, identity, missing genes, and alerts. "
+        "Use this when the user asks about V. parahaemolyticus serotyping."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "contigs_path": {
+                "type": "string",
+                "description": "Path to assembled contigs FASTA.",
+            },
+            "sample_id": {
+                "type": "string",
+                "description": "Sample identifier (optional, auto-detected from path).",
+            },
+        },
+        "required": ["contigs_path"],
+    },
+}

@@ -43,3 +43,24 @@ rule vpara_virulence:
         "  genes[g]=len(hits)>0; "
         "json.dump({{k:v for k,v in genes.items()}},open('{output.result}','w')); "
         "\" 2>/dev/null || echo '{{\"tdh\":false,\"trh\":false,\"tlh\":false}}' > {output.result}"
+
+rule vpara_serotype:
+    input:
+        contigs = str(WORKDIR) + "/{sample}/assembly/contigs.fasta"
+    output:
+        result = str(WORKDIR) + "/{sample}/vpa/vpa_serotype.json"
+    params:
+        python = str(PROJECT_ROOT / ".venv/bin/python"),
+        src_path = str(PROJECT_ROOT / "src"),
+        contigs = lambda wc: str(WORKDIR) + f"/{wc.sample}/assembly/contigs.fasta",
+        sample = lambda wc: wc.sample,
+        out = lambda wc: str(WORKDIR) + f"/{wc.sample}/vpa/vpa_serotype.json"
+    shell:
+        "mkdir -p $(dirname {params.out}) && "
+        "{params.python} -c \""
+        "import sys, json; sys.path.insert(0, '{params.src_path}'); "
+        "from hermes_bacmap.vpa_serotyper import VpaSerotyper; "
+        "s = VpaSerotyper(); "
+        "r = s.analyze('{params.contigs}', '{params.sample}'); "
+        "json.dump(r.to_dict(), open('{params.out}', 'w'), ensure_ascii=False, indent=2)"
+        "\""

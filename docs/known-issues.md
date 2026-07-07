@@ -84,10 +84,10 @@
 
 ## 架构决策待定
 
-### A1. V. parahaemolyticus 血清型
+### A1. (已完成 — V.para 血清型已实现)
 
-- **状态**: 自行开发，不采用 Kaptive
-- **参考**: `docs/bacmap-migration-plan.md` 中的 `vpa_kaptive_like_strategy` 仅作思路参考
+- **状态**: ✅ 已完成 (VpaSerotyper, 移植自 vpautils)
+- **参考**: docs/architecture/engine.md (engine 层 MashBackend/SourmashBackend)
 
 ### A2. GBrain embedding 待配置
 

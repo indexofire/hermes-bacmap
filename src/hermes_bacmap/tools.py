@@ -1283,6 +1283,30 @@ def gene_scan(args: dict, **kwargs) -> str:
         return json.dumps({"error": f"gene_scan failed: {e}"})
 
 
+def vpa_serotype(args: dict, **kwargs) -> str:
+    """Predict V. parahaemolyticus O/K serotype from contigs."""
+    contigs_path = args.get("contigs_path", "")
+    sample_id = args.get("sample_id", "")
+
+    contigs = Path(contigs_path)
+    if not contigs.exists():
+        return json.dumps({"error": f"Contigs not found: {contigs_path}"})
+
+    if not sample_id:
+        sample_id = contigs.parent.parent.name
+
+    try:
+        import sys
+        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
+        from hermes_bacmap.vpa_serotyper import VpaSerotyper
+
+        serotyper = VpaSerotyper()
+        result = serotyper.analyze(contigs_path, sample_id)
+        return json.dumps(result.to_dict(), ensure_ascii=False)
+    except Exception as e:
+        return json.dumps({"error": f"VPA serotyping failed: {e}"})
+
+
 def snp_tree(args: dict, **kwargs) -> str:
     """Retrieve cohort-level SNP phylogenetic tree and distance matrix."""
     db_path = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"

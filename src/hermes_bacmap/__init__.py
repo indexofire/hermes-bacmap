@@ -119,6 +119,12 @@ def register(ctx):
         schema=schemas.DIAGNOSE,
         handler=tools.diagnose_failure,
     )
+    ctx.register_tool(
+        name="bio_vpa_serotype",
+        toolset="bioinfo",
+        schema=schemas.VPA_SEROTYPE,
+        handler=tools.vpa_serotype,
+    )
 
     # Bundle skills with common pipeline guidance.
     # Skills live at <project_root>/skills/ — two levels up from this file
@@ -132,4 +138,4 @@ def register(ctx):
             if child.is_dir() and skill_md.exists():
                 ctx.register_skill(child.name, skill_md)
 
-    logger.info("hermes_bacmap plugin registered 18 tools")
+    logger.info("hermes_bacmap plugin registered 19 tools")

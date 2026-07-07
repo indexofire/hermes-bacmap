@@ -29,6 +29,7 @@ provides_tools:
   - bio_search_samples
   - bio_annotate
   - bio_diagnose
+  - bio_vpa_serotype
 provides_skills:
   - bio-router
   - run-pipeline
