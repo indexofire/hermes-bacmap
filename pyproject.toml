@@ -1,20 +1,20 @@
 [project]
 name = "hermes-bacmap"
-version = "0.1.0"
-description = "Bacterial genome mapping plugin for Hermes Agent"
+version = "0.5.0"
+description = "AI-native pathogen genome analysis platform — Hermes Agent plugin"
 requires-python = ">=3.11,<3.14"
 authors = [
     { name = "indexofire", email = "indexofire@gmail.com" },
 ]
 
-# 运行时依赖 — 这些包最终也要装到 Hermes venv
 dependencies = [
     "biopython>=1.83",
     "pydantic>=2.0",
+    "pyrodigal>=3.0",
+    "pyhmmer>=0.10",
 ]
 
 [project.optional-dependencies]
-# 开发依赖 — 只在开发环境需要, 不装到 Hermes venv
 dev = [
     "pytest>=8.0",
     "pytest-cov>=4.0",
@@ -22,6 +22,16 @@ dev = [
     "mypy>=1.10",
     "pre-commit>=3.7",
     "types-python-dateutil",
+]
+
+web = [
+    "fastapi>=0.100",
+    "uvicorn>=0.20",
+]
+
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.0",
 ]
 
 [build-system]

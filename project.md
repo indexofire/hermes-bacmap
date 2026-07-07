@@ -1019,8 +1019,8 @@ V0.4 引入 Web UI 后必须满足：
 - [x] ipaH BLAST rule（dec_ipaH_blast，替代 ShigEiFinder）
 - [x] report.smk 更新（新增 DEC 字段：ectyper/pathotype/ipaH）
 - [x] Snakefile include dec_shigella.smk + DAG 验证（25 new jobs）
-- [ ] DEC/Shigella Gold standard 样本下载 + 端到端测试
-- [ ] V0.2 release
+- [x] DEC/Shigella Gold standard 样本下载 + 端到端测试
+- [x] V0.2 release
 
 ### 13.3 V0.1 验收清单
 

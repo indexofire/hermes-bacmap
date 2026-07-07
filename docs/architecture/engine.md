@@ -1,6 +1,6 @@
 # Engine 引擎层
 
-`src/hermes_bacmap/engine/` 是平台的**算法抽象层**，约 800 行，解耦上层管线逻辑与底层具体 CLI 工具（blastn / blastp / minimap2 / bwa）。换比对工具只需改 mode 参数，无需改业务代码。
+`src/hermes_bacmap/engine/` 是平台的**算法抽象层**，约 1000 行，解耦上层管线逻辑与底层具体 CLI 工具（blastn / blastp / minimap2 / bwa / mash / sourmash）。换比对工具只需改 mode 参数，无需改业务代码。
 
 ## 设计目标
 
@@ -21,9 +21,12 @@ engine/
 ├── registry.py          28 行   Registry（name → callable，小写键，懒加载）
 ├── _env.py                     pixi 环境定位 + which() 工具查找
 ├── utils.py                    classify_allele / confidence_tier / merge_intervals
+├── utils.py (项目级)    67 行   parse_mlst / parse_abricate_tsv / read_json_file（共享解析）
 └── backends/
-    ├── __init__.py      44 行   后端注册表 + 懒加载
-    └── blast.py                BlastBackend + MinimapBackend 实现
+    ├── __init__.py      44 行   后端注册表 + 懒加载（7 个后端）
+    ├── blast.py                BlastBackend（blastn/blastp/blastx/tblastn）
+    ├── minimap2.py             MinimapBackend（PAF 对齐 + .mmi 索引）
+    └── kmer.py                 MashBackend + SourmashBackend（MinHash 基因组距离）
 ```
 
 ## 核心组件
@@ -194,6 +197,61 @@ register("diamond", DiamondBackend)
 ```
 
 之后 `SequenceMatcher.match(query, db_prefix, mode="diamond")` 即可用。
+
+## 7 个已注册后端
+
+| 后端 | 类 | 文件 | 用途 | 输出 |
+|---|---|---|---|---|
+| blastn | BlastBackend | blast.py | 核酸序列搜索 | list[Hit] |
+| blastp | BlastBackend | blast.py | 蛋白序列搜索 | list[Hit] |
+| blastx | BlastBackend | blast.py | 翻译搜索 | list[Hit] |
+| tblastn | BlastBackend | blast.py | 反向翻译搜索 | list[Hit] |
+| minimap2 | MinimapBackend | minimap2.py | 装配 vs 参考对齐 | list[Hit] (PAF) |
+| mash | MashBackend | kmer.py | MinHash 基因组距离估算 | list[KmerDistance] |
+| sourmash | SourmashBackend | kmer.py | MinHash 基因组距离估算 | list[KmerDistance] |
+
+### K-mer 后端（mash / sourmash）
+
+`kmer.py` 提供 MinHash 基因组距离估算，适用于快速物种鉴定和基因组相似度筛查：
+
+```python
+from hermes_bacmap.engine.backends import get_backend
+
+mash = get_backend("mash")
+
+# 创建 sketch
+mash.sketch(Path("genome.fasta"), Path("genome.msh"))
+
+# 计算距离
+results = mash.distance(Path("query.msh"), Path("ref.msh"))
+for r in results:
+    print(f"{r.reference_id}: distance={r.distance}, shared={r.shared_hashes}")
+```
+
+`KmerDistance` dataclass 包含 `distance`、`pvalue`、`shared_hashes`、`total_hashes`。
+
+### gene_synonyms 基因名归一化
+
+`gene_scanner.py` 提供 `normalize_synonyms()` 和 `resolve_gene_name()` 处理基因名别名：
+
+```python
+from hermes_bacmap.gene_scanner import normalize_synonyms, resolve_gene_name
+
+syn = normalize_synonyms({"stx1": ["stx1a", "stxA1"]})
+resolve_gene_name("stx1a", syn)  # → "stx1"
+```
+
+支持两种输入格式：`{canonical: [aliases]}` 和 `{alias: canonical}`。
+
+### 共享工具函数
+
+`utils.py`（项目级）提供跨模块复用的解析函数：
+
+| 函数 | 用途 | 替代的重复代码 |
+|---|---|---|
+| `parse_mlst(tsv)` | MLST TSV → {st, alleles} | 7 处重复实现 |
+| `parse_abricate_tsv(tsv)` | abricate TSV → list[dict] | 3 处重复实现 |
+| `read_json_file(path)` | JSON 文件读取 + 异常处理 | 5+ 处重复实现 |
 
 ## 相关
 
