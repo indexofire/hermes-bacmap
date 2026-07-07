@@ -48,10 +48,17 @@ class SequenceMatcher:
         min_coverage: float = 0.0,
         **kwargs: Any,
     ) -> list[Hit]:
+        query = str(query)
         target = db_prefix or db_path
 
         if mode == "auto":
             mode = cls._select_backend(query, query_type)
+
+        if mode in ("mash", "sourmash"):
+            raise ValueError(
+                f"mode='{mode}' uses KmerDistance (not Hit). "
+                f"Use get_backend('{mode}').distance() directly."
+            )
 
         if mode in ("blastp", "blastx", "tblastn"):
             backend = get_backend(mode, tool=mode)
