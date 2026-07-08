@@ -44,7 +44,7 @@ def _format_gene_details(genes: list[dict]) -> str:
         parts.append(f"{name},{ident:.1f}%,{cov:.1f}%,{status}")
     return ";".join(parts) if parts else ""
 
-SIGNING_KEY = b"hermes-bacmap-vpa-serotype-db"
+SIGNING_KEY = b"vpautils-serotype-db-integrity"
 
 MAX_GENE_DIFF = 4
 MIN_CONTIG_ALIGN_LEN = 500
