@@ -4,7 +4,7 @@ rule species_identify:
     output:
         result = str(WORKDIR) + "/{sample}/species/species_id.json"
     params:
-        venv_py = str(PROJECT_ROOT / ".venv/bin/python"),
+        venv_py = str(PROJECT_ROOT / ".pixi/envs/default/bin/python"),
         pixi_bin = str(PROJECT_ROOT / ".pixi/envs/default/bin"),
         fallback = '{{"species":"Unknown","confidence":"low","detected_markers":[],"interpretation":"species_identify failed"}}'
     shell:

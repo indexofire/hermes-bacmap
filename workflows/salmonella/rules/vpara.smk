@@ -27,7 +27,7 @@ rule vpara_virulence:
     output:
         result = str(WORKDIR) + "/{sample}/vpara/virulence.json"
     params:
-        venv_py = str(PROJECT_ROOT / ".venv/bin/python"),
+        venv_py = str(PROJECT_ROOT / ".pixi/envs/default/bin/python"),
         pixi_bin = str(PROJECT_ROOT / ".pixi/envs/default/bin")
     shell:
         "mkdir -p $(dirname {output.result}) && "
@@ -50,7 +50,7 @@ rule vpara_serotype:
     output:
         result = str(WORKDIR) + "/{sample}/vpa/vpa_serotype.json"
     params:
-        python = str(PROJECT_ROOT / ".venv/bin/python"),
+        python = str(PROJECT_ROOT / ".pixi/envs/default/bin/python"),
         src_path = str(PROJECT_ROOT / "src"),
         contigs = lambda wc: str(WORKDIR) + f"/{wc.sample}/assembly/contigs.fasta",
         sample = lambda wc: wc.sample,

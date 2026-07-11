@@ -8,7 +8,7 @@ rule dec_ecoh_serotype:
         result = str(WORKDIR) + "/{sample}/dec/ecoh_serotype.json"
     threads: 4
     params:
-        venv_py = str(PROJECT_ROOT / ".venv/bin/python"),
+        venv_py = str(PROJECT_ROOT / ".pixi/envs/default/bin/python"),
         pixi_bin = str(PROJECT_ROOT / ".pixi/envs/default/bin"),
         fallback = '{{"serotype":"-:-","o_type":"-","h_type":"-","o_antigen_hits":[],"h_antigen_hits":[],"interpretation":"ecoh_serotyper failed"}}'
     shell:
@@ -36,7 +36,7 @@ rule shigella_serotype:
     output:
         result = str(WORKDIR) + "/{sample}/dec/shigella_serotype.json"
     params:
-        venv_py = str(PROJECT_ROOT / ".venv/bin/python"),
+        venv_py = str(PROJECT_ROOT / ".pixi/envs/default/bin/python"),
         pixi_bin = str(PROJECT_ROOT / ".pixi/envs/default/bin"),
         fallback = '{{"species":"N/A","serotype":"Undetermined","confidence":"low","detected_genes":[],"interpretation":"shigella_serotyper failed"}}'
     shell:

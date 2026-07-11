@@ -58,7 +58,7 @@ rule snp_matrix:
         fasta = str(WORKDIR) + "/snp/core_snps.fasta"
     params:
         script = str(PROJECT_ROOT / "workflows/salmonella/scripts/generate_snp_matrix.py"),
-        python = str(PROJECT_ROOT / ".venv/bin/python")
+        python = str(PROJECT_ROOT / ".pixi/envs/default/bin/python")
     shell:
         "mkdir -p $(dirname {output.fasta}) && "
         "{params.python} {params.script} {input.vcfgz} {output.fasta}"
@@ -88,6 +88,6 @@ rule snp_summary:
         summary = str(WORKDIR) + "/snp/snp_summary.json"
     params:
         script = str(PROJECT_ROOT / "workflows/salmonella/scripts/generate_snp_summary.py"),
-        python = str(PROJECT_ROOT / ".venv/bin/python")
+        python = str(PROJECT_ROOT / ".pixi/envs/default/bin/python")
     shell:
         "{params.python} {params.script} {input.tree} {input.fasta} {output.summary}"

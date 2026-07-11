@@ -9,7 +9,10 @@ AI Native 病原微生物基因组智能分析平台 — [Hermes Agent](https://
 2. 下载源代码
 
 ```bash
+# 克隆hermes-bacmap代码仓库到本地
 git clone https://github.com/indexofire/hermes-bacmap
+
+# 将插件安装到hermes中
 ln -s `pwd`/hermes-bacmap/src/hermes-bacmap $HOME/.hermes/plugins
 
 # 安装生信依赖
@@ -27,20 +30,21 @@ hermes chat
 
 ---
 
-```bash
-# 1. Python 开发环境 (uv)
-uv venv --python 3.11
-uv pip install -e ".[dev]"
+## 开发环境
 
-# 2. 生信 CLI 工具 (pixi)
+```bash
+# 1. 生信环境 (pixi，含所有运行时依赖 + Python 库)
 pixi install
 
-# 3. gmlst (Python 3.12 独立环境)
-uv venv .venv-gmlst --python 3.12
-uv pip install --python .venv-gmlst/bin/python gmlst
-
-# 4. 启动 Hermes Agent
+# 2. 启动 Hermes Agent
 hermes chat
+```
+
+生产用户只需 `pixi install`。开发者额外执行：
+```bash
+# 3. Python 开发工具 (uv，仅 pytest/ruff/mypy)
+uv venv --python 3.12
+uv pip install -e ".[dev]"
 ```
 
 详细功能文档见 **[docs/features.md](docs/features.md)**。
@@ -115,9 +119,8 @@ hermes-bacmap/
 
 | 工具 | 管理内容 | 说明 |
 |------|---------|------|
-| **uv** | Python 3.11 开发环境 | biopython, pydantic, pytest, ruff, mypy |
-| **pixi** | 生信 CLI 工具 | fastp, Shovill, blast, gmlst, SISTR, abricate, seqkit |
-| **.venv-gmlst** | Python 3.12 独立环境 | gmlst（需要 Python ≥3.12） |
+| **pixi** | 生信 CLI + Python 运行时 | fastp, Shovill, blast, bwa, samtools, bcftools, seqkit, iqtree, prodigal, mash, snakemake, gmlst, biopython, pyrodigal, mappy, sourmash |
+| **uv** (可选) | Python 开发工具 | pytest, ruff, mypy（仅开发者需要） |
 | **Hermes Agent** | LLM 编排 | API-key 模式（GLM-5.2 via Z.AI） |
 
 ## 日常开发
@@ -157,7 +160,7 @@ hermes chat
 
 ```bash
 # 1. 安装依赖到 Hermes venv
-uv pip install --python ~/.hermes/hermes-agent/venv/bin/python biopython pydantic
+uv pip install --python ~/.hermes/hermes-agent/venv/bin/python biopython pydantic pyrodigal mappy sourmash
 
 # 2. 链接插件目录
 ln -sf ~/repo/github/hermes-bacmap/src/hermes_bacmap ~/.hermes/plugins/hermes_bacmap

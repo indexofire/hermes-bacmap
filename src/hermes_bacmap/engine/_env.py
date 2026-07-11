@@ -6,7 +6,7 @@ from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
 PIXI_BIN = str(_PROJECT_ROOT / ".pixi" / "envs" / "default" / "bin")
-VENV_BIN = str(_PROJECT_ROOT / ".venv" / "bin")
+PIXI_PYTHON = str(_PROJECT_ROOT / ".pixi" / "envs" / "default" / "bin" / "python")
 
 
 def pixi_path() -> str:
