@@ -6,8 +6,8 @@ from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
 PIXI_BIN = str(_PROJECT_ROOT / ".pixi" / "envs" / "default" / "bin")
+PIXI_GMLST_BIN = str(_PROJECT_ROOT / ".pixi" / "envs" / "gmlst" / "bin")
 VENV_BIN = str(_PROJECT_ROOT / ".venv" / "bin")
-VENV_GMLST = str(_PROJECT_ROOT / ".venv-gmlst" / "bin")
 
 
 def pixi_path() -> str:

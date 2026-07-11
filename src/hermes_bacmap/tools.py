@@ -24,7 +24,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from hermes_bacmap.engine._env import PIXI_BIN, VENV_BIN, VENV_GMLST, _PROJECT_ROOT  # noqa: E402
+from hermes_bacmap.engine._env import PIXI_BIN, PIXI_GMLST_BIN, VENV_BIN, _PROJECT_ROOT  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ _BIOPYTHON_AVAILABLE: bool | None = None
 
 _RESULTS_DIR = _PROJECT_ROOT / "results"
 _PIXI_ENV: dict[str, str] = dict(os.environ)
-_PIXI_ENV["PATH"] = ":".join([PIXI_BIN, VENV_GMLST, VENV_BIN, _PIXI_ENV.get("PATH", "")])
+_PIXI_ENV["PATH"] = ":".join([PIXI_BIN, PIXI_GMLST_BIN, VENV_BIN, _PIXI_ENV.get("PATH", "")])
 
 
 def _run_project_script(script_name: str, args: list[str], timeout: int = 3600) -> str:

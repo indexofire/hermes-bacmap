@@ -4,6 +4,29 @@ AI Native 病原微生物基因组智能分析平台 — [Hermes Agent](https://
 
 ## 快速开始
 
+1. 参照[Hermes Agent](https://hermes-agent.nousresearch.com/)安装说明完成[Hermes](https://hermes-agent.nousresearch.com)的安装。
+
+2. 下载源代码
+
+```bash
+git clone https://github.com/indexofire/hermes-bacmap
+ln -s `pwd`/hermes-bacmap/src/hermes-bacmap $HOME/.hermes/plugins
+
+# 安装生信依赖
+cd hermes-bacmap
+pixi install
+```
+
+3. 启动hermes
+
+启动`hermes agent`后，可以与其交互，开始让AI帮助进行食源性病原微生物的菌株基因组分析工作。
+
+```bash
+hermes chat
+```
+
+---
+
 ```bash
 # 1. Python 开发环境 (uv)
 uv venv --python 3.11
@@ -28,9 +51,9 @@ hermes chat
 | 病原 | 物种鉴定靶基因 | 血清型 | MLST | AMR | SNP/系统发育 | 状态 |
 |---|---|---|---|---|---|---|
 | **Salmonella** | invA | SISTR | gmlst (salmonella_2) | abricate (CARD/VFDB/PlasmidFinder) | bwa+bcftools+iqtree | ✅ V0.3 |
-| **DEC** (E. coli) | uidA | ecoh_serotyper (Python) | gmlst | abricate | — | ✅ V0.2 |
-| **Shigella / EIEC** | ipaH | shigella_serotyper (58 serotypes) | gmlst | abricate | — | ✅ V0.2 |
-| **V. parahaemolyticus** | toxR + tlh | — | — | abricate | — | ✅ V0.4 (物种鉴定) |
+| **DEC** (E. coli) | uidA | ecoh_serotyper (Python) | gmlst | abricate | bwa+bcftools+iqtree | ✅ V0.2 |
+| **Shigella / EIEC** | ipaH | shigella_serotyper (58 serotypes) | gmlst | abricate | bwa+bcftools+iqtree | ✅ V0.2 |
+| **V. parahaemolyticus** | toxR + tlh | native | gmlst | abricate | bwa+bcftools+iqtree | ✅ V0.4 (物种鉴定) |
 
 ## 核心模块
 

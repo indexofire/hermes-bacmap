@@ -27,5 +27,14 @@ abricate = ">=1.4.0,<2"
 iqtree = ">=3.1.2,<4"
 prodigal = ">=2.6.3,<3"
 
+[feature.gmlst.dependencies]
+python = "3.12.*"
+
+[feature.gmlst.pypi-dependencies]
+gmlst = ">=0.1.0"
+
+[environments]
+gmlst = { features = ["gmlst"], no-default-feature = true }
+
 # R 可视化环境（ggtree/ggplot2）需单独设置，pixi solver 与现有依赖冲突。
 # 推荐方案：conda create -n r-viz -c bioconda -c conda-forge r-base=4.4 r-ggplot2 bioconductor-ggtree
