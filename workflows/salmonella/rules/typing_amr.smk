@@ -2,6 +2,11 @@
 
 ABRICATE_MINID = config["tools"]["abricate"]["minid"]
 ABRICATE_MINCOV = config["tools"]["abricate"]["mincov"]
+_GMLST_SCHEMES = {
+    "Salmonella": "salmonella_2",
+    "E.coli": "ecoli_1",
+    "Shigella": "ecoli_1",
+}
 GMLST_BIN = str(PROJECT_ROOT / ".pixi/envs/default/bin/gmlst")
 
 rule typing_mlst:
@@ -10,13 +15,15 @@ rule typing_mlst:
     output:
         result = str(WORKDIR) + "/{sample}/typing/mlst.tsv"
     params:
-        scheme = "salmonella_2"
+        scheme = lambda wc: _GMLST_SCHEMES.get(
+            SAMPLES_DF.loc[wc.sample, "species"], "salmonella_2"
+        )
+    threads: 4
     shell:
         "mkdir -p $(dirname {output.result}) && "
-        "export PATH={GMLST_BIN}:$PATH && "
         "{GMLST_BIN} typing mlst -s {params.scheme} "
         "-o {output.result} {input.contigs} 2>/dev/null || "
-        "echo -e 'File\\tScheme\\tST\\taroC\\tdnaN\\themD\\thisD\\tpurE\\tsucA\\tthrA\\n{wildcards.sample}\\tsalmonella_2\\tN/A\\t-\\t-\\t-\\t-\\t-\\t-\\t-' > {output.result}"
+        "echo -e 'File\\tScheme\\tST\\n{wildcards.sample}\\t{params.scheme}\\tN/A' > {output.result}"
 
 rule typing_sistr:
     input:
