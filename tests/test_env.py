@@ -30,7 +30,7 @@ def test_pyproject_config():
     from pathlib import Path
     pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
     text = pyproject.read_text()
-    assert 'requires-python = ">=3.11,<3.14"' in text
+    assert 'requires-python = ">=3.12,<3.14"' in text
     assert "biopython" in text
 
 

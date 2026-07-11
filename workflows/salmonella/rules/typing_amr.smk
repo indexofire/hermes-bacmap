@@ -2,7 +2,7 @@
 
 ABRICATE_MINID = config["tools"]["abricate"]["minid"]
 ABRICATE_MINCOV = config["tools"]["abricate"]["mincov"]
-GMLST_BIN = str(PROJECT_ROOT / ".pixi/envs/gmlst/bin/gmlst")
+GMLST_BIN = str(PROJECT_ROOT / ".pixi/envs/default/bin/gmlst")
 
 rule typing_mlst:
     input:

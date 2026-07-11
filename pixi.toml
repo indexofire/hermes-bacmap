@@ -3,12 +3,12 @@ authors = ["indexofire <indexofire@gmail.com>"]
 channels = ["conda-forge", "bioconda"]
 name = "hermes-bacmap"
 platforms = ["linux-64"]
-version = "0.1.0"
+version = "0.5.0"
 
 [tasks]
 
 [dependencies]
-python = "3.11.*"
+python = "3.12.*"
 samtools = ">=1.20"
 bwa = ">=0.7.17"
 minimap2 = ">=2.28"
@@ -27,14 +27,5 @@ abricate = ">=1.4.0,<2"
 iqtree = ">=3.1.2,<4"
 prodigal = ">=2.6.3,<3"
 
-[feature.gmlst.dependencies]
-python = "3.12.*"
-
-[feature.gmlst.pypi-dependencies]
+[pypi-dependencies]
 gmlst = ">=0.1.0"
-
-[environments]
-gmlst = { features = ["gmlst"], no-default-feature = true }
-
-# R 可视化环境（ggtree/ggplot2）需单独设置，pixi solver 与现有依赖冲突。
-# 推荐方案：conda create -n r-viz -c bioconda -c conda-forge r-base=4.4 r-ggplot2 bioconductor-ggtree
