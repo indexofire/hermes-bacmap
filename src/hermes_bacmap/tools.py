@@ -56,24 +56,16 @@ def _ensure_biopython() -> bool:
         return True
     except ImportError:
         pass
-    # Attempt lazy install
     try:
-        from tools.lazy_deps import ensure  # type: ignore
-    except Exception:
-        ensure = None  # type: ignore
-    if ensure:
-        try:
-            # biopython is a common package — but lazy_deps may not have it.
-            # Fall back to pip install.
-            subprocess.run(
-                ["pip", "install", "--quiet", "biopython>=1.83"],
-                capture_output=True, timeout=120, check=True,
-            )
-            import Bio  # noqa: F401
-            _BIOPYTHON_AVAILABLE = True
-            return True
-        except Exception as e:
-            logger.warning("Biopython not available and lazy install failed: %s", e)
+        subprocess.run(
+            [PIXI_PYTHON, "-m", "pip", "install", "biopython"],
+            check=True, capture_output=True, timeout=120,
+        )
+        import Bio  # noqa: F401
+        _BIOPYTHON_AVAILABLE = True
+        return True
+    except Exception as e:
+        logger.warning("Biopython not available and lazy install failed: %s", e)
     _BIOPYTHON_AVAILABLE = False
     return False
 
@@ -103,15 +95,6 @@ def _detect_format(path: str, hint: str = "auto") -> str:
     if hint != "auto":
         return hint
     return fmt if fmt else "fasta"
-
-
-def _load_records(path: str, fmt: str, limit: int | None = None):
-    """Load sequence records via Biopython SeqIO. Returns list."""
-    from Bio import SeqIO  # type: ignore
-    records = list(SeqIO.parse(path, fmt))
-    if limit:
-        records = records[:limit]
-    return records
 
 
 def _run_cmd(cmd: list[str], timeout: int = 3600) -> dict[str, Any]:

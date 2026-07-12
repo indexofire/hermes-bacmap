@@ -61,9 +61,12 @@ rule amr_abricate_card:
     output:
         result = str(WORKDIR) + "/{sample}/amr/abricate_card.tsv"
     params:
+        pixi = str(PROJECT_ROOT / ".pixi/envs/default/bin"),
         minid = ABRICATE_MINID,
         mincov = ABRICATE_MINCOV
+    threads: 2
     shell:
+        "mkdir -p $(dirname {output.result}) && "
         "abricate --db card --minid {params.minid} --mincov {params.mincov} "
         "{input.contigs} > {output.result}"
 

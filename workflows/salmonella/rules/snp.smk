@@ -4,8 +4,8 @@ _SALMONELLA_SAMPLES = [s for s in SAMPLES if SAMPLES_DF.loc[s, "species"] == "Sa
 
 rule snp_calling:
     input:
-        r1 = lambda wc: str(PROJECT_ROOT / SAMPLES_DF.loc[wc.sample, "R1"]),
-        r2 = lambda wc: str(PROJECT_ROOT / SAMPLES_DF.loc[wc.sample, "R2"])
+        r1 = lambda wc: str(WORKDIR) + f"/{wc.sample}/qc/{wc.sample}_clean_R1.fastq.gz",
+        r2 = lambda wc: str(WORKDIR) + f"/{wc.sample}/qc/{wc.sample}_clean_R2.fastq.gz"
     output:
         bam = str(WORKDIR) + "/{sample}/snp/snps.bam"
     params:

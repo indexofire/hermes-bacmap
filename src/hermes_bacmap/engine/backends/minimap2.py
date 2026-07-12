@@ -65,7 +65,7 @@ class MinimapBackend:
                 hit = Hit.from_paf_line(line)
             except ValueError:
                 continue
-            if hit.identity >= min_identity and hit.subject_coverage >= min_coverage:
+            if hit.identity >= min_identity and hit.query_coverage >= min_coverage:
                 hits.append(hit)
 
         return hits

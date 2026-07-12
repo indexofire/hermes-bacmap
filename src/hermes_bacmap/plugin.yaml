@@ -4,7 +4,7 @@ author: indexofire <indexofire@gmail.com>
 description: >
   AI-native pathogen genome analysis platform. Supports Salmonella, DEC
   (E. coli), Shigella/EIEC, and V. parahaemolyticus with automatic species
-  routing. Provides 18 tools: sequence operations (BLAST/align/samtools/
+  routing. Provides 23 tools: sequence operations (BLAST/align/samtools/
   variant), pipeline orchestration (Snakemake), genome annotation
   (pyrodigal + Prokka DBs), SNP phylogenetics, GOM persistence (SQLite),
   natural language sample search, and failure diagnostics. Engine layer
