@@ -88,8 +88,7 @@ rule joint_variant_calling:
         grp = params.group
         out_dir = _WD + "/snp/" + grp
         _os.makedirs(out_dir, exist_ok=True)
-        bam_paths = [s + "/snp/snps.bam" for s in [_WD + "/" + s for s in params.samples]]
-        bam_list = " ".join(bam_paths)
+        bam_list = " ".join(_WD + "/" + s + "/snp/snps.bam" for s in params.samples)
         rename_tsv = out_dir + "/joint.vcf.gz.rename.tsv"
         with open(rename_tsv, "w") as fh:
             for s in params.samples:
@@ -157,6 +156,9 @@ rule snp_summary:
         summary = str(WORKDIR) + "/snp/{group}/snp_summary.json"
     params:
         script = str(PROJECT_ROOT / "workflows/salmonella/scripts/generate_snp_summary.py"),
-        python = str(PROJECT_ROOT / ".pixi/envs/default/bin/python")
+        python = str(PROJECT_ROOT / ".pixi/envs/default/bin/python"),
+        group = "{group}",
+        organism = lambda wc: _SPECIES_GROUPS[wc.group]["organism"]
     shell:
-        "{params.python} {params.script} {input.tree} {input.fasta} {output.summary}"
+        "{params.python} {params.script} {input.tree} {input.fasta} {output.summary} "
+        "--group {params.group} --organism \"{params.organism}\""

@@ -31,7 +31,6 @@ rule vpara_virulence:
         db = str(PROJECT_ROOT / "data/reference/vpara_targets_blastdb")
     shell:
         "mkdir -p $(dirname {output.result}) && "
-        "export PATH={params.pixi_bin}:$PATH && "
         "{params.python} -c \""
         "import json, subprocess; "
         "contigs='{input.contigs}'; "
@@ -53,7 +52,8 @@ rule vpara_serotype:
         src_path = str(PROJECT_ROOT / "src"),
         contigs = lambda wc: str(WORKDIR) + f"/{wc.sample}/assembly/contigs.fasta",
         sample = lambda wc: wc.sample,
-        out = lambda wc: str(WORKDIR) + f"/{wc.sample}/vpa/vpa_serotype.json"
+        out = lambda wc: str(WORKDIR) + f"/{wc.sample}/vpa/vpa_serotype.json",
+        fallback = '{{"predicted_serotype":"N/A","o_locus":"None","k_locus":"None","o_confidence":"Unknown","k_confidence":"Unknown","interpretation":"not V. parahaemolyticus"}}'
     shell:
         "mkdir -p $(dirname {params.out}) && "
         "{params.python} -c \""
@@ -62,4 +62,4 @@ rule vpara_serotype:
         "s = VpaSerotyper(); "
         "r = s.analyze('{params.contigs}', '{params.sample}'); "
         "json.dump(r.to_dict(), open('{params.out}', 'w'), ensure_ascii=False, indent=2)"
-        "\""
+        "\" || echo '{params.fallback}' > {params.out}"
