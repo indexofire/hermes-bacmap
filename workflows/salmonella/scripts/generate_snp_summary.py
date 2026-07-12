@@ -66,6 +66,8 @@ def main() -> int:
     parser.add_argument("treefile", help="Path to Newick treefile")
     parser.add_argument("fasta", help="Path to alignment FASTA")
     parser.add_argument("output", help="Output JSON path")
+    parser.add_argument("--group", default=None, help="SNP group name (e.g. salmonella)")
+    parser.add_argument("--organism", default=None, help="Organism label")
     args = parser.parse_args()
 
     tree_path = Path(args.treefile)
@@ -93,6 +95,10 @@ def main() -> int:
         "pairwise_distances": distances,
         "missing_rate": round(missing_rate, 4),
     }
+    if args.group:
+        summary["group"] = args.group
+    if args.organism:
+        summary["organism"] = args.organism
 
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
     Path(args.output).write_text(json.dumps(summary, indent=2))

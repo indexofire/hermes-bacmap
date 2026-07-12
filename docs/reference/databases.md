@@ -41,6 +41,28 @@ Shigella 库支持 58 种血清型：S. flexneri（1a–7b, Y, Yv）、S. sonnei
 | 文件 | 大小 | 内容 |
 |---|---|---|
 | `salmonella_LT2_ref.fasta` | 4.7 MB | NC_003197.2（S. enterica LT2 染色体, 4,857,450 bp） |
+| `ecoli_k12_ref.fasta` | 4.5 MB | NC_000913.3（E. coli K-12 MG1655, 4,639,675 bp） |
+| `vpara_rimd_ref.fasta` | 5.0 MB | NC_004603.1 + NC_004605.1（V. parahaemolyticus RIMD 2210633, 5,165,770 bp） |
+
+E.coli + Shigella 共享 K-12 MG1655 参考（两者分类学上为同一物种）。V.para 含 2 条染色体。
+
+下载：
+
+```bash
+# E.coli K-12 MG1655
+curl -sL "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.fna.gz" \
+  -o /tmp/ecoli.fna.gz && zcat /tmp/ecoli.fna.gz > data/reference/ecoli_k12_ref.fasta
+
+# V.parahaemolyticus RIMD 2210633
+curl -sL "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/196/095/GCF_000196095.1_ASM19609v1/GCF_000196095.1_ASM19609v1_genomic.fna.gz" \
+  -o /tmp/vpara.fna.gz && zcat /tmp/vpara.fna.gz > data/reference/vpara_rimd_ref.fasta
+
+# bwa index
+bwa index data/reference/ecoli_k12_ref.fasta
+bwa index data/reference/vpara_rimd_ref.fasta
+samtools faidx data/reference/ecoli_k12_ref.fasta
+samtools faidx data/reference/vpara_rimd_ref.fasta
+```
 
 仅包含染色体，排除质粒。用前验证：
 

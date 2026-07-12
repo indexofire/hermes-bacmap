@@ -29,9 +29,8 @@ RESULTS_DIR = ROOT / "results"
 DB_PATH = ROOT / "data" / "hermes_bacmap.sqlite"
 
 PIPELINE_VERSION = "salmonella-workflow-v0.1"
-SNP_PIPELINE_VERSION = "snp-pipeline-v0.3"
+SNP_PIPELINE_VERSION = "snp-pipeline-v0.4"
 SCHEMA_VERSION = "0.1.0"
-COHORT_STRAIN_ID = "cohort:salmonella-snp"
 
 DB_VERSIONS = {
     "abricate_card": "2026-Apr-3",
@@ -59,7 +58,15 @@ SNP_TOOL_VERSIONS = {
 }
 
 SNP_DB_VERSIONS = {
-    "reference": "NC_003197.2 (S. enterica LT2)",
+    "salmonella": "NC_003197.2 (S. enterica LT2)",
+    "ecoli": "NC_000913.3 (E. coli K-12 MG1655)",
+    "vpara": "NC_004603.1 + NC_004605.1 (V. parahaemolyticus RIMD 2210633)",
+}
+
+SNP_GROUP_ORGANISMS = {
+    "salmonella": "Salmonella enterica",
+    "ecoli": "Escherichia coli / Shigella",
+    "vpara": "Vibrio parahaemolyticus",
 }
 
 
@@ -198,34 +205,60 @@ def _create_new_version(gos: GenomeObjectService, existing_id: str, sample_id: s
     return new_obj.object_id
 
 
-def ingest_cohort_snp(gos: GenomeObjectService) -> str | None:
-    snp_summary_path = RESULTS_DIR / "snp" / "snp_summary.json"
-    if not snp_summary_path.exists():
-        print("  ✗ SNP summary not found: results/snp/snp_summary.json")
+def ingest_cohort_snp(gos: GenomeObjectService) -> list[str]:
+    snp_dir = RESULTS_DIR / "snp"
+    if not snp_dir.exists():
+        print("  ✗ SNP results directory not found: results/snp/")
+        return []
+
+    group_dirs = sorted(
+        d for d in snp_dir.iterdir()
+        if d.is_dir() and (d / "snp_summary.json").exists()
+    )
+    if not group_dirs:
+        print("  ✗ No per-group SNP summaries found in results/snp/")
+        return []
+
+    ingested_ids: list[str] = []
+    for group_dir in group_dirs:
+        group = group_dir.name
+        oid = _ingest_group_snp(gos, group)
+        if oid:
+            ingested_ids.append(oid)
+
+    return ingested_ids
+
+
+def _ingest_group_snp(gos: GenomeObjectService, group: str) -> str | None:
+    summary_path = RESULTS_DIR / "snp" / group / "snp_summary.json"
+    if not summary_path.exists():
+        print(f"  ✗ SNP summary not found: {summary_path}")
         return None
 
-    with snp_summary_path.open() as f:
+    with summary_path.open() as f:
         snp_data = json.load(f)
 
+    cohort_strain_id = f"cohort:{group}-snp"
     existing = [
         o for o in gos.list_by_type(ObjectType.ANALYSIS)
-        if o.strain_id == COHORT_STRAIN_ID
+        if o.strain_id == cohort_strain_id
     ]
 
     if existing:
         latest = max(existing, key=lambda o: o.version)
         if latest.pipeline_version == SNP_PIPELINE_VERSION:
-            print(f"  ⏭️  SNP cohort: 已存在 v{latest.version}, skipped")
+            print(f"  ⏭️  SNP cohort [{group}]: 已存在 v{latest.version}, skipped")
             return latest.object_id
-        return _create_cohort_version(gos, latest.object_id, snp_data, snp_summary_path)
+        return _create_cohort_version(gos, latest.object_id, snp_data, group)
 
-    return _create_cohort_new(gos, snp_data, snp_summary_path)
+    return _create_cohort_new(gos, snp_data, group)
 
 
-def _build_cohort_payload(snp_data: dict) -> tuple[dict, str]:
-    organism = "Salmonella enterica"
+def _build_cohort_payload(snp_data: dict, group: str) -> tuple[dict, str]:
+    organism = SNP_GROUP_ORGANISMS.get(group, snp_data.get("organism", group))
     payload = {
         "analysis_type": "snp_cohort",
+        "group": group,
         "samples": snp_data.get("samples", []),
         "n_samples": snp_data.get("n_samples", 0),
         "n_snp_sites": snp_data.get("n_snp_sites", 0),
@@ -236,13 +269,17 @@ def _build_cohort_payload(snp_data: dict) -> tuple[dict, str]:
     return payload, organism
 
 
-def _register_cohort_files(gos: GenomeObjectService, object_id: str, version: int):
+def _register_cohort_files(
+    gos: GenomeObjectService, object_id: str, version: int, group: str
+):
+    group_dir = RESULTS_DIR / "snp" / group
+    prefix = f"core_{group}"
     files_to_register = [
-        ("snp_tree_newick", RESULTS_DIR / "snp" / "core.treefile"),
-        ("snp_alignment", RESULTS_DIR / "snp" / "core_snps.fasta"),
-        ("iqtree_report", RESULTS_DIR / "snp" / "core.iqtree"),
-        ("joint_vcf", RESULTS_DIR / "snp" / "joint.vcf.gz"),
-        ("snp_summary", RESULTS_DIR / "snp" / "snp_summary.json"),
+        ("snp_tree_newick", group_dir / f"{prefix}.treefile"),
+        ("snp_alignment", group_dir / "core_snps.fasta"),
+        ("iqtree_report", group_dir / f"{prefix}.iqtree"),
+        ("joint_vcf", group_dir / "joint.vcf.gz"),
+        ("snp_summary", group_dir / "snp_summary.json"),
     ]
     for file_type, fpath in files_to_register:
         if fpath.exists() and fpath.stat().st_size > 0:
@@ -275,9 +312,10 @@ def _link_samples_to_cohort(gos: GenomeObjectService, cohort_object_id: str, sam
 
 
 def _create_cohort_new(
-    gos: GenomeObjectService, snp_data: dict, summary_path: Path
+    gos: GenomeObjectService, snp_data: dict, group: str
 ) -> str:
-    payload, organism = _build_cohort_payload(snp_data)
+    payload, organism = _build_cohort_payload(snp_data, group)
+    cohort_strain_id = f"cohort:{group}-snp"
     object_id = str(uuid4())
     now = datetime.now(timezone.utc).replace(tzinfo=None)
 
@@ -290,47 +328,49 @@ def _create_cohort_new(
         created_by="snp-pipeline",
         payload=payload,
         pipeline_version=SNP_PIPELINE_VERSION,
-        database_versions=SNP_DB_VERSIONS,
+        database_versions={"reference": SNP_DB_VERSIONS.get(group, "unknown")},
         tool_versions=SNP_TOOL_VERSIONS,
         organism=organism,
-        strain_id=COHORT_STRAIN_ID,
+        strain_id=cohort_strain_id,
     )
     gos.create(obj)
-    _register_cohort_files(gos, object_id, 1)
+    _register_cohort_files(gos, object_id, 1, group)
     _link_samples_to_cohort(gos, object_id, payload["samples"])
 
     gos.log_event(object_id, "snp_finished", {
+        "group": group,
         "n_samples": payload["n_samples"],
         "n_snp_sites": payload["n_snp_sites"],
     })
 
     print(
-        f"  ✅ SNP cohort: 新建 v1 "
+        f"  ✅ SNP cohort [{group}]: 新建 v1 "
         f"({payload['n_samples']} samples, {payload['n_snp_sites']:,} sites)"
     )
     return object_id
 
 
 def _create_cohort_version(
-    gos: GenomeObjectService, existing_id: str, snp_data: dict, summary_path: Path
+    gos: GenomeObjectService, existing_id: str, snp_data: dict, group: str
 ) -> str:
-    payload, _ = _build_cohort_payload(snp_data)
+    payload, _ = _build_cohort_payload(snp_data, group)
     new_obj = gos.create_new_version(
         existing_id,
         payload,
         pipeline_version=SNP_PIPELINE_VERSION,
-        database_versions=SNP_DB_VERSIONS,
+        database_versions={"reference": SNP_DB_VERSIONS.get(group, "unknown")},
         tool_versions=SNP_TOOL_VERSIONS,
     )
-    _register_cohort_files(gos, new_obj.object_id, new_obj.version)
+    _register_cohort_files(gos, new_obj.object_id, new_obj.version, group)
     _link_samples_to_cohort(gos, new_obj.object_id, payload["samples"])
 
     gos.log_event(new_obj.object_id, "snp_finished", {
+        "group": group,
         "n_samples": payload["n_samples"],
         "n_snp_sites": payload["n_snp_sites"],
     })
 
-    print(f"  🔄 SNP cohort: 新版本 v{new_obj.version}")
+    print(f"  🔄 SNP cohort [{group}]: 新版本 v{new_obj.version}")
     return new_obj.object_id
 
 
@@ -346,15 +386,17 @@ def main() -> int:
     gos = GenomeObjectService(DB_PATH)
 
     if args.snp:
-        print("=== 入库 SNP Cohort ===\n")
-        oid = ingest_cohort_snp(gos)
-        if oid:
-            print(f"\n✓ SNP cohort 入库完成: object_id={oid[:12]}...")
+        print("=== 入库 SNP Cohort (per-group) ===\n")
+        oids = ingest_cohort_snp(gos)
+        if oids:
+            print(f"\n✓ SNP cohort 入库完成: {len(oids)} group(s)")
+            for oid in oids:
+                print(f"  object_id={oid[:12]}...")
         else:
             print("\n❌ SNP cohort 入库失败")
         print(f"  Database: {DB_PATH}")
         gos.close()
-        return 0 if oid else 1
+        return 0 if oids else 1
 
     if args.all:
         import csv

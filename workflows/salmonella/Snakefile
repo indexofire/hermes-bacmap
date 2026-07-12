@@ -17,14 +17,6 @@ def r1_path(wc):
 def r2_path(wc):
     return str(PROJECT_ROOT / SAMPLES_DF.loc[wc.sample, "R2"])
 
-rule all:
-    input:
-        expand(str(WORKDIR) + "/{sample}/report/{sample}_summary.json", sample=SAMPLES),
-        expand(str(WORKDIR) + "/{sample}/annotation/annotation.json", sample=SAMPLES),
-        expand(str(WORKDIR) + "/{sample}/vpa/vpa_serotype.json", sample=SAMPLES),
-        str(WORKDIR) + "/snp/core.treefile",
-        str(WORKDIR) + "/snp/snp_summary.json"
-
 include: "rules/qc.smk"
 include: "rules/assembly.smk"
 include: "rules/species.smk"
@@ -34,3 +26,13 @@ include: "rules/vpara.smk"
 include: "rules/snp.smk"
 include: "rules/annotation.smk"
 include: "rules/report.smk"
+
+rule all:
+    input:
+        expand(str(WORKDIR) + "/{sample}/report/{sample}_summary.json", sample=SAMPLES),
+        expand(str(WORKDIR) + "/{sample}/annotation/annotation.json", sample=SAMPLES),
+        expand(str(WORKDIR) + "/{sample}/vpa/vpa_serotype.json", sample=SAMPLES),
+        expand(
+            str(WORKDIR) + "/snp/{group}/snp_summary.json",
+            group=_ACTIVE_GROUPS
+        )
