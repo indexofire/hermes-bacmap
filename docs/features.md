@@ -1,7 +1,7 @@
 # Hermes-bacmap 功能文档
 
-> **版本**: V0.5 (2026-07-06)
-> **状态**: 18 Hermes tools · 22 Snakemake rules · 96 tests · 4 skills · engine 抽象层 · GBrain 知识层 · 10 株验证数据集
+> **版本**: V0.6 (2026-07-11)
+> **状态**: 19 Hermes tools · 23 Snakemake rules · 120 tests · 4 skills · engine 抽象层 · GBrain 知识层 · 菌株元数据 + 湿实验结果 · 10 株验证数据集
 
 ---
 
@@ -685,6 +685,127 @@ mcp_servers:
 | vpara | toxR/tlh/tdh/trh 毒力检测 |
 | pipeline-params | 参数 + 质量阈值 + 耗时 |
 | troubleshooting | 常见错误 + 修复步骤 |
+
+---
+
+## 13.6 菌株元数据 + 湿实验结果系统
+
+### 三表数据架构
+
+```
+┌──────────────────────────────────────────────────────────┐
+│              data/hermes_bacmap.sqlite                    │
+│                                                          │
+│  strain_metadata     lab_results        genome_objects    │
+│  ┌──────────┐       ┌──────────┐      ┌──────────┐      │
+│  │strain_id │──┐    │strain_id │──┐   │strain_id │      │
+│  │patient_* │  │    │category  │  │   │payload   │      │
+│  │isolation_│  │    │test_name │  │   │version   │      │
+│  │province  │  │    │result    │  │   └──────────┘      │
+│  │outbreak  │  │    │method    │  │                     │
+│  │extra JSON│  │    │extra JSON│  │   events             │
+│  └──────────┘  │    └──────────┘  │   file_artifacts     │
+│       1        │       N          │       1              │
+│                └───────┬──────────┘                      │
+│                   strain_id (JOIN 枢纽)                    │
+└──────────────────────────────────────────────────────────┘
+```
+
+| 表 | 每株行数 | 变更模式 | 存什么 |
+|---|---|---|---|
+| **strain_metadata** | 1 | 写一次，偶尔修正 | 患者信息/分离信息/暴发关联 |
+| **lab_results** | 0-50 | 可追加 | 药敏/血清/生化/PCR 实验结果 |
+| **genome_objects** | 1+ | 版本化（不可变） | 生信分析结果 |
+
+### strain_metadata（菌株背景信息）
+
+**27 个核心列 + extra JSON 扩展列**
+
+| 类别 | 核心列 |
+|---|---|
+| 送检信息 | submitting_lab, submit_date, receiver |
+| 患者信息 | patient_id, patient_name, patient_age, patient_gender, patient_phone |
+| 分离信息 | isolation_date, province, city, district, facility |
+| 样品信息 | sample_source, sample_type, food_category, food_name, collection_date |
+| 临床信息 | symptoms, onset_date, diagnosis, outcome, hospital |
+| 暴发关联 | outbreak_id, cluster_note |
+
+**extra JSON** 存储自定义字段（不受表结构限制），UPSERT 时自动合并已有 extra。
+
+```python
+from hermes_bacmap.strain_metadata import StrainMetadataService
+
+svc = StrainMetadataService("data/hermes_bacmap.sqlite")
+
+# 写入（首次 INSERT，再次 UPDATE）
+svc.upsert("SAM-TYP-001", {
+    "patient_name": "张三",           # → 核心列
+    "patient_age": 35,                # → 核心列
+    "province": "北京",               # → 核心列
+    "case_type": "暴发",              # → extra JSON
+    "report_status": "已报",          # → extra JSON
+})
+
+# 搜索
+results = svc.search(province="北京", isolation_date_from="2024-01-01")
+results = svc.search(extra={"report_status": "已报"})
+```
+
+### lab_results（湿实验结果）
+
+**EAV 模式**（Entity-Attribute-Value），每条实验结果一行：
+
+| category | test_name | 示例 |
+|---|---|---|
+| ast | 氨苄西林 | result=16, unit=ug/mL, interpretation=R |
+| ast | 环丙沙星 | result=0.5, unit=ug/mL, interpretation=S |
+| serology | O抗原 | result=O4, method=antiserum |
+| biochemical | 氧化酶 | result=阴性 |
+| pcr | invA | result=positive, method=qPCR |
+
+```python
+from hermes_bacmap.lab_results import LabResultService
+
+svc = LabResultService("data/hermes_bacmap.sqlite")
+
+# 批量导入药敏
+svc.add_batch("SAM-TYP-001", "ast", [
+    {"test_name": "氨苄西林", "result": "16", "unit": "ug/mL", "interpretation": "R"},
+    {"test_name": "环丙沙星", "result": "0.5", "unit": "ug/mL", "interpretation": "S"},
+])
+
+# 查询
+ast = svc.get_by_strain("SAM-TYP-001", category="ast")
+resistant = svc.search(category="ast", interpretation="R")
+```
+
+### Profile 模板系统（可扩展）
+
+```yaml
+# metadata_profiles/cdc_china.yaml
+name: cdc_china
+extends: default
+
+fields:
+  - {name: case_type, type: enum, options: [散发, 暴发, 输入性], required: true}
+  - {name: report_status, type: enum, options: [草稿, 待审, 已报, 退回]}
+  - {name: sequencing_platform, type: enum, options: [MiSeq, NextSeq, NovaSeq, GridION]}
+```
+
+用户自定义只需创建 YAML 文件，不改代码、不改表结构。
+
+### 跨表联合查询（湿实验 vs 生信）
+
+```sql
+SELECT m.strain_id,
+       m.patient_name, m.province,
+       lr.result AS wet_serotype,
+       json_extract(g.payload_json, '$.serotype.sistr') AS in_silco_serotype
+FROM strain_metadata m
+JOIN lab_results lr ON m.strain_id = lr.strain_id AND lr.category = 'serology'
+JOIN genome_objects g ON m.strain_id = g.strain_id
+WHERE m.province = '北京';
+```
 
 ---
 
