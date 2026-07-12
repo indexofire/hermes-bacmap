@@ -27,8 +27,8 @@ rule vpara_virulence:
     output:
         result = str(WORKDIR) + "/{sample}/vpara/virulence.json"
     params:
-        venv_py = str(PROJECT_ROOT / ".pixi/envs/default/bin/python"),
-        pixi_bin = str(PROJECT_ROOT / ".pixi/envs/default/bin")
+        python = str(PROJECT_ROOT / ".pixi/envs/default/bin/python"),
+        db = str(PROJECT_ROOT / "data/reference/vpara_targets_blastdb")
     shell:
         "mkdir -p $(dirname {output.result}) && "
         "export PATH={params.pixi_bin}:$PATH && "
@@ -37,7 +37,7 @@ rule vpara_virulence:
         "contigs='{input.contigs}'; "
         "genes={{}}; "
         "for g in ['tdh','trh','tlh']: "
-        "  r=subprocess.run(['blastn','-query',contigs,'-db','data/reference/vpara_targets_blastdb','-outfmt','6 sseqid pident','-evalue','1e-50','-word_size','28'],capture_output=True,text=True,timeout=60); "
+        "  r=subprocess.run(['blastn','-query',contigs,'-db','{params.db}','-outfmt','6 sseqid pident','-evalue','1e-50','-word_size','28'],capture_output=True,text=True,timeout=60); "
         "  hits=[l for l in r.stdout.split('\\n') if g.upper() in l.upper()]; "
         "  genes[g]=len(hits)>0; "
         "json.dump({{k:v for k,v in genes.items()}},open('{output.result}','w')); "
