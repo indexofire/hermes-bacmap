@@ -12,7 +12,6 @@ import re
 from dataclasses import dataclass, field
 
 
-
 @dataclass
 class Diagnosis:
     error_type: str = "unknown"

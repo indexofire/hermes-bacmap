@@ -137,6 +137,18 @@ def register(ctx):
         schema=schemas.ADD_METADATA,
         handler=tools.add_metadata,
     )
+    ctx.register_tool(
+        name="bio_query_lab_results",
+        toolset="bioinfo",
+        schema=schemas.QUERY_LAB_RESULTS,
+        handler=tools.query_lab_results,
+    )
+    ctx.register_tool(
+        name="bio_add_lab_result",
+        toolset="bioinfo",
+        schema=schemas.ADD_LAB_RESULT,
+        handler=tools.add_lab_result,
+    )
 
     # Bundle skills with common pipeline guidance.
     # Skills live at <project_root>/skills/ — two levels up from this file
@@ -150,4 +162,4 @@ def register(ctx):
             if child.is_dir() and skill_md.exists():
                 ctx.register_skill(child.name, skill_md)
 
-    logger.info("hermes_bacmap plugin registered 21 tools")
+    logger.info("hermes_bacmap plugin registered 23 tools")

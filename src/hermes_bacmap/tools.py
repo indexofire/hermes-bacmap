@@ -24,7 +24,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from hermes_bacmap.engine._env import PIXI_BIN, PIXI_PYTHON, _PROJECT_ROOT  # noqa: E402
+from hermes_bacmap.engine._env import _PROJECT_ROOT, PIXI_BIN, PIXI_PYTHON  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -791,7 +791,6 @@ def align(args: dict, **kwargs) -> str:
         mapper_kwargs["preset"] = args["preset"]
 
     try:
-        import sys
         from hermes_bacmap.engine import ReadMapper
 
         result = ReadMapper.map(
@@ -1193,7 +1192,6 @@ def verify_result(args: dict, **kwargs) -> str:
         summary = json.load(f)
 
     try:
-        import sys
         from hermes_bacmap.deterministic_verifier import DeterministicVerifier
         v = DeterministicVerifier()
         result = v.verify_all(summary)
@@ -1261,7 +1259,6 @@ def gene_scan(args: dict, **kwargs) -> str:
     db_list = [d.strip() for d in database.split(",")]
 
     try:
-        import sys
         from hermes_bacmap.gene_scanner import scan, scan_multi
 
         if len(db_list) == 1:
@@ -1370,12 +1367,84 @@ def add_metadata(args: dict, **kwargs) -> str:
         return json.dumps({"error": f"Add metadata failed: {e}"})
 
 
+def query_lab_results(args: dict, **kwargs) -> str:
+    """Query wet lab experiment results."""
+    db_path = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
+    if not db_path.exists():
+        return json.dumps({"error": "Database not found."})
+
+    try:
+        import sys
+        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
+        from hermes_bacmap.lab_results import LabResultService
+
+        sample_id = args.get("sample_id", "")
+        category = args.get("category", "")
+        interpretation = args.get("interpretation", "")
+
+        with LabResultService(db_path) as svc:
+            if sample_id:
+                results = svc.get_by_strain(sample_id, category=category or None)
+            elif category or interpretation:
+                search_kwargs: dict = {}
+                if category:
+                    search_kwargs["category"] = category
+                if interpretation:
+                    search_kwargs["interpretation"] = interpretation
+                results = svc.search(**search_kwargs)
+            else:
+                results = svc.search(limit=200)
+
+            return json.dumps(
+                {"count": len(results), "results": [r.to_dict() for r in results]},
+                ensure_ascii=False,
+            )
+    except Exception as e:
+        return json.dumps({"error": f"Query failed: {e}"})
+
+
+def add_lab_result(args: dict, **kwargs) -> str:
+    """Record a wet lab experiment result."""
+    strain_id = args.get("strain_id", "")
+    category = args.get("category", "")
+    test_name = args.get("test_name", "")
+    result = args.get("result", "")
+
+    if not all([strain_id, category, test_name, result]):
+        return json.dumps({"error": "strain_id, category, test_name, result are required"})
+
+    db_path = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
+
+    try:
+        import sys
+        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
+        from hermes_bacmap.lab_results import LabResultService
+
+        optional = {}
+        for key in ("interpretation", "method", "unit", "standard", "tested_date", "tested_by", "lab"):
+            val = args.get(key)
+            if val:
+                optional[key] = val
+
+        with LabResultService(db_path) as svc:
+            lr = svc.add(strain_id, category, test_name, result, **optional)
+            return json.dumps({
+                "status": "saved",
+                "id": lr.id,
+                "strain_id": strain_id,
+                "category": category,
+                "test_name": test_name,
+                "result": result,
+            }, ensure_ascii=False)
+    except Exception as e:
+        return json.dumps({"error": f"Add lab result failed: {e}"})
+
+
 def snp_tree(args: dict, **kwargs) -> str:
     """Retrieve cohort-level SNP phylogenetic tree and distance matrix."""
     db_path = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
     if db_path.exists():
         try:
-            import sys
             from hermes_bacmap.genome_object_service import GenomeObjectService, ObjectType
 
             with GenomeObjectService(db_path) as gos:
@@ -1432,7 +1501,6 @@ def search_samples(args: dict, **kwargs) -> str:
         })
 
     try:
-        import sys
         from hermes_bacmap.genome_object_service import GenomeObjectService, ObjectType
 
         with GenomeObjectService(db_path) as gos:
@@ -1555,7 +1623,6 @@ def annotate_genome(args: dict, **kwargs) -> str:
         output_path = str(_RESULTS_DIR / sample_id / "annotation" / "annotation.json")
 
     try:
-        import sys
         from hermes_bacmap.genome_annotator import annotate
 
         result = annotate(contigs_path, sample_id)
@@ -1577,7 +1644,6 @@ def annotate_genome(args: dict, **kwargs) -> str:
 
 def diagnose_failure(args: dict, **kwargs) -> str:
     """Diagnose pipeline failure from Snakemake log or stderr text."""
-    import sys
     from hermes_bacmap.failure_diagnostics import diagnose, diagnose_from_log
 
     stderr_text = args.get("stderr_text", "")

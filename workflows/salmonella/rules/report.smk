@@ -14,6 +14,8 @@ rule report_summary:
         pathotype = str(WORKDIR) + "/{sample}/dec/pathotype.tsv",
         shigella_serotype = str(WORKDIR) + "/{sample}/dec/shigella_serotype.json",
         vpa_serotype = str(WORKDIR) + "/{sample}/vpa/vpa_serotype.json",
+        vpa_virulence = str(WORKDIR) + "/{sample}/vpara/virulence.json",
+        annotation = str(WORKDIR) + "/{sample}/annotation/annotation.json",
     output:
         summary = str(WORKDIR) + "/{sample}/report/{sample}_summary.json"
     script:

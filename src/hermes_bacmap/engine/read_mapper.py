@@ -3,12 +3,8 @@ from __future__ import annotations
 import os
 import subprocess
 from pathlib import Path
-from typing import Optional
 
-from ._env import PIXI_BIN, pixi_path, which
-
-
-from ._env import PIXI_BIN, pixi_path, which
+from ._env import which
 
 
 def _ensure_bwa_index(ref: str) -> None:

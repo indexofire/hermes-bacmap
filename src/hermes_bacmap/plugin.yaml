@@ -32,6 +32,8 @@ provides_tools:
   - bio_vpa_serotype
   - bio_query_metadata
   - bio_add_metadata
+  - bio_query_lab_results
+  - bio_add_lab_result
 provides_skills:
   - bio-router
   - run-pipeline

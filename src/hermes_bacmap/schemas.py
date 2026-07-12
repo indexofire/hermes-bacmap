@@ -683,3 +683,56 @@ ADD_METADATA = {
         "required": ["strain_id", "data"],
     },
 }
+
+
+QUERY_LAB_RESULTS = {
+    "name": "bio_query_lab_results",
+    "description": (
+        "Query wet lab experiment results (AST drug susceptibility, "
+        "classical serology, biochemical tests, PCR) for a sample. "
+        "Supports filtering by sample, category, and interpretation. "
+        "Use this when the user asks about phenotypic results, "
+        "antibiotic resistance testing, or serological findings."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "sample_id": {
+                "type": "string",
+                "description": "Strain ID to look up (optional). If omitted, returns all results.",
+            },
+            "category": {
+                "type": "string",
+                "description": "Filter by category: ast, serology, biochemical, pcr, pfge.",
+            },
+            "interpretation": {
+                "type": "string",
+                "description": "Filter by interpretation: R (resistant), S (susceptible), I (intermediate), positive, negative.",
+            },
+        },
+    },
+}
+
+
+ADD_LAB_RESULT = {
+    "name": "bio_add_lab_result",
+    "description": (
+        "Record a wet lab experiment result (AST, serology, biochemical, PCR) "
+        "for a sample. Use this when the user wants to enter phenotypic "
+        "data such as disk diffusion results, MIC values, or classical "
+        "serotyping results."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "strain_id": {"type": "string", "description": "Strain/sample identifier."},
+            "category": {"type": "string", "description": "Test category: ast, serology, biochemical, pcr."},
+            "test_name": {"type": "string", "description": "Test name (e.g. Ampicillin, O antigen, oxidase)."},
+            "result": {"type": "string", "description": "Raw result value (e.g. 16, O4, positive)."},
+            "interpretation": {"type": "string", "description": "S, I, R, positive, negative."},
+            "method": {"type": "string", "description": "Method used (broth_microdilution, disk_diffusion, antiserum)."},
+            "unit": {"type": "string", "description": "Unit (ug/mL, mm)."},
+        },
+        "required": ["strain_id", "category", "test_name", "result"],
+    },
+}

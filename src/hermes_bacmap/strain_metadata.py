@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from uuid import uuid4
 
 _SCHEMA_SQL = [
     """CREATE TABLE IF NOT EXISTS strain_metadata (

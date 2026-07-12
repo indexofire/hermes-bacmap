@@ -125,6 +125,29 @@ if vpa_serotype.get("predicted_serotype"):
         "k_confidence": vpa_serotype.get("k_confidence", "Unknown"),
     }
 
+vpa_virulence = read_json(snakemake.input.vpa_virulence, {})
+if isinstance(vpa_virulence, dict) and vpa_virulence:
+    summary["steps"]["vpa_virulence"] = vpa_virulence
+
+annotation = read_json(snakemake.input.annotation, {})
+if isinstance(annotation, dict) and annotation.get("summary"):
+    ann_summary = annotation.get("summary", {})
+    top_genes = []
+    for feat in annotation.get("features", [])[:20]:
+        if feat.get("gene") and feat.get("identity", 0) >= 80:
+            top_genes.append({
+                "gene": feat["gene"],
+                "product": feat.get("product", ""),
+                "identity": feat.get("identity", 0),
+                "source": feat.get("source", ""),
+            })
+    summary["steps"]["annotation"] = {
+        "total_CDS": ann_summary.get("total_CDS", 0),
+        "annotated_CDS": ann_summary.get("annotated_CDS", 0),
+        "annotation_rate": ann_summary.get("annotation_rate", 0),
+        "top_genes": top_genes,
+    }
+
 
 Path(snakemake.output.summary).parent.mkdir(parents=True, exist_ok=True)
 Path(snakemake.output.summary).write_text(

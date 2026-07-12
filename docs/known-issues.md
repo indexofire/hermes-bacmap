@@ -50,7 +50,7 @@
 - **当前影响**: 无。当前无自定义后端注册。
 - **修复方案**: 合并 `_BUILTINS.keys()` 和 `_REG.available().keys()`。
 
-### L3. Snakemake shell 中 2>/dev/null 压制错误
+### L3. (已完成 — 2>/dev/null 已清理)
 
 - **位置**: `workflows/salmonella/rules/snp.smk`（多个 shell 块）
 - **问题**: `bwa mem`、`bcftools mpileup/call`、`bcftools reheader/view/index` 的 stderr 都被 `2>/dev/null` 丢弃。工具失败时无诊断信息。
@@ -65,7 +65,7 @@
 - **当前影响**: 纯装饰性，不影响运行。
 - **修复方案**: `ruff format src/hermes_bacmap/ && ruff check --fix src/hermes_bacmap/`
 
-### L5. Snakemake rule all 缺少 annotation 目标
+### L5. (已完成 — annotation 已加入 rule all)
 
 - **位置**: `workflows/salmonella/Snakefile:rule all`
 - **问题**: `rule all` 包含 per-sample summary + SNP cohort summary，但不包含 `{sample}/annotation/annotation.json`。annotation 规则存在且可用，但需要单独触发。

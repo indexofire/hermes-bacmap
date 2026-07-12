@@ -10,11 +10,10 @@ Pipeline:
 
 from __future__ import annotations
 
-import logging
-import pickle
 import hashlib
 import hmac
 import logging
+import pickle
 import re
 from collections import defaultdict
 from pathlib import Path
@@ -808,7 +807,8 @@ class SerotyperEngine:
     def _build_locus_region_aligner(self, entries: list[tuple[str, str]]):
         if not entries:
             return None
-        import tempfile, os
+        import os
+        import tempfile
         tmp = tempfile.NamedTemporaryFile(suffix=".fasta", delete=False, mode="w")
         for i, entry in enumerate(entries):
             tmp.write(f">region_{i}\n{entry[1]}\n")

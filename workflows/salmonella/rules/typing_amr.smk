@@ -6,6 +6,7 @@ _GMLST_SCHEMES = {
     "Salmonella": "salmonella_2",
     "E.coli": "ecoli_1",
     "Shigella": "ecoli_1",
+    "V.parahaemolyticus": "vparahaemolyticus_1",
 }
 GMLST_BIN = str(PROJECT_ROOT / ".pixi/envs/default/bin/gmlst")
 
