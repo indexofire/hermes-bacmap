@@ -287,16 +287,16 @@ class SerotyperEngine:
 
         best_locus = ranked[0][0]
         containment = ranked[0][1]
-        valid_ids = {l for l, c in ranked if c >= min_containment}
+        valid_ids = {loc for loc, c in ranked if c >= min_containment}
 
         close = [
-            (l, c)
-            for l, c in ranked
+            (loc, c)
+            for loc, c in ranked
             if c >= containment - KMER_TIEBREAK_MARGIN and c >= min_containment
         ]
         if len(close) >= 2:
             best_locus = self._select_by_gene_coverage(
-                [l for l, _ in close], type_contigs, sample_aligner
+                [loc for loc, _ in close], type_contigs, sample_aligner
             )
             containment = dict(ranked)[best_locus]
 
@@ -534,10 +534,10 @@ class SerotyperEngine:
         parts = []
 
         if len(close) >= 2:
-            close_ids = [l for l, _ in close[:5]]
+            close_ids = [loc for loc, _ in close[:5]]
             parts.append(
                 f"{len(close)} candidates within {KMER_TIEBREAK_MARGIN:.0f}% k-mer: "
-                + ", ".join(f"{l}({c:.1f}%)" for l, c in close[:5])
+                + ", ".join(f"{loc}({c:.1f}%)" for loc, c in close[:5])
             )
 
             seq_cache: dict[str, str] = {}
@@ -684,7 +684,7 @@ class SerotyperEngine:
         vote_log: list[str] = []
 
         for lid_a in candidates:
-            other_lids = [l for l in candidates if l != lid_a]
+            other_lids = [loc for loc in candidates if loc != lid_a]
             for gene in self.metadata[lid_a]["genes"]:
                 g_seq = extract_gene_seq(lid_a, gene)
                 if not is_unique(g_seq, other_lids):
