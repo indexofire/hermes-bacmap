@@ -1,0 +1,24 @@
+name: default
+description: 核心字段（所有用户共享）
+core_only: true
+
+fields:
+  - {name: submitting_lab, type: string, label: 送检单位}
+  - {name: submit_date, type: date, label: 送检日期}
+  - {name: receiver, type: string, label: 接收人}
+  - {name: patient_id, type: string, label: 病例编号}
+  - {name: patient_name, type: string, label: 患者姓名}
+  - {name: patient_age, type: integer, min: 0, max: 150, label: 年龄}
+  - {name: patient_gender, type: enum, options: [M, F], label: 性别}
+  - {name: patient_phone, type: string, label: 联系电话}
+  - {name: isolation_date, type: date, label: 分离日期}
+  - {name: province, type: string, label: 省}
+  - {name: city, type: string, label: 市}
+  - {name: district, type: string, label: 区/县}
+  - {name: facility, type: string, label: 分离机构}
+  - {name: sample_source, type: enum, options: [临床, 食品, 环境, 其他], label: 样品来源}
+  - {name: sample_type, type: string, label: 样品类型}
+  - {name: food_category, type: string, label: 食品类别}
+  - {name: food_name, type: string, label: 食品名称}
+  - {name: outbreak_id, type: string, label: 暴发事件编号}
+  - {name: cluster_note, type: string, label: 聚类备注}

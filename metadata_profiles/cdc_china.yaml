@@ -1,0 +1,12 @@
+name: cdc_china
+description: 中国食源性疾病主动监测
+extends: default
+
+fields:
+  - {name: case_type, type: enum, options: [散发, 暴发, 输入性], required: true, label: 病例类型}
+  - {name: report_status, type: enum, options: [草稿, 待审, 已报, 退回], default: 草稿, label: 上报状态}
+  - {name: notification_card_no, type: string, label: 传染病报告卡编号}
+  - {name: antibiotic_before_culture, type: boolean, label: 采样前是否使用抗生素}
+  - {name: hospitalization_days, type: integer, min: 0, max: 365, label: 住院天数}
+  - {name: severity, type: enum, options: [轻症, 中症, 重症, 死亡], label: 严重程度}
+  - {name: sequencing_platform, type: enum, options: [MiSeq, NextSeq, NovaSeq, GridION, PromethION, 其他], label: 测序平台}
