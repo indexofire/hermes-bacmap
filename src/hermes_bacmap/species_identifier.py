@@ -19,11 +19,11 @@ _SPECIES_MIN_IDENTITY = 85.0
 _SPECIES_MIN_COVERAGE = 30.0
 
 _GENE_TO_SPECIES = {
-    "invA":  ("Salmonella",          "high"),
-    "uidA":  ("DEC",                 "high"),
-    "ipaH":  ("Shigella/EIEC",      "high"),
-    "toxR":  ("V_parahaemolyticus", "high"),
-    "tlh":   ("V_parahaemolyticus", "high"),
+    "invA": ("Salmonella", "high"),
+    "uidA": ("DEC", "high"),
+    "ipaH": ("Shigella/EIEC", "high"),
+    "toxR": ("V_parahaemolyticus", "high"),
+    "tlh": ("V_parahaemolyticus", "high"),
 }
 
 _SPECIES_PRIORITY = ["invA", "ipaH", "toxR", "tlh", "uidA"]
@@ -71,11 +71,13 @@ def identify(contigs_fasta: str | Path) -> SpeciesIdResult:
                     "coverage": hit.coverage,
                     "contig": hit.contig,
                 }
-        result.all_hits.append({
-            "gene": hit.gene,
-            "identity": hit.identity,
-            "coverage": hit.coverage,
-        })
+        result.all_hits.append(
+            {
+                "gene": hit.gene,
+                "identity": hit.identity,
+                "coverage": hit.coverage,
+            }
+        )
 
     result.detected_markers = [gene_hits[g] for g in _SPECIES_PRIORITY if g in gene_hits]
 
@@ -100,6 +102,7 @@ def identify(contigs_fasta: str | Path) -> SpeciesIdResult:
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="Species identifier")
     parser.add_argument("contigs")
     parser.add_argument("--json", action="store_true")

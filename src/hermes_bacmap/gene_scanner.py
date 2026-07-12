@@ -275,14 +275,18 @@ def scan_multi(
     results = {}
     for db in db_names:
         results[db] = scan(
-            contigs_fasta, db_name=db,
-            min_identity=min_identity, min_coverage=min_coverage,
+            contigs_fasta,
+            db_name=db,
+            min_identity=min_identity,
+            min_coverage=min_coverage,
             threads=threads,
         )
     return results
 
 
-def setup_db(db_name: str, fasta_source: Path | str | None = None, output_dir: Path | None = None) -> Path:
+def setup_db(
+    db_name: str, fasta_source: Path | str | None = None, output_dir: Path | None = None
+) -> Path:
     """Build a BLAST database from a FASTA file.
 
     Args:
@@ -312,9 +316,11 @@ def setup_db(db_name: str, fasta_source: Path | str | None = None, output_dir: P
     local_fasta = output_dir / f"{db_name}_sequences.fasta"
 
     import shutil
+
     shutil.copy2(fasta_source, local_fasta)
 
     from hermes_bacmap.engine.backends.blast import BlastBackend
+
     backend = BlastBackend(tool="blastn")
     backend.make_db(local_fasta, db_prefix, db_type="nucl")
 
@@ -353,7 +359,9 @@ def main():
         description="Gene scanner — abricate-like gene detection with JSON output"
     )
     parser.add_argument("contigs", help="Assembled contigs FASTA")
-    parser.add_argument("--db", default="card", help="Database name (card/vfdb/ecoh/plasmidfinder/...)")
+    parser.add_argument(
+        "--db", default="card", help="Database name (card/vfdb/ecoh/plasmidfinder/...)"
+    )
     parser.add_argument("--json", action="store_true", help="Output JSON (default: TSV)")
     parser.add_argument("--multi", help="Comma-separated db names for multi-db scan")
     parser.add_argument("--min-id", type=float, default=_DEFAULT_MIN_IDENTITY)
@@ -378,8 +386,10 @@ def main():
     if args.multi:
         db_names = [d.strip() for d in args.multi.split(",")]
         results = scan_multi(
-            args.contigs, db_names,
-            min_identity=args.min_id, min_coverage=args.min_cov,
+            args.contigs,
+            db_names,
+            min_identity=args.min_id,
+            min_coverage=args.min_cov,
             threads=args.threads,
         )
         if args.json:
@@ -393,8 +403,10 @@ def main():
         return
 
     result = scan(
-        args.contigs, db_name=args.db,
-        min_identity=args.min_id, min_coverage=args.min_cov,
+        args.contigs,
+        db_name=args.db,
+        min_identity=args.min_id,
+        min_coverage=args.min_cov,
         threads=args.threads,
     )
 
@@ -405,7 +417,9 @@ def main():
         print(f"# Total hits: {result.total_hits}, Unique genes: {len(result.unique_genes)}")
         print("GENE\t%IDENTITY\t%COVERAGE\tCONTIG\tSTART\tEND\tACCESSION")
         for g in result.genes:
-            print(f"{g.gene}\t{g.identity}\t{g.coverage}\t{g.contig}\t{g.start}\t{g.end}\t{g.accession}")
+            print(
+                f"{g.gene}\t{g.identity}\t{g.coverage}\t{g.contig}\t{g.start}\t{g.end}\t{g.accession}"
+            )
 
 
 if __name__ == "__main__":

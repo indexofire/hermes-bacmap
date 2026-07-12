@@ -43,6 +43,7 @@ def _format_gene_details(genes: list[dict]) -> str:
         parts.append(f"{name},{ident:.1f}%,{cov:.1f}%,{status}")
     return ";".join(parts) if parts else ""
 
+
 SIGNING_KEY = b"vpautils-serotype-db-integrity"
 
 MAX_GENE_DIFF = 4
@@ -53,7 +54,6 @@ KMER_TIEBREAK_MARGIN = 5.0
 
 
 class SerotyperEngine:
-
     ANTIGEN_BOUNDARY = {
         "O": {"start": "coaD", "end": "rfaD"},
         "K": {"start": "rfaD", "end": "glpX"},
@@ -70,12 +70,14 @@ class SerotyperEngine:
 
         try:
             import mappy as mp
+
             self._mp = mp
         except ImportError:
             raise ImportError("mappy is required. Install: conda install -c bioconda minimap2")
 
         try:
             from sourmash import load_signatures
+
             self._load_signatures = load_signatures
         except ImportError:
             raise ImportError("sourmash is required. Install: pip install sourmash")
@@ -118,8 +120,12 @@ class SerotyperEngine:
             if not hmac.compare_digest(actual, bytes(embedded_sig)):
                 raise RuntimeError("Database signature verification failed.")
 
-    def run_one_sample(self, sample_path: Path, enable_detail: bool = False,
-                       min_containment: float = MIN_CONTAINMENT) -> dict[str, Any]:
+    def run_one_sample(
+        self,
+        sample_path: Path,
+        enable_detail: bool = False,
+        min_containment: float = MIN_CONTAINMENT,
+    ) -> dict[str, Any]:
         sample_name = Path(sample_path).stem
 
         try:
@@ -138,11 +144,19 @@ class SerotyperEngine:
         if not locus_contigs:
             return self._empty_result(sample_name)
 
-        o_result = self._type_locus(locus_contigs, "O", sample_aligner, enable_detail, min_containment)
-        k_result = self._type_locus(locus_contigs, "K", sample_aligner, enable_detail, min_containment)
+        o_result = self._type_locus(
+            locus_contigs, "O", sample_aligner, enable_detail, min_containment
+        )
+        k_result = self._type_locus(
+            locus_contigs, "K", sample_aligner, enable_detail, min_containment
+        )
 
-        result = {"Sample": sample_name, "_gene_details": {"O": [], "K": []},
-                  "_locus_pieces": {}, "_sample_seqs": sample_seqs}
+        result = {
+            "Sample": sample_name,
+            "_gene_details": {"O": [], "K": []},
+            "_locus_pieces": {},
+            "_sample_seqs": sample_seqs,
+        }
         for ltype, typed in [("O", o_result), ("K", k_result)]:
             locus_name = typed["locus"] if typed else "None"
             if typed and locus_name != "None":
@@ -161,9 +175,13 @@ class SerotyperEngine:
                     typed.get("gene_details", [])
                 )
                 result[f"{ltype}_Expected_In_Locus"] = typed.get("expected_in_locus", "")
-                result[f"{ltype}_Expected_In_Locus_Detail"] = typed.get("expected_in_locus_detail", "")
+                result[f"{ltype}_Expected_In_Locus_Detail"] = typed.get(
+                    "expected_in_locus_detail", ""
+                )
                 result[f"{ltype}_Expected_Outside"] = typed.get("expected_outside", "")
-                result[f"{ltype}_Expected_Outside_Detail"] = typed.get("expected_outside_detail", "")
+                result[f"{ltype}_Expected_Outside_Detail"] = typed.get(
+                    "expected_outside_detail", ""
+                )
                 result[f"{ltype}_Other_In_Locus"] = typed.get("other_in_locus", "0")
                 result[f"{ltype}_Other_In_Locus_Detail"] = typed.get("other_in_locus_detail", "")
                 result[f"{ltype}_Truncated"] = typed.get("truncated_detail", "")
@@ -211,8 +229,12 @@ class SerotyperEngine:
                 if key in seen:
                     continue
                 seen.add(key)
-                extracted = contig_seq[hit.q_st:hit.q_en]
-                strand = int(hit.strand) if not isinstance(hit.strand, str) else (1 if hit.strand == "+" else -1)
+                extracted = contig_seq[hit.q_st : hit.q_en]
+                strand = (
+                    int(hit.strand)
+                    if not isinstance(hit.strand, str)
+                    else (1 if hit.strand == "+" else -1)
+                )
                 r_st = min(hit.r_st, hit.r_en)
                 locus_contigs[locus_id].append((contig_name, extracted, strand, r_st))
 
@@ -227,7 +249,8 @@ class SerotyperEngine:
         min_containment: float = MIN_CONTAINMENT,
     ) -> dict[str, Any] | None:
         type_contigs = {
-            lid: entries for lid, entries in locus_contigs.items()
+            lid: entries
+            for lid, entries in locus_contigs.items()
             if self.locus_type_map.get(lid) == ltype
         }
         if not type_contigs:
@@ -236,14 +259,21 @@ class SerotyperEngine:
         ranked = self._rank_loci_by_kmer(type_contigs, ltype)
         if not ranked or ranked[0][1] < min_containment:
             result = {
-                "locus": "None", "confidence": "Unknown",
-                "coverage": 0, "identity": 0,
-                "missing": "None", "alerts": "None",
+                "locus": "None",
+                "confidence": "Unknown",
+                "coverage": 0,
+                "identity": 0,
+                "missing": "None",
+                "alerts": "None",
                 "gene_details": [],
-                "expected_in_locus": "", "expected_in_locus_detail": "",
-                "expected_outside": "", "expected_outside_detail": "",
-                "other_in_locus": "0", "other_in_locus_detail": "",
-                "truncated_detail": "", "length_discrepancy": "",
+                "expected_in_locus": "",
+                "expected_in_locus_detail": "",
+                "expected_outside": "",
+                "expected_outside_detail": "",
+                "other_in_locus": "0",
+                "other_in_locus_detail": "",
+                "truncated_detail": "",
+                "length_discrepancy": "",
             }
             if enable_detail and ranked:
                 result["detail_notes"] = (
@@ -259,7 +289,11 @@ class SerotyperEngine:
         containment = ranked[0][1]
         valid_ids = {l for l, c in ranked if c >= min_containment}
 
-        close = [(l, c) for l, c in ranked if c >= containment - KMER_TIEBREAK_MARGIN and c >= min_containment]
+        close = [
+            (l, c)
+            for l, c in ranked
+            if c >= containment - KMER_TIEBREAK_MARGIN and c >= min_containment
+        ]
         if len(close) >= 2:
             best_locus = self._select_by_gene_coverage(
                 [l for l, _ in close], type_contigs, sample_aligner
@@ -267,14 +301,16 @@ class SerotyperEngine:
             containment = dict(ranked)[best_locus]
 
         import re
-        if re.search(r'V\d+$', best_locus):
-            best_locus = self._resolve_variant_locus(
-                best_locus, ltype, type_contigs, sample_aligner, valid_ids
-            ) or best_locus
 
-        superset = self._check_superset_override(
-            best_locus, ltype, valid_ids, sample_aligner
-        )
+        if re.search(r"V\d+$", best_locus):
+            best_locus = (
+                self._resolve_variant_locus(
+                    best_locus, ltype, type_contigs, sample_aligner, valid_ids
+                )
+                or best_locus
+            )
+
+        superset = self._check_superset_override(best_locus, ltype, valid_ids, sample_aligner)
         if superset:
             best_locus = superset
             containment = dict(ranked).get(best_locus, containment)
@@ -354,7 +390,7 @@ class SerotyperEngine:
             total_genes = len(meta["genes"])
 
             for gene in meta["genes"]:
-                g_seq = locus_seq[gene["start"]:gene["end"]]
+                g_seq = locus_seq[gene["start"] : gene["end"]]
                 if gene.get("strand", 1) == -1:
                     g_seq = g_seq[::-1].translate(comp)
 
@@ -373,7 +409,9 @@ class SerotyperEngine:
             avg_ident = total_ident / present if present else 0
             scores[lid] = (gene_cov, present, avg_ident)
 
-            logger.debug(f"  Gene tiebreak: {lid} = {present}/{total_genes} ({gene_cov:.1f}%) ident={avg_ident:.1f}%")
+            logger.debug(
+                f"  Gene tiebreak: {lid} = {present}/{total_genes} ({gene_cov:.1f}%) ident={avg_ident:.1f}%"
+            )
 
         if not scores:
             return candidates[0]
@@ -392,7 +430,8 @@ class SerotyperEngine:
             return None
 
         candidates = [
-            lid for lid in valid_ids
+            lid
+            for lid in valid_ids
             if lid != best_locus
             and self.locus_type_map.get(lid) == ltype
             and len(self.metadata.get(lid, {}).get("genes", [])) > len(best_genes)
@@ -420,7 +459,7 @@ class SerotyperEngine:
         def present_genes_in_sample(ref_seq):
             present = set()
             for i, g in enumerate(self.metadata.get(best_locus, {}).get("genes", [])):
-                gseq = ref_seq[g["start"]:g["end"]]
+                gseq = ref_seq[g["start"] : g["end"]]
                 if g.get("strand", 1) == -1:
                     gseq = gseq[::-1].translate(comp)
                 for h in sample_aligner.map(gseq):
@@ -434,7 +473,7 @@ class SerotyperEngine:
         def present_genes_are_subset(aligner_b):
             for i in present_indices:
                 g = self.metadata[best_locus]["genes"][i]
-                gseq = best_seq[g["start"]:g["end"]]
+                gseq = best_seq[g["start"] : g["end"]]
                 if g.get("strand", 1) == -1:
                     gseq = gseq[::-1].translate(comp)
                 has_match = False
@@ -459,7 +498,7 @@ class SerotyperEngine:
             cand_unique_present = 0
             cand_unique_total = 0
             for g in self.metadata[lid]["genes"]:
-                gseq = cand_seq[g["start"]:g["end"]]
+                gseq = cand_seq[g["start"] : g["end"]]
                 if g.get("strand", 1) == -1:
                     gseq = gseq[::-1].translate(comp)
                 is_unique = True
@@ -485,9 +524,7 @@ class SerotyperEngine:
 
         return None
 
-    def _generate_detail(
-        self, ltype, best_locus, ranked, close, sample_aligner, result
-    ) -> str:
+    def _generate_detail(self, ltype, best_locus, ranked, close, sample_aligner, result) -> str:
         comp = str.maketrans("ATGCatgc", "TACGtacg")
         confidence = result.get("confidence", "Unknown")
 
@@ -562,7 +599,7 @@ class SerotyperEngine:
         aln_b = self._mp.Aligner(seq=seq_b, preset="splice")
         unique = []
         for g in genes_a:
-            gseq = seq_a[g["start"]:g["end"]]
+            gseq = seq_a[g["start"] : g["end"]]
             if g.get("strand", 1) == -1:
                 gseq = gseq[::-1].translate(comp)
             is_unique = True
@@ -593,15 +630,16 @@ class SerotyperEngine:
         """Resolve OLnVn locus by checking presence of locus-unique genes only."""
         import re
 
-        m = re.match(r'^(.+?)V\d+$', best_locus)
+        m = re.match(r"^(.+?)V\d+$", best_locus)
         if not m:
             return None
         base = m.group(1)
 
         candidates = [
-            lid for lid in self.metadata
+            lid
+            for lid in self.metadata
             if self.locus_type_map.get(lid) == ltype
-            and (lid == base or re.match(rf'^{re.escape(base)}V\d+$', lid))
+            and (lid == base or re.match(rf"^{re.escape(base)}V\d+$", lid))
             and (valid_ids is None or lid in valid_ids)
         ]
         if len(candidates) < 2:
@@ -615,12 +653,11 @@ class SerotyperEngine:
                 locus_seqs[lid] = seq
 
         locus_aligners = {
-            lid: self._mp.Aligner(seq=seq, preset="splice")
-            for lid, seq in locus_seqs.items()
+            lid: self._mp.Aligner(seq=seq, preset="splice") for lid, seq in locus_seqs.items()
         }
 
         def extract_gene_seq(lid, gene):
-            gseq = locus_seqs[lid][gene["start"]:gene["end"]]
+            gseq = locus_seqs[lid][gene["start"] : gene["end"]]
             if gene.get("strand", 1) == -1:
                 gseq = gseq[::-1].translate(comp)
             return gseq
@@ -656,7 +693,9 @@ class SerotyperEngine:
                 si = sample_identity(g_seq)
                 if si >= 80.0:
                     votes[lid_a] += 1
-                    vote_log.append(f"{gene['name']}({lid_a}): unique, sample={si:.1f}% -> +{lid_a}")
+                    vote_log.append(
+                        f"{gene['name']}({lid_a}): unique, sample={si:.1f}% -> +{lid_a}"
+                    )
 
         for line in vote_log:
             logger.debug(f"  Vote: {line}")
@@ -709,7 +748,9 @@ class SerotyperEngine:
 
             if not locus_seq:
                 missing_genes.append(g_name)
-                gene_results.append({"gene": g_name, "identity": 0, "coverage": 0, "status": "missing"})
+                gene_results.append(
+                    {"gene": g_name, "identity": 0, "coverage": 0, "status": "missing"}
+                )
                 continue
 
             g_seq = locus_seq[g_start:g_end]
@@ -733,9 +774,13 @@ class SerotyperEngine:
 
             if best_cov >= MIN_GENE_COV:
                 gd = {
-                    "gene": g_name, "identity": round(best_ident, 2),
-                    "coverage": round(best_cov, 2), "status": "present",
-                    "ctg": best_ctg, "r_st": best_r_st, "r_en": best_r_en,
+                    "gene": g_name,
+                    "identity": round(best_ident, 2),
+                    "coverage": round(best_cov, 2),
+                    "status": "present",
+                    "ctg": best_ctg,
+                    "r_st": best_r_st,
+                    "r_en": best_r_en,
                 }
                 gene_results.append(gd)
                 entry = f"{g_name},{best_ident:.2f}%,{best_cov:.2f}%"
@@ -747,16 +792,17 @@ class SerotyperEngine:
                     truncated.append(entry)
             else:
                 missing_genes.append(g_name)
-                gene_results.append({"gene": g_name, "identity": 0, "coverage": 0, "status": "missing"})
+                gene_results.append(
+                    {"gene": g_name, "identity": 0, "coverage": 0, "status": "missing"}
+                )
 
         occupied_regions: list[tuple[str, int, int]] = [
             (g["ctg"], g["r_st"], g["r_en"])
-            for g in gene_results if g["status"] == "present" and g.get("ctg")
+            for g in gene_results
+            if g["status"] == "present" and g.get("ctg")
         ]
 
-        locus_region_aligner = self._build_locus_region_aligner(
-            type_contigs.get(best_locus, [])
-        )
+        locus_region_aligner = self._build_locus_region_aligner(type_contigs.get(best_locus, []))
 
         other_in_locus = self._find_other_genes_in_locus(
             best_locus, ltype, locus_region_aligner, occupied_regions, sample_aligner
@@ -794,9 +840,13 @@ class SerotyperEngine:
             "missing": ";".join(missing_genes) if missing_genes else "None",
             "alerts": ";".join(alerts) if alerts else "None",
             "gene_details": gene_results,
-            "expected_in_locus": f"{len(expected_in_locus)} / {total_genes} ({len(expected_in_locus)/total_genes*100:.2f}%)" if total_genes else "0 / 0",
+            "expected_in_locus": f"{len(expected_in_locus)} / {total_genes} ({len(expected_in_locus) / total_genes * 100:.2f}%)"
+            if total_genes
+            else "0 / 0",
             "expected_in_locus_detail": ";".join(expected_in_locus),
-            "expected_outside": f"{len(expected_outside)} / {total_genes} ({len(expected_outside)/total_genes*100:.2f}%)" if total_genes else "0 / 0",
+            "expected_outside": f"{len(expected_outside)} / {total_genes} ({len(expected_outside) / total_genes * 100:.2f}%)"
+            if total_genes
+            else "0 / 0",
             "expected_outside_detail": ";".join(expected_outside),
             "other_in_locus": str(len(other_in_locus)),
             "other_in_locus_detail": ";".join(other_in_locus),
@@ -809,6 +859,7 @@ class SerotyperEngine:
             return None
         import os
         import tempfile
+
         tmp = tempfile.NamedTemporaryFile(suffix=".fasta", delete=False, mode="w")
         for i, entry in enumerate(entries):
             tmp.write(f">region_{i}\n{entry[1]}\n")
@@ -830,7 +881,8 @@ class SerotyperEngine:
 
         comp = str.maketrans("ATGCatgc", "TACGtacg")
         other_loci = [
-            lid for lid in self.metadata
+            lid
+            for lid in self.metadata
             if self.locus_type_map.get(lid) == ltype and lid != best_locus
         ]
 
@@ -871,7 +923,7 @@ class SerotyperEngine:
                 gname = gene.get("locus_tag", gene["name"])
                 if gname in seen_genes:
                     continue
-                g_seq = lseq[gene["start"]:gene["end"]]
+                g_seq = lseq[gene["start"] : gene["end"]]
                 if gene.get("strand", 1) == -1:
                     g_seq = g_seq[::-1].translate(comp)
                 if not g_seq:
@@ -895,8 +947,12 @@ class SerotyperEngine:
         return results
 
     def _decide(
-        self, gene_diff: int, gene_coverage: float, identity: float,
-        pieces: int, missing_boundary: list[str],
+        self,
+        gene_diff: int,
+        gene_coverage: float,
+        identity: float,
+        pieces: int,
+        missing_boundary: list[str],
     ) -> tuple[bool, str]:
         if missing_boundary:
             return False, "Unknown"

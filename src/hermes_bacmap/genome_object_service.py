@@ -26,11 +26,21 @@ from uuid import uuid4
 
 _SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+(?:[-+][a-zA-Z0-9.]+)?$")
 
-_VALID_EVENT_TYPES = frozenset({
-    "uploaded", "qc_finished", "assembly_finished", "annotation_finished",
-    "amr_finished", "mlst_finished", "serotype_finished", "snp_finished",
-    "report_generated", "analysis_failed", "version_created",
-})
+_VALID_EVENT_TYPES = frozenset(
+    {
+        "uploaded",
+        "qc_finished",
+        "assembly_finished",
+        "annotation_finished",
+        "amr_finished",
+        "mlst_finished",
+        "serotype_finished",
+        "snp_finished",
+        "report_generated",
+        "analysis_failed",
+        "version_created",
+    }
+)
 
 
 class GOMValidationError(Exception):
@@ -56,9 +66,17 @@ class ObjectType(StrEnum):
 
 
 EventType = Literal[
-    "uploaded", "qc_finished", "assembly_finished", "annotation_finished",
-    "amr_finished", "mlst_finished", "serotype_finished", "snp_finished",
-    "report_generated", "analysis_failed", "version_created",
+    "uploaded",
+    "qc_finished",
+    "assembly_finished",
+    "annotation_finished",
+    "amr_finished",
+    "mlst_finished",
+    "serotype_finished",
+    "snp_finished",
+    "report_generated",
+    "analysis_failed",
+    "version_created",
 ]
 
 
@@ -93,9 +111,7 @@ class GenomeObject:
             raise GOMValidationError(f"Invalid object_type: {self.object_type!r}")
 
         if not isinstance(self.version, int) or self.version < 1:
-            raise GOMValidationError(
-                f"version must be a positive integer, got {self.version!r}"
-            )
+            raise GOMValidationError(f"version must be a positive integer, got {self.version!r}")
 
         if not _SEMVER_RE.match(self.schema_version):
             raise GOMValidationError(
@@ -302,10 +318,17 @@ class GenomeObjectService:
                     payload_json, organism, strain_id, pipeline_version, database_signature)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
-                    row["object_id"], row["object_type"], row["version"],
-                    row["schema_version"], row["created_at"], row["created_by"],
-                    payload_json, row["organism"], row["strain_id"],
-                    row["pipeline_version"], row["database_signature"],
+                    row["object_id"],
+                    row["object_type"],
+                    row["version"],
+                    row["schema_version"],
+                    row["created_at"],
+                    row["created_by"],
+                    payload_json,
+                    row["organism"],
+                    row["strain_id"],
+                    row["pipeline_version"],
+                    row["database_signature"],
                 ),
             )
             self._conn.execute(
@@ -325,9 +348,7 @@ class GenomeObjectService:
             (object_id, version),
         ).fetchone()
         if row is None:
-            raise GOMNotFoundError(
-                f"GenomeObject not found: ({object_id}, v{version})"
-            )
+            raise GOMNotFoundError(f"GenomeObject not found: ({object_id}, v{version})")
         return self._row_to_go(row)
 
     def list_by_type(
@@ -383,8 +404,12 @@ class GenomeObjectService:
             created_at=datetime.now(),
             created_by=old.created_by,
             payload=payload,
-            pipeline_version=pipeline_version if pipeline_version is not None else old.pipeline_version,
-            database_versions=database_versions if database_versions is not None else old.database_versions,
+            pipeline_version=pipeline_version
+            if pipeline_version is not None
+            else old.pipeline_version,
+            database_versions=database_versions
+            if database_versions is not None
+            else old.database_versions,
             tool_versions=tool_versions if tool_versions is not None else old.tool_versions,
             organism=old.organism,
             strain_id=old.strain_id,
@@ -473,9 +498,7 @@ class GenomeObjectService:
             raise
         return artifact
 
-    def list_file_artifacts(
-        self, object_id: str, version: int | None = None
-    ) -> list[FileArtifact]:
+    def list_file_artifacts(self, object_id: str, version: int | None = None) -> list[FileArtifact]:
         try:
             if version is not None:
                 self.read(object_id, version)
@@ -507,13 +530,10 @@ class GenomeObjectService:
             for r in rows
         ]
 
-    def log_event(
-        self, object_id: str, event_type: str, event_payload: dict[str, Any]
-    ) -> Event:
+    def log_event(self, object_id: str, event_type: str, event_payload: dict[str, Any]) -> Event:
         if event_type not in _VALID_EVENT_TYPES:
             raise GOMValidationError(
-                f"Invalid event_type: {event_type!r}. "
-                f"Must be one of {sorted(_VALID_EVENT_TYPES)}"
+                f"Invalid event_type: {event_type!r}. Must be one of {sorted(_VALID_EVENT_TYPES)}"
             )
         try:
             self.get_latest_version(object_id)
@@ -534,8 +554,13 @@ class GenomeObjectService:
             self._conn.execute(
                 """INSERT INTO events (event_id, object_id, event_type, event_payload, timestamp)
                    VALUES (?, ?, ?, ?, ?)""",
-                (event_id, object_id, event_type,
-                 json.dumps(event_payload, ensure_ascii=False), timestamp.isoformat()),
+                (
+                    event_id,
+                    object_id,
+                    event_type,
+                    json.dumps(event_payload, ensure_ascii=False),
+                    timestamp.isoformat(),
+                ),
             )
             self._commit()
         except Exception:
@@ -543,9 +568,7 @@ class GenomeObjectService:
             raise
         return event
 
-    def list_events(
-        self, object_id: str, since: datetime | None = None
-    ) -> list[Event]:
+    def list_events(self, object_id: str, since: datetime | None = None) -> list[Event]:
         try:
             self.get_latest_version(object_id)
         except GOMNotFoundError:
@@ -589,9 +612,7 @@ class GenomeObjectService:
         if not query.strip():
             return []
 
-        fts_query = " OR ".join(
-            f'"{term}"' for term in query.split() if term.strip()
-        )
+        fts_query = " OR ".join(f'"{term}"' for term in query.split() if term.strip())
 
         sql = """
             SELECT DISTINCT g.* FROM genome_objects g

@@ -10,6 +10,7 @@ from .._env import which
 @dataclass
 class KmerDistance:
     """MinHash-based genome distance result."""
+
     query_id: str
     reference_id: str
     distance: float
@@ -38,18 +39,20 @@ class MashBackend:
     def _find_binary(self) -> str:
         binary = which("mash")
         if not binary:
-            raise RuntimeError(
-                "mash not found. Install: conda install -c bioconda mash"
-            )
+            raise RuntimeError("mash not found. Install: conda install -c bioconda mash")
         return binary
 
     def sketch(self, fasta: Path, output: Path, individual: bool = False) -> Path:
         """Create a MinHash sketch from FASTA file(s)."""
         cmd = [
-            self._bin, "sketch",
-            "-k", str(self.kmer_size),
-            "-s", str(self.sketch_size),
-            "-o", str(output),
+            self._bin,
+            "sketch",
+            "-k",
+            str(self.kmer_size),
+            "-s",
+            str(self.sketch_size),
+            "-o",
+            str(output),
         ]
         if individual:
             cmd.append("-i")
@@ -70,8 +73,10 @@ class MashBackend:
         Returns one KmerDistance per reference sequence pair.
         """
         cmd = [
-            self._bin, "dist",
-            "-d", str(max_distance),
+            self._bin,
+            "dist",
+            "-d",
+            str(max_distance),
             str(query),
             str(reference),
         ]
@@ -81,7 +86,10 @@ class MashBackend:
                 cmd.extend([f"-{key}", str(value)])
 
         proc = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=300,
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=300,
         )
         if proc.returncode != 0:
             raise RuntimeError(
@@ -108,14 +116,16 @@ class MashBackend:
                 else:
                     shared_hashes = int(hash_field)
                     total_hashes = int(parts[5]) if len(parts) > 5 else 0
-                results.append(KmerDistance(
-                    query_id=query_id,
-                    reference_id=ref_id,
-                    distance=dist,
-                    pvalue=pval,
-                    shared_hashes=shared_hashes,
-                    total_hashes=total_hashes,
-                ))
+                results.append(
+                    KmerDistance(
+                        query_id=query_id,
+                        reference_id=ref_id,
+                        distance=dist,
+                        pvalue=pval,
+                        shared_hashes=shared_hashes,
+                        total_hashes=total_hashes,
+                    )
+                )
             except (ValueError, IndexError):
                 continue
 
@@ -147,18 +157,19 @@ class SourmashBackend:
     def _find_binary(self) -> str:
         binary = which("sourmash")
         if not binary:
-            raise RuntimeError(
-                "sourmash not found. Install: pip install sourmash"
-            )
+            raise RuntimeError("sourmash not found. Install: pip install sourmash")
         return binary
 
     def sketch(self, fasta: Path, output: Path, name: str = "") -> Path:
         """Create a sourmash signature from FASTA."""
         cmd = [
-            self._bin, "sketch",
+            self._bin,
+            "sketch",
             "dna",
-            "-p", f"k={self.kmer_size},scaled={self.scaled}",
-            "-o", str(output),
+            "-p",
+            f"k={self.kmer_size},scaled={self.scaled}",
+            "-o",
+            str(output),
         ]
         if name:
             cmd.extend(["--name", name])
@@ -175,16 +186,22 @@ class SourmashBackend:
     ) -> list[KmerDistance]:
         """Calculate containment/ANI distances between signatures."""
         cmd = [
-            self._bin, "search",
+            self._bin,
+            "search",
             str(query_sig),
             str(reference_sig),
-            "--threshold", str(threshold),
-            "-o", "/dev/stdout",
+            "--threshold",
+            str(threshold),
+            "-o",
+            "/dev/stdout",
             "--csv",
         ]
 
         proc = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=300,
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=300,
         )
         if proc.returncode != 0:
             raise RuntimeError(
@@ -210,15 +227,17 @@ class SourmashBackend:
                 q_name = parts[0].strip() if len(parts) > 6 else ""
                 ref_name = parts[3].strip() if len(parts) > 4 else parts[1].strip()
                 containment = float(parts[-2]) if len(parts) >= 2 else 0.0
-                results.append(KmerDistance(
-                    query_id=q_name,
-                    reference_id=ref_name,
-                    distance=round(1.0 - containment, 6),
-                    pvalue=0.0,
-                    shared_hashes=int(containment * self.scaled),
-                    total_hashes=self.scaled,
-                    backend="sourmash",
-                ))
+                results.append(
+                    KmerDistance(
+                        query_id=q_name,
+                        reference_id=ref_name,
+                        distance=round(1.0 - containment, 6),
+                        pvalue=0.0,
+                        shared_hashes=int(containment * self.scaled),
+                        total_hashes=self.scaled,
+                        backend="sourmash",
+                    )
+                )
             except (ValueError, IndexError):
                 continue
 
@@ -230,15 +249,17 @@ class SourmashBackend:
             if len(parts) < 4:
                 continue
             try:
-                results.append(KmerDistance(
-                    query_id=parts[0].strip(),
-                    reference_id=parts[1].strip(),
-                    distance=1.0 - float(parts[2]),
-                    pvalue=0.0,
-                    shared_hashes=int(float(parts[2]) * 1000),
-                    total_hashes=1000,
-                    backend="sourmash",
-                ))
+                results.append(
+                    KmerDistance(
+                        query_id=parts[0].strip(),
+                        reference_id=parts[1].strip(),
+                        distance=1.0 - float(parts[2]),
+                        pvalue=0.0,
+                        shared_hashes=int(float(parts[2]) * 1000),
+                        total_hashes=1000,
+                        backend="sourmash",
+                    )
+                )
             except (ValueError, IndexError):
                 continue
 

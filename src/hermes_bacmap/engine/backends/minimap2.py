@@ -37,8 +37,10 @@ class MinimapBackend:
         use_preset = preset or self.preset
         cmd = [
             self._bin,
-            "-x", use_preset,
-            "-t", str(self.threads),
+            "-x",
+            use_preset,
+            "-t",
+            str(self.threads),
             "-c",
             "--secondary=no",
             str(target),
@@ -50,7 +52,10 @@ class MinimapBackend:
                 cmd.extend([f"-{key}", str(value)])
 
         proc = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=600,
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=600,
         )
         if proc.returncode != 0:
             raise RuntimeError(

@@ -31,9 +31,7 @@ class Hit:
         qstart qend sstart send evalue bitscore qlen slen'."""
         f = line.strip().split("\t")
         if len(f) < 14:
-            raise ValueError(
-                f"BLAST line has {len(f)} fields, need >=14 for coverage: {line[:80]}"
-            )
+            raise ValueError(f"BLAST line has {len(f)} fields, need >=14 for coverage: {line[:80]}")
 
         qlen = int(f[12]) if len(f) > 12 else 0
         slen = int(f[13]) if len(f) > 13 else 0

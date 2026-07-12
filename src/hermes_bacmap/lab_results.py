@@ -113,8 +113,9 @@ class LabResultService:
             "created_at": now,
         }
 
-        extra_keys = {k: v for k, v in kwargs.items()
-                      if k not in core_fields and k != "extra" and v}
+        extra_keys = {
+            k: v for k, v in kwargs.items() if k not in core_fields and k != "extra" and v
+        }
         core_fields["extra"] = json.dumps(extra_keys, ensure_ascii=False) if extra_keys else None
 
         cols = ", ".join(core_fields.keys())
@@ -137,14 +138,10 @@ class LabResultService:
         return added
 
     def get_by_id(self, result_id: str) -> LabResult | None:
-        row = self._conn.execute(
-            "SELECT * FROM lab_results WHERE id = ?", (result_id,)
-        ).fetchone()
+        row = self._conn.execute("SELECT * FROM lab_results WHERE id = ?", (result_id,)).fetchone()
         return self._row_to_result(row) if row else None
 
-    def get_by_strain(
-        self, strain_id: str, category: str | None = None
-    ) -> list[LabResult]:
+    def get_by_strain(self, strain_id: str, category: str | None = None) -> list[LabResult]:
         if category:
             rows = self._conn.execute(
                 "SELECT * FROM lab_results WHERE strain_id = ? AND category = ? ORDER BY test_name",
@@ -200,9 +197,7 @@ class LabResultService:
                 (strain_id, category),
             )
         else:
-            cur = self._conn.execute(
-                "DELETE FROM lab_results WHERE strain_id = ?", (strain_id,)
-            )
+            cur = self._conn.execute("DELETE FROM lab_results WHERE strain_id = ?", (strain_id,))
         return cur.rowcount
 
     def import_tsv(self, tsv_path: Path | str) -> int:
@@ -221,9 +216,9 @@ class LabResultService:
                 if not category or not test_name or not result:
                     continue
                 kwargs = {
-                    k: v for k, v in row.items()
-                    if k not in ("strain_id", "category", "test_name", "result")
-                    and v
+                    k: v
+                    for k, v in row.items()
+                    if k not in ("strain_id", "category", "test_name", "result") and v
                 }
                 self.add(strain_id, category, test_name, result, **kwargs)
                 count += 1

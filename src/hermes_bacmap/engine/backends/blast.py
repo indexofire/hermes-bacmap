@@ -37,9 +37,7 @@ class BlastBackend:
             raise RuntimeError(f"{self.tool} not found in PATH")
         return binary
 
-    def make_db(
-        self, fasta_file: Path, db_path: Path, db_type: str = "nucl"
-    ) -> None:
+    def make_db(self, fasta_file: Path, db_path: Path, db_type: str = "nucl") -> None:
         makeblastdb = which("makeblastdb")
         if not makeblastdb:
             raise RuntimeError("makeblastdb not found")
@@ -72,12 +70,18 @@ class BlastBackend:
     ) -> list[Hit]:
         cmd = [
             self._bin,
-            "-query", str(query),
-            "-db", db_path,
-            "-outfmt", _BLAST_OUTFMT,
-            "-evalue", str(evalue),
-            "-max_target_seqs", str(max_targets),
-            "-num_threads", str(self.threads),
+            "-query",
+            str(query),
+            "-db",
+            db_path,
+            "-outfmt",
+            _BLAST_OUTFMT,
+            "-evalue",
+            str(evalue),
+            "-max_target_seqs",
+            str(max_targets),
+            "-num_threads",
+            str(self.threads),
         ]
 
         for key, value in kwargs.items():
@@ -94,7 +98,10 @@ class BlastBackend:
                 cmd.extend([f"-{mapped}", str(value)])
 
         proc = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=600,
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=600,
         )
         if proc.returncode != 0:
             raise RuntimeError(

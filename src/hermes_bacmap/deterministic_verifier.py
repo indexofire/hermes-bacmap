@@ -10,10 +10,49 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-_KNOWN_SEROGROUPS = frozenset({
-    "A", "B", "C1", "C2-C3", "D1", "D2", "E1", "E4",
-    "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "R", "S", "T", "U", "V", "W", "X", "Z", "51", "53", "54", "55", "56", "57", "58", "59", "60", "61", "65", "66",
-})
+_KNOWN_SEROGROUPS = frozenset(
+    {
+        "A",
+        "B",
+        "C1",
+        "C2-C3",
+        "D1",
+        "D2",
+        "E1",
+        "E4",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P",
+        "R",
+        "S",
+        "T",
+        "U",
+        "V",
+        "W",
+        "X",
+        "Z",
+        "51",
+        "53",
+        "54",
+        "55",
+        "56",
+        "57",
+        "58",
+        "59",
+        "60",
+        "61",
+        "65",
+        "66",
+    }
+)
 
 _MLST_LOCI = ("aroC", "dnaN", "hemD", "hisD", "purE", "sucA", "thrA")
 
@@ -63,13 +102,15 @@ class DeterministicVerifier:
 
         if missing:
             return CheckResult(
-                "mlst", False,
+                "mlst",
+                False,
                 f"MLST alleles missing for: {', '.join(missing)}",
                 {"missing_loci": missing},
             )
 
         return CheckResult(
-            "mlst", True,
+            "mlst",
+            True,
             f"MLST ST={st}, all 7 loci present",
             {"st": st, "alleles": alleles},
         )
@@ -83,7 +124,8 @@ class DeterministicVerifier:
             details["serogroup"] = serogroup
             if serogroup not in _KNOWN_SEROGROUPS:
                 return CheckResult(
-                    "serotype", False,
+                    "serotype",
+                    False,
                     f"Unknown serogroup: {serogroup!r}",
                     details,
                 )

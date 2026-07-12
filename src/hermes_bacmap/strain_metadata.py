@@ -47,12 +47,33 @@ _SCHEMA_SQL = [
 ]
 
 _CORE_COLUMNS = [
-    "strain_id", "sample_id", "submitting_lab", "submit_date", "receiver",
-    "patient_id", "patient_name", "patient_age", "patient_gender", "patient_phone",
-    "isolation_date", "province", "city", "district", "facility",
-    "sample_source", "sample_type", "food_category", "food_name", "collection_date",
-    "symptoms", "onset_date", "diagnosis", "outcome", "hospital",
-    "outbreak_id", "cluster_note",
+    "strain_id",
+    "sample_id",
+    "submitting_lab",
+    "submit_date",
+    "receiver",
+    "patient_id",
+    "patient_name",
+    "patient_age",
+    "patient_gender",
+    "patient_phone",
+    "isolation_date",
+    "province",
+    "city",
+    "district",
+    "facility",
+    "sample_source",
+    "sample_type",
+    "food_category",
+    "food_name",
+    "collection_date",
+    "symptoms",
+    "onset_date",
+    "diagnosis",
+    "outcome",
+    "hospital",
+    "outbreak_id",
+    "cluster_note",
 ]
 
 
@@ -176,9 +197,7 @@ class StrainMetadataService:
             if existing:
                 sets = ", ".join(f"{k} = ?" for k in core)
                 values = list(core.values()) + [strain_id]
-                self._conn.execute(
-                    f"UPDATE strain_metadata SET {sets} WHERE strain_id = ?", values
-                )
+                self._conn.execute(f"UPDATE strain_metadata SET {sets} WHERE strain_id = ?", values)
             else:
                 core["created_at"] = now
                 cols = ", ".join(core.keys())
@@ -243,9 +262,7 @@ class StrainMetadataService:
         return [self._row_to_meta(r) for r in rows]
 
     def delete(self, strain_id: str) -> bool:
-        cur = self._conn.execute(
-            "DELETE FROM strain_metadata WHERE strain_id = ?", (strain_id,)
-        )
+        cur = self._conn.execute("DELETE FROM strain_metadata WHERE strain_id = ?", (strain_id,))
         return cur.rowcount > 0
 
     def list_all(self, limit: int = 100) -> list[StrainMeta]:

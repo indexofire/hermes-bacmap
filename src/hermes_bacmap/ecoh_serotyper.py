@@ -49,8 +49,12 @@ class SerotypeResult:
 
     def _interpret(self) -> str:
         parts = []
-        parts.append(f"O antigen: O{self.o_type}" if self.o_type != "-" else "No O antigen detected")
-        parts.append(f"H antigen: H{self.h_type}" if self.h_type != "-" else "No H antigen (non-motile?)")
+        parts.append(
+            f"O antigen: O{self.o_type}" if self.o_type != "-" else "No O antigen detected"
+        )
+        parts.append(
+            f"H antigen: H{self.h_type}" if self.h_type != "-" else "No H antigen (non-motile?)"
+        )
         parts.append(f"Serotype: {self.serotype}")
         return "; ".join(parts)
 
@@ -79,8 +83,13 @@ def serotype(contigs_fasta: str | Path, **kwargs) -> SerotypeResult:
             continue
         gene_prefix, antigen_type, antigen_group = parsed
         score = hit.identity * hit.coverage / 100
-        entry = {"gene": gene_prefix, "antigen_group": antigen_group,
-                 "identity": hit.identity, "coverage": hit.coverage, "contig": hit.contig}
+        entry = {
+            "gene": gene_prefix,
+            "antigen_group": antigen_group,
+            "identity": hit.identity,
+            "coverage": hit.coverage,
+            "contig": hit.contig,
+        }
         if antigen_type == "O":
             o_hits.append(entry)
             if antigen_group not in o_scores or score > o_scores[antigen_group]:
@@ -94,7 +103,8 @@ def serotype(contigs_fasta: str | Path, **kwargs) -> SerotypeResult:
     h_type = max(h_scores, key=h_scores.get) if h_scores else "-"
 
     return SerotypeResult(
-        o_type=o_type, h_type=h_type,
+        o_type=o_type,
+        h_type=h_type,
         serotype=f"O{o_type}:H{h_type}" if o_type != "-" or h_type != "-" else "-:-",
         o_hits=sorted(o_hits, key=lambda x: -x["identity"]),
         h_hits=sorted(h_hits, key=lambda x: -x["identity"]),
@@ -103,6 +113,7 @@ def serotype(contigs_fasta: str | Path, **kwargs) -> SerotypeResult:
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="E. coli O:H serotyper")
     parser.add_argument("contigs")
     parser.add_argument("--json", action="store_true")

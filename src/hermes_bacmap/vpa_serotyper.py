@@ -8,6 +8,7 @@ Usage:
     serotyper = VpaSerotyper()
     result = serotyper.analyze("results/SAM-XXX/assembly/contigs.fasta")
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -106,4 +107,5 @@ class VpaSerotyper:
 
     def analyze_to_json(self, contigs_path: str | Path, sample_id: str = "") -> dict:
         import json
+
         return json.loads(json.dumps(self.analyze(contigs_path, sample_id).to_dict()))

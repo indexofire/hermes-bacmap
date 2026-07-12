@@ -166,8 +166,15 @@ SEQ_CONVERT = {
             "output_format": {
                 "type": "string",
                 "enum": [
-                    "fasta", "fastq", "genbank", "embl", "nexus",
-                    "phylip", "stockholm", "clustal", "gff",
+                    "fasta",
+                    "fastq",
+                    "genbank",
+                    "embl",
+                    "nexus",
+                    "phylip",
+                    "stockholm",
+                    "clustal",
+                    "gff",
                 ],
                 "description": "Target format.",
             },
@@ -199,8 +206,7 @@ BLAST = {
             "query": {
                 "type": "string",
                 "description": (
-                    "Query: raw sequence, or path to a FASTA file "
-                    "if query_is_file=true."
+                    "Query: raw sequence, or path to a FASTA file if query_is_file=true."
                 ),
             },
             "query_is_file": {
@@ -297,8 +303,15 @@ SAMTOOLS = {
             "operation": {
                 "type": "string",
                 "enum": [
-                    "sort", "index", "view", "depth", "flagstat",
-                    "mpileup", "faidx", "idxstats", "fasta_index",
+                    "sort",
+                    "index",
+                    "view",
+                    "depth",
+                    "flagstat",
+                    "mpileup",
+                    "faidx",
+                    "idxstats",
+                    "fasta_index",
                 ],
                 "description": "samtools subcommand to run.",
             },
@@ -344,7 +357,11 @@ VARIANT = {
             "operation": {
                 "type": "string",
                 "enum": [
-                    "mpileup_call", "filter", "query", "annotate", "consensus",
+                    "mpileup_call",
+                    "filter",
+                    "query",
+                    "annotate",
+                    "consensus",
                 ],
                 "description": "Variant operation to perform.",
             },
@@ -363,8 +380,7 @@ VARIANT = {
             "query": {
                 "type": "string",
                 "description": (
-                    "bcftools query format string "
-                    "(e.g. '%CHROM\\t%POS\\t%REF\\t%ALT\\n')."
+                    "bcftools query format string (e.g. '%CHROM\\t%POS\\t%REF\\t%ALT\\n')."
                 ),
             },
             "filter_expr": {
@@ -379,7 +395,6 @@ VARIANT = {
         "required": ["operation", "input"],
     },
 }
-
 
 
 # ---------------------------------------------------------------------------
@@ -459,9 +474,7 @@ GENERATE_REPORT = {
 
 LIST_SAMPLES = {
     "name": "bio_list_samples",
-    "description": (
-        "List all samples and their analysis status."
-    ),
+    "description": ("List all samples and their analysis status."),
     "parameters": {
         "type": "object",
         "properties": {},
@@ -652,8 +665,14 @@ QUERY_METADATA = {
             },
             "province": {"type": "string", "description": "Filter by province."},
             "outbreak_id": {"type": "string", "description": "Filter by outbreak ID."},
-            "sample_source": {"type": "string", "description": "Filter by sample source (clinical/food/environment)."},
-            "isolation_date_from": {"type": "string", "description": "Date range start (YYYY-MM-DD)."},
+            "sample_source": {
+                "type": "string",
+                "description": "Filter by sample source (clinical/food/environment).",
+            },
+            "isolation_date_from": {
+                "type": "string",
+                "description": "Date range start (YYYY-MM-DD).",
+            },
             "isolation_date_to": {"type": "string", "description": "Date range end (YYYY-MM-DD)."},
         },
     },
@@ -726,11 +745,23 @@ ADD_LAB_RESULT = {
         "type": "object",
         "properties": {
             "strain_id": {"type": "string", "description": "Strain/sample identifier."},
-            "category": {"type": "string", "description": "Test category: ast, serology, biochemical, pcr."},
-            "test_name": {"type": "string", "description": "Test name (e.g. Ampicillin, O antigen, oxidase)."},
-            "result": {"type": "string", "description": "Raw result value (e.g. 16, O4, positive)."},
+            "category": {
+                "type": "string",
+                "description": "Test category: ast, serology, biochemical, pcr.",
+            },
+            "test_name": {
+                "type": "string",
+                "description": "Test name (e.g. Ampicillin, O antigen, oxidase).",
+            },
+            "result": {
+                "type": "string",
+                "description": "Raw result value (e.g. 16, O4, positive).",
+            },
             "interpretation": {"type": "string", "description": "S, I, R, positive, negative."},
-            "method": {"type": "string", "description": "Method used (broth_microdilution, disk_diffusion, antiserum)."},
+            "method": {
+                "type": "string",
+                "description": "Method used (broth_microdilution, disk_diffusion, antiserum).",
+            },
             "unit": {"type": "string", "description": "Unit (ug/mL, mm)."},
         },
         "required": ["strain_id", "category", "test_name", "result"],

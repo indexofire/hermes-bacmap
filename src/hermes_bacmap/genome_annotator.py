@@ -10,6 +10,7 @@ Usage:
     result = annotate("results/SAM-TYP-001/assembly/contigs.fasta")
     result.save("results/SAM-TYP-001/annotation/annotation.json")
 """
+
 from __future__ import annotations
 
 import json
@@ -67,7 +68,9 @@ class AnnotationResult:
     @property
     def summary(self) -> dict[str, Any]:
         cds = [f for f in self.features if f.ftype == "CDS"]
-        annotated = [f for f in cds if f.gene or (f.product and "hypothetical" not in f.product.lower())]
+        annotated = [
+            f for f in cds if f.gene or (f.product and "hypothetical" not in f.product.lower())
+        ]
         hypothetical = [f for f in cds if f not in annotated]
         return {
             "total_contigs": len(self.contigs),
@@ -135,14 +138,16 @@ def _predict_cds(contigs: list[tuple[str, str]]) -> list[tuple[str, int, int, in
             if isinstance(prot_seq, bytes):
                 prot_seq = prot_seq.decode()
             prot_seq = prot_seq.rstrip("*")
-            predictions.append((
-                contig_name,
-                gene.begin,
-                gene.end,
-                gene.strand,
-                na_seq,
-                prot_seq,
-            ))
+            predictions.append(
+                (
+                    contig_name,
+                    gene.begin,
+                    gene.end,
+                    gene.strand,
+                    na_seq,
+                    prot_seq,
+                )
+            )
 
     return predictions
 
@@ -211,11 +216,13 @@ def annotate(contigs_path: str | Path, sample_id: str = "") -> AnnotationResult:
     contigs = _read_contigs(contigs_file)
     for name, seq in contigs:
         gc = (seq.count("G") + seq.count("C")) / len(seq) if seq else 0
-        result.contigs.append({
-            "id": name,
-            "length": len(seq),
-            "gc_content": round(gc, 4),
-        })
+        result.contigs.append(
+            {
+                "id": name,
+                "length": len(seq),
+                "gc_content": round(gc, 4),
+            }
+        )
 
     predictions = _predict_cds(contigs)
 

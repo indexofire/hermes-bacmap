@@ -96,8 +96,6 @@ class Minimap2ReadMapper:
         }
 
 
-
-
 def _get_mapper(name: str):
     key = name.strip().lower()
     if key in ("bwa", "bwa-mem"):

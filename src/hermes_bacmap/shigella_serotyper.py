@@ -20,29 +20,29 @@ from typing import Any
 from hermes_bacmap.gene_scanner import scan
 
 _FLEXNERI_RULES = [
-    ("Shigella flexneri serotype 6",         ["Sf6_wzx"]),
-    ("Shigella flexneri serotype 1a",        ["gtrI"]),
-    ("Shigella flexneri serotype 1b",        ["gtrI", "Oac1b"]),
-    ("Shigella flexneri serotype 1c (7a)",   ["gtrI", "gtrIC"]),
-    ("Shigella flexneri serotype 7b",        ["gtrI", "gtrIC", "Oac1b"]),
-    ("Shigella flexneri serotype 2a",        ["gtrII"]),
-    ("Shigella flexneri 2av",                ["gtrII", "Xv"]),
-    ("Shigella flexneri serotype 2b",        ["gtrII", "gtrX"]),
-    ("Shigella flexneri serotype 4a",        ["gtrIV"]),
-    ("Shigella flexneri serotype 4av",       ["gtrIV", "Xv"]),
-    ("Shigella flexneri serotype 5a",        ["gtrV"]),
-    ("Shigella flexneri serotype 5b",        ["gtrV", "gtrX"]),
-    ("Shigella flexneri serotype X",         ["gtrX"]),
-    ("Shigella flexneri serotype Xv (4c)",   ["gtrX", "Xv"]),
-    ("Shigella flexneri serotype Yv",        ["Xv"]),
-    ("Shigella flexneri serotype Y",         []),
+    ("Shigella flexneri serotype 6", ["Sf6_wzx"]),
+    ("Shigella flexneri serotype 1a", ["gtrI"]),
+    ("Shigella flexneri serotype 1b", ["gtrI", "Oac1b"]),
+    ("Shigella flexneri serotype 1c (7a)", ["gtrI", "gtrIC"]),
+    ("Shigella flexneri serotype 7b", ["gtrI", "gtrIC", "Oac1b"]),
+    ("Shigella flexneri serotype 2a", ["gtrII"]),
+    ("Shigella flexneri 2av", ["gtrII", "Xv"]),
+    ("Shigella flexneri serotype 2b", ["gtrII", "gtrX"]),
+    ("Shigella flexneri serotype 4a", ["gtrIV"]),
+    ("Shigella flexneri serotype 4av", ["gtrIV", "Xv"]),
+    ("Shigella flexneri serotype 5a", ["gtrV"]),
+    ("Shigella flexneri serotype 5b", ["gtrV", "gtrX"]),
+    ("Shigella flexneri serotype X", ["gtrX"]),
+    ("Shigella flexneri serotype Xv (4c)", ["gtrX", "Xv"]),
+    ("Shigella flexneri serotype Yv", ["Xv"]),
+    ("Shigella flexneri serotype Y", []),
 ]
 
 _FLEXNERI_OAC_VARIANTS = {
-    "Shigella flexneri serotype 3a":  (["gtrX", "Oac"],),
-    "Shigella flexneri serotype 3b":  (["Oac"], ["Oac1b"]),
-    "Shigella flexneri serotype 4b":  (["gtrIV", "Oac"], ["gtrIV", "Oac1b"]),
-    "Shigella flexneri 4bv":          (["gtrIV", "Oac", "Xv"],),
+    "Shigella flexneri serotype 3a": (["gtrX", "Oac"],),
+    "Shigella flexneri serotype 3b": (["Oac"], ["Oac1b"]),
+    "Shigella flexneri serotype 4b": (["gtrIV", "Oac"], ["gtrIV", "Oac1b"]),
+    "Shigella flexneri 4bv": (["gtrIV", "Oac", "Xv"],),
 }
 
 
@@ -146,7 +146,9 @@ def serotype(contigs_fasta: str | Path, **kwargs) -> ShigellaSerotypeResult:
 
     if len(species_hits) == 0:
         result.species = "No Shigella serotype determinants"
-        result.interpretation = f"No Shigella O-antigen genes detected. Detected: {', '.join(sorted(detected)[:10])}"
+        result.interpretation = (
+            f"No Shigella O-antigen genes detected. Detected: {', '.join(sorted(detected)[:10])}"
+        )
         return result
 
     if len(species_hits) > 1:
@@ -169,25 +171,32 @@ def serotype(contigs_fasta: str | Path, **kwargs) -> ShigellaSerotypeResult:
     elif sp == "dysenteriae":
         st_num, conf = _determine_dysenteriae_type(detected)
         result.species = "Shigella dysenteriae"
-        result.serotype = f"Shigella dysenteriae type {st_num}" if st_num else "Shigella dysenteriae (untypeable)"
+        result.serotype = (
+            f"Shigella dysenteriae type {st_num}" if st_num else "Shigella dysenteriae (untypeable)"
+        )
         result.confidence = conf
     elif sp == "boydii":
         st_num, conf = _determine_boydii_type(detected)
         result.species = "Shigella boydii"
-        result.serotype = f"Shigella boydii type {st_num}" if st_num else "Shigella boydii (untypeable)"
+        result.serotype = (
+            f"Shigella boydii type {st_num}" if st_num else "Shigella boydii (untypeable)"
+        )
         result.confidence = conf
 
     eiec_note = ""
     if has_ecoli and has_ipah:
         eiec_note = " (EIEC markers present — may be EIEC rather than Shigella)"
 
-    result.interpretation = f"{result.species} {result.serotype} (confidence: {result.confidence}){eiec_note}"
+    result.interpretation = (
+        f"{result.species} {result.serotype} (confidence: {result.confidence}){eiec_note}"
+    )
 
     return result
 
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="Shigella serotyper")
     parser.add_argument("contigs")
     parser.add_argument("--json", action="store_true")

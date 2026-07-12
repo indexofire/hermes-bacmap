@@ -52,6 +52,7 @@ def _ensure_biopython() -> bool:
         return _BIOPYTHON_AVAILABLE
     try:
         import Bio  # noqa: F401
+
         _BIOPYTHON_AVAILABLE = True
         return True
     except ImportError:
@@ -59,9 +60,12 @@ def _ensure_biopython() -> bool:
     try:
         subprocess.run(
             [PIXI_PYTHON, "-m", "pip", "install", "biopython"],
-            check=True, capture_output=True, timeout=120,
+            check=True,
+            capture_output=True,
+            timeout=120,
         )
         import Bio  # noqa: F401
+
         _BIOPYTHON_AVAILABLE = True
         return True
     except Exception as e:
@@ -79,6 +83,7 @@ def _which_or_error(cmd: str) -> str | None:
 # Shared utilities
 # ---------------------------------------------------------------------------
 
+
 def _resolve_path(p: str) -> str:
     """Expand ~ and make absolute."""
     return os.path.abspath(os.path.expanduser(p))
@@ -87,9 +92,14 @@ def _resolve_path(p: str) -> str:
 def _detect_format(path: str, hint: str = "auto") -> str:
     ext = Path(path).suffix.lower().lstrip(".")
     aliases = {
-        "fa": "fasta", "fna": "fasta", "ffn": "fasta", "faa": "fasta",
-        "frn": "fasta", "fq": "fastq",
-        "gb": "genbank", "gbk": "genbank",
+        "fa": "fasta",
+        "fna": "fasta",
+        "ffn": "fasta",
+        "faa": "fasta",
+        "frn": "fasta",
+        "fq": "fastq",
+        "gb": "genbank",
+        "gbk": "genbank",
     }
     fmt = aliases.get(ext, ext)
     if hint != "auto":
@@ -101,7 +111,11 @@ def _run_cmd(cmd: list[str], timeout: int = 3600) -> dict[str, Any]:
     """Run a subprocess, return {returncode, stdout, stderr}."""
     logger.info("Running: %s", " ".join(cmd))
     proc = subprocess.run(
-        cmd, capture_output=True, text=True, timeout=timeout, env=_PIXI_ENV,
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        env=_PIXI_ENV,
     )
     return {
         "returncode": proc.returncode,
@@ -114,6 +128,7 @@ def _run_cmd(cmd: list[str], timeout: int = 3600) -> dict[str, Any]:
 # bio_seq_stats
 # ---------------------------------------------------------------------------
 
+
 def seq_stats(args: dict, **kwargs) -> str:
     path = _resolve_path(args.get("file", ""))
     if not os.path.isfile(path):
@@ -123,12 +138,11 @@ def seq_stats(args: dict, **kwargs) -> str:
     bins = args.get("histogram_bins", 20)
 
     if not _ensure_biopython():
-        return json.dumps({
-            "error": "Biopython is required. Run: pip install biopython"
-        })
+        return json.dumps({"error": "Biopython is required. Run: pip install biopython"})
 
     try:
         from Bio import SeqIO  # type: ignore
+
         records = list(SeqIO.parse(path, fmt))
     except Exception as e:
         return json.dumps({"error": f"Failed to parse {fmt} file: {e}"})
@@ -183,17 +197,13 @@ def seq_stats(args: dict, **kwargs) -> str:
                     "q30_fraction": round(
                         sum(1 for q in phred_scores if q >= 30) / len(phred_scores), 4
                     ),
-                    "per_position_mean_q": [
-                        round(sum(p) / len(p), 2) for p in quals_per_pos[:200]
-                    ],
+                    "per_position_mean_q": [round(sum(p) / len(p), 2) for p in quals_per_pos[:200]],
                 }
         except Exception as e:
             result["quality_error"] = str(e)
 
     # Top 10 longest records
-    by_len = sorted(
-        [(r.id, len(r)) for r in records], key=lambda x: -x[1]
-    )[:10]
+    by_len = sorted([(r.id, len(r)) for r in records], key=lambda x: -x[1])[:10]
     result["top_records_by_length"] = [{"id": rid, "length": rl} for rid, rl in by_len]
 
     return json.dumps(result, indent=2)
@@ -243,10 +253,22 @@ def _histogram(values: list, bins: int = 20) -> list[dict]:
 
 _COMPLEMENT = str.maketrans("ACGTUNacgtun", "TGCAANtgcaan")
 _IUPAC = {
-    "A": "A", "C": "C", "G": "G", "T": "T", "U": "U",
-    "R": "[AG]", "Y": "[CT]", "S": "[GC]", "W": "[AT]",
-    "K": "[GT]", "M": "[AC]", "B": "[CGT]", "D": "[AGT]",
-    "H": "[ACT]", "V": "[ACG]", "N": "[ACGTN]",
+    "A": "A",
+    "C": "C",
+    "G": "G",
+    "T": "T",
+    "U": "U",
+    "R": "[AG]",
+    "Y": "[CT]",
+    "S": "[GC]",
+    "W": "[AT]",
+    "K": "[GT]",
+    "M": "[AC]",
+    "B": "[CGT]",
+    "D": "[AGT]",
+    "H": "[ACT]",
+    "V": "[ACG]",
+    "N": "[ACGTN]",
 }
 
 
@@ -264,6 +286,7 @@ def _get_sequence(args: dict) -> tuple[str | None, str]:
     if not _ensure_biopython():
         return None, "Biopython required for file input."
     from Bio import SeqIO  # type: ignore
+
     rid = args.get("record_id")
     for rec in SeqIO.parse(path, _detect_format(path)):
         if rid is None or rec.id == rid:
@@ -290,22 +313,30 @@ def seq_ops(args: dict, **kwargs) -> str:
         if not _ensure_biopython():
             return json.dumps({"error": "Biopython required for translation."})
         from Bio.Seq import Seq  # type: ignore
+
         frame = args.get("frame", 0)
         protein = str(Seq(seq[frame:]).translate())
-        return json.dumps({
-            "input_length": len(seq), "frame": frame,
-            "protein": protein, "protein_length": len(protein),
-        })
+        return json.dumps(
+            {
+                "input_length": len(seq),
+                "frame": frame,
+                "protein": protein,
+                "protein_length": len(protein),
+            }
+        )
 
     if op == "gc_content":
         seq, err = _get_sequence(args)
         if err:
             return json.dumps({"error": err})
-        gc = (seq.count("G") + seq.count("C"))
-        return json.dumps({
-            "length": len(seq), "gc_count": gc,
-            "gc_content": round(gc / len(seq) * 100, 3) if seq else 0,
-        })
+        gc = seq.count("G") + seq.count("C")
+        return json.dumps(
+            {
+                "length": len(seq),
+                "gc_count": gc,
+                "gc_content": round(gc / len(seq) * 100, 3) if seq else 0,
+            }
+        )
 
     if op == "gc_skew":
         seq, err = _get_sequence(args)
@@ -314,7 +345,7 @@ def seq_ops(args: dict, **kwargs) -> str:
         window = args.get("window", 1000)
         skew_vals = []
         for i in range(0, len(seq), window):
-            chunk = seq[i:i + window]
+            chunk = seq[i : i + window]
             g = chunk.count("G")
             c = chunk.count("C")
             skew = (g - c) / (g + c) if (g + c) else 0
@@ -330,10 +361,13 @@ def seq_ops(args: dict, **kwargs) -> str:
             return json.dumps({"error": "Provide 'motif' (IUPAC pattern)."})
         regex = "".join(_IUPAC.get(c, c) for c in motif)
         matches = [(m.start(), m.end()) for m in re.finditer(regex, seq)]
-        return json.dumps({
-            "motif": motif, "match_count": len(matches),
-            "positions": matches[:200],
-        })
+        return json.dumps(
+            {
+                "motif": motif,
+                "match_count": len(matches),
+                "positions": matches[:200],
+            }
+        )
 
     if op == "find_orfs":
         seq, err = _get_sequence(args)
@@ -341,9 +375,13 @@ def seq_ops(args: dict, **kwargs) -> str:
             return json.dumps({"error": err})
         min_len = args.get("min_orf_len", 30)
         orfs = _find_orfs(seq, min_len)
-        return json.dumps({
-            "min_orf_length": min_len, "orf_count": len(orfs), "orfs": orfs[:100],
-        })
+        return json.dumps(
+            {
+                "min_orf_length": min_len,
+                "orf_count": len(orfs),
+                "orfs": orfs[:100],
+            }
+        )
 
     if op == "restriction_sites":
         seq, err = _get_sequence(args)
@@ -351,10 +389,17 @@ def seq_ops(args: dict, **kwargs) -> str:
             return json.dumps({"error": err})
         # Common restriction enzymes
         enzymes = {
-            "EcoRI": "GAATTC", "BamHI": "GGATCC", "HindIII": "AAGCTT",
-            "XhoI": "CTCGAG", "NotI": "GCGGCCGC", "NheI": "GCTAGC",
-            "SacI": "GAGCTC", "KpnI": "GGTACC", "PstI": "CTGCAG",
-            "SmaI": "CCCGGG", "SalI": "GTCGAC",
+            "EcoRI": "GAATTC",
+            "BamHI": "GGATCC",
+            "HindIII": "AAGCTT",
+            "XhoI": "CTCGAG",
+            "NotI": "GCGGCCGC",
+            "NheI": "GCTAGC",
+            "SacI": "GAGCTC",
+            "KpnI": "GGTACC",
+            "PstI": "CTGCAG",
+            "SmaI": "CCCGGG",
+            "SalI": "GTCGAC",
         }
         sites = {}
         for name, site in enzymes.items():
@@ -369,7 +414,7 @@ def seq_ops(args: dict, **kwargs) -> str:
             return json.dumps({"error": err})
         k = args.get("k", 3)
         top = args.get("top", 20)
-        kmers = Counter(seq[i:i + k] for i in range(len(seq) - k + 1))
+        kmers = Counter(seq[i : i + k] for i in range(len(seq) - k + 1))
         top_kmers = [
             {"kmer": km, "count": cnt, "frequency": round(cnt / len(seq), 5)}
             for km, cnt in kmers.most_common(top)
@@ -395,14 +440,16 @@ def _find_orfs(seq: str, min_codons: int = 30) -> list[dict]:
         for m in codon_re.finditer(sub):
             orf_seq = m.group(1)
             if len(orf_seq) // 3 >= min_codons:
-                orfs.append({
-                    "start": m.start() + frame,
-                    "end": m.end() + frame,
-                    "strand": strand,
-                    "frame": frame,
-                    "length_codons": len(orf_seq) // 3,
-                    "protein": orf_seq[:120] + ("..." if len(orf_seq) > 120 else ""),
-                })
+                orfs.append(
+                    {
+                        "start": m.start() + frame,
+                        "end": m.end() + frame,
+                        "strand": strand,
+                        "frame": frame,
+                        "length_codons": len(orf_seq) // 3,
+                        "protein": orf_seq[:120] + ("..." if len(orf_seq) > 120 else ""),
+                    }
+                )
     orfs.sort(key=lambda x: -x["length_codons"])
     return orfs
 
@@ -410,6 +457,7 @@ def _find_orfs(seq: str, min_codons: int = 30) -> list[dict]:
 # ---------------------------------------------------------------------------
 # bio_fastq_qc
 # ---------------------------------------------------------------------------
+
 
 def fastq_qc(args: dict, **kwargs) -> str:
     files = args.get("files", [])
@@ -430,6 +478,7 @@ def fastq_qc(args: dict, **kwargs) -> str:
             continue
         try:
             from Bio import SeqIO  # type: ignore
+
             lengths = []
             quals_per_pos: dict[int, list[float]] = {}
             ids = []
@@ -450,14 +499,11 @@ def fastq_qc(args: dict, **kwargs) -> str:
                 "length_max": max(lengths) if lengths else 0,
                 "length_mean": round(sum(lengths) / len(lengths), 2) if lengths else 0,
                 "per_position_mean_q": [
-                    round(sum(v) / len(v), 2)
-                    for _, v in sorted(quals_per_pos.items())[:200]
+                    round(sum(v) / len(v), 2) for _, v in sorted(quals_per_pos.items())[:200]
                 ],
             }
             all_lens.extend(lengths)
-            all_q.extend(
-                q for v in quals_per_pos.values() for q in v
-            )
+            all_q.extend(q for v in quals_per_pos.values() for q in v)
 
             # Duplication estimate
             if ids:
@@ -478,12 +524,8 @@ def fastq_qc(args: dict, **kwargs) -> str:
 
     if all_q:
         report["summary"]["overall_mean_q"] = round(sum(all_q) / len(all_q), 2)
-        report["summary"]["q30_fraction"] = round(
-            sum(1 for q in all_q if q >= 30) / len(all_q), 4
-        )
-        report["summary"]["q20_fraction"] = round(
-            sum(1 for q in all_q if q >= 20) / len(all_q), 4
-        )
+        report["summary"]["q30_fraction"] = round(sum(1 for q in all_q if q >= 30) / len(all_q), 4)
+        report["summary"]["q20_fraction"] = round(sum(1 for q in all_q if q >= 20) / len(all_q), 4)
     if all_lens:
         report["summary"]["total_reads_sampled"] = len(all_lens)
         report["summary"]["length_distribution"] = _histogram(all_lens, 20)
@@ -497,6 +539,7 @@ def fastq_qc(args: dict, **kwargs) -> str:
 
 def _check_adapters(fastq_path: str, adapter_fasta: str) -> dict:
     from Bio import SeqIO  # type: ignore
+
     adapters = [str(r.seq) for r in SeqIO.parse(adapter_fasta, "fasta")]
     counts = {a[:20]: 0 for a in adapters}
     total = 0
@@ -511,9 +554,7 @@ def _check_adapters(fastq_path: str, adapter_fasta: str) -> dict:
     return {
         "total_checked": total,
         "adapters": counts,
-        "contamination_rate": {
-            k: round(v / total, 4) for k, v in counts.items()
-        } if total else {},
+        "contamination_rate": {k: round(v / total, 4) for k, v in counts.items()} if total else {},
     }
 
 
@@ -531,8 +572,10 @@ def _write_fastq_md(path: str, report: dict):
                 f.write(f"Error: {fr['error']}\n\n")
                 continue
             f.write(f"- Reads sampled: {fr.get('reads_sampled')}\n")
-            f.write(f"- Length: {fr.get('length_min')}-{fr.get('length_max')} "
-                    f"(mean {fr.get('length_mean')})\n")
+            f.write(
+                f"- Length: {fr.get('length_min')}-{fr.get('length_max')} "
+                f"(mean {fr.get('length_mean')})\n"
+            )
             if "duplication_rate" in fr:
                 f.write(f"- Duplication rate: {fr['duplication_rate']:.1%}\n")
             f.write("\n")
@@ -544,9 +587,14 @@ def _write_fastq_md(path: str, report: dict):
 
 # Mapping our format names to Biopython SeqIO format keys
 _BIO_FORMAT_MAP = {
-    "fasta": "fasta", "fastq": "fastq", "genbank": "genbank",
-    "embl": "embl", "nexus": "nexus", "phylip": "phylip",
-    "stockholm": "stockholm", "clustal": "clustal",
+    "fasta": "fasta",
+    "fastq": "fastq",
+    "genbank": "genbank",
+    "embl": "embl",
+    "nexus": "nexus",
+    "phylip": "phylip",
+    "stockholm": "stockholm",
+    "clustal": "clustal",
 }
 
 
@@ -567,6 +615,7 @@ def seq_convert(args: dict, **kwargs) -> str:
 
     try:
         from Bio import SeqIO  # type: ignore
+
         records = list(SeqIO.parse(inp, in_fmt))
         if not records:
             return json.dumps({"error": f"No records in {inp} ({in_fmt})"})
@@ -576,11 +625,15 @@ def seq_convert(args: dict, **kwargs) -> str:
                 if "molecule_type" not in rec.annotations:
                     rec.annotations["molecule_type"] = "DNA"
         count = SeqIO.write(records, outp, bio_out)
-        return json.dumps({
-            "input_file": inp, "input_format": in_fmt,
-            "output_file": outp, "output_format": bio_out,
-            "records_converted": count,
-        })
+        return json.dumps(
+            {
+                "input_file": inp,
+                "input_format": in_fmt,
+                "output_file": outp,
+                "output_format": bio_out,
+                "records_converted": count,
+            }
+        )
     except Exception as e:
         return json.dumps({"error": f"Conversion failed: {e}"})
 
@@ -588,6 +641,7 @@ def seq_convert(args: dict, **kwargs) -> str:
 # ---------------------------------------------------------------------------
 # bio_blast
 # ---------------------------------------------------------------------------
+
 
 def blast(args: dict, **kwargs) -> str:
     mode = args.get("mode", "remote")
@@ -601,19 +655,37 @@ def blast(args: dict, **kwargs) -> str:
     out_file = args.get("output_file")
 
     if mode == "remote":
-        return _blast_remote(query, args.get("query_is_file", False),
-                             program, args.get("database", "nt"),
-                             evalue, max_hits, out_file)
+        return _blast_remote(
+            query,
+            args.get("query_is_file", False),
+            program,
+            args.get("database", "nt"),
+            evalue,
+            max_hits,
+            out_file,
+        )
     elif mode == "local":
-        return _blast_local(query, args.get("query_is_file", False),
-                            program, args.get("database", ""),
-                            evalue, max_hits, out_file)
+        return _blast_local(
+            query,
+            args.get("query_is_file", False),
+            program,
+            args.get("database", ""),
+            evalue,
+            max_hits,
+            out_file,
+        )
     return json.dumps({"error": f"Unknown mode: {mode}"})
 
 
-def _blast_remote(query: str, is_file: bool, program: str,
-                  db: str, evalue: float, max_hits: int,
-                  out_file: str | None) -> str:
+def _blast_remote(
+    query: str,
+    is_file: bool,
+    program: str,
+    db: str,
+    evalue: float,
+    max_hits: int,
+    out_file: str | None,
+) -> str:
     if not _ensure_biopython():
         return json.dumps({"error": "Biopython required. Run: pip install biopython"})
     try:
@@ -628,7 +700,11 @@ def _blast_remote(query: str, is_file: bool, program: str,
 
     try:
         result_handle = NCBIWWW.qblast(
-            program, db, query_str, expect=evalue, hitlist_size=max_hits,
+            program,
+            db,
+            query_str,
+            expect=evalue,
+            hitlist_size=max_hits,
         )
         blast_records = list(NCBIXML.parse(result_handle))
     except Exception as e:
@@ -638,43 +714,59 @@ def _blast_remote(query: str, is_file: bool, program: str,
     for rec in blast_records:
         for alignment in rec.alignments:
             for hsp in alignment.hsps:
-                hits.append({
-                    "title": alignment.title,
-                    "length": alignment.length,
-                    "e_value": hsp.expect,
-                    "bit_score": hsp.bits,
-                    "identity": hsp.identities,
-                    "align_length": hsp.align_length,
-                    "query_start": hsp.query_start,
-                    "identity_pct": round(hsp.identities / hsp.align_length * 100, 2)
-                    if hsp.align_length else 0,
-                })
+                hits.append(
+                    {
+                        "title": alignment.title,
+                        "length": alignment.length,
+                        "e_value": hsp.expect,
+                        "bit_score": hsp.bits,
+                        "identity": hsp.identities,
+                        "align_length": hsp.align_length,
+                        "query_start": hsp.query_start,
+                        "identity_pct": round(hsp.identities / hsp.align_length * 100, 2)
+                        if hsp.align_length
+                        else 0,
+                    }
+                )
 
     hits = hits[:max_hits]
     if out_file:
         with open(out_file, "w") as f:
             f.write("query\tsubject\tevalue\tbitscore\tidentity%\n")
             for h in hits:
-                f.write(f"{query[:50]}\t{h['title']}\t{h['e_value']}\t"
-                        f"{h['bit_score']}\t{h['identity_pct']}\n")
+                f.write(
+                    f"{query[:50]}\t{h['title']}\t{h['e_value']}\t"
+                    f"{h['bit_score']}\t{h['identity_pct']}\n"
+                )
 
-    return json.dumps({
-        "mode": "remote", "program": program, "database": db,
-        "hit_count": len(hits), "hits": hits[:50],
-    }, indent=2)
+    return json.dumps(
+        {
+            "mode": "remote",
+            "program": program,
+            "database": db,
+            "hit_count": len(hits),
+            "hits": hits[:50],
+        },
+        indent=2,
+    )
 
 
-def _blast_local(query: str, is_file: bool, program: str,
-                 subject: str, evalue: float, max_hits: int,
-                 out_file: str | None) -> str:
+def _blast_local(
+    query: str,
+    is_file: bool,
+    program: str,
+    subject: str,
+    evalue: float,
+    max_hits: int,
+    out_file: str | None,
+) -> str:
     if not subject:
         return json.dumps({"error": "Local BLAST needs 'database' (subject FASTA)."})
     blast_bin = _which_or_error(program)
     if not blast_bin:
-        return json.dumps({
-            "error": f"{program} not found. Install blast+ "
-            f"(e.g. apt install ncbi-blast+)."
-        })
+        return json.dumps(
+            {"error": f"{program} not found. Install blast+ (e.g. apt install ncbi-blast+)."}
+        )
     makedb = _which_or_error("makeblastdb")
     if not makedb:
         return json.dumps({"error": "makeblastdb not found. Install blast+."})
@@ -684,11 +776,17 @@ def _blast_local(query: str, is_file: bool, program: str,
 
     # Build DB if not present
     if not os.path.exists(db_prefix + ".ndb" if makedb else db_prefix + ".nsq"):
-        r = _run_cmd([
-            "makeblastdb", "-in", subj_path, "-dbtype",
-            "nucl" if program in ("blastn", "tblastn", "tblastx") else "prot",
-            "-out", db_prefix,
-        ])
+        r = _run_cmd(
+            [
+                "makeblastdb",
+                "-in",
+                subj_path,
+                "-dbtype",
+                "nucl" if program in ("blastn", "tblastn", "tblastx") else "prot",
+                "-out",
+                db_prefix,
+            ]
+        )
         if r["returncode"] != 0:
             return json.dumps({"error": "makeblastdb failed", "stderr": r["stderr"]})
 
@@ -701,9 +799,17 @@ def _blast_local(query: str, is_file: bool, program: str,
         query_path = tmp_query.name
 
     cmd = [
-        program, "-query", query_path, "-db", db_prefix,
-        "-evalue", str(evalue), "-max_target_seqs", str(max_hits),
-        "-outfmt", "6",
+        program,
+        "-query",
+        query_path,
+        "-db",
+        db_prefix,
+        "-evalue",
+        str(evalue),
+        "-max_target_seqs",
+        str(max_hits),
+        "-outfmt",
+        "6",
     ]
     r = _run_cmd(cmd)
     if tmp_query:
@@ -719,25 +825,37 @@ def _blast_local(query: str, is_file: bool, program: str,
             continue
         parts = line.split("\t")
         if len(parts) >= 12:
-            hits.append({
-                "query": parts[0], "subject": parts[1], "identity_pct": float(parts[2]),
-                "align_length": int(parts[3]), "e_value": float(parts[10]),
-                "bit_score": float(parts[11]),
-            })
+            hits.append(
+                {
+                    "query": parts[0],
+                    "subject": parts[1],
+                    "identity_pct": float(parts[2]),
+                    "align_length": int(parts[3]),
+                    "e_value": float(parts[10]),
+                    "bit_score": float(parts[11]),
+                }
+            )
 
     if out_file:
         with open(out_file, "w") as f:
             f.write(r["stdout"])
 
-    return json.dumps({
-        "mode": "local", "program": program, "subject": subject,
-        "hit_count": len(hits), "hits": hits[:50],
-    }, indent=2)
+    return json.dumps(
+        {
+            "mode": "local",
+            "program": program,
+            "subject": subject,
+            "hit_count": len(hits),
+            "hits": hits[:50],
+        },
+        indent=2,
+    )
 
 
 # ---------------------------------------------------------------------------
 # bio_align — BWA / minimap2 / STAR wrapper
 # ---------------------------------------------------------------------------
+
 
 def align(args: dict, **kwargs) -> str:
     aligner = args.get("aligner", "")
@@ -755,11 +873,14 @@ def align(args: dict, **kwargs) -> str:
         return json.dumps({"error": "Need 'output_bam'."})
 
     if aligner == "star":
-        return json.dumps({
-            "error": "STAR alignment is complex (requires a genome index directory). "
-                     "Use the terminal tool to run STAR directly with appropriate --genomeDir.",
-            "reference": ref_path, "reads": reads,
-        })
+        return json.dumps(
+            {
+                "error": "STAR alignment is complex (requires a genome index directory). "
+                "Use the terminal tool to run STAR directly with appropriate --genomeDir.",
+                "reference": ref_path,
+                "reads": reads,
+            }
+        )
 
     read_args = [_resolve_path(r) for r in reads]
     for r in read_args:
@@ -792,6 +913,7 @@ def align(args: dict, **kwargs) -> str:
 # bio_samtools — wrapper for common samtools operations
 # ---------------------------------------------------------------------------
 
+
 def samtools_op(args: dict, **kwargs) -> str:
     op = args.get("operation", "")
     inp = args.get("input", "")
@@ -800,10 +922,9 @@ def samtools_op(args: dict, **kwargs) -> str:
 
     samtools = _which_or_error("samtools")
     if not samtools:
-        return json.dumps({
-            "error": "samtools not found. "
-            "Install: conda install -c bioconda samtools"
-        })
+        return json.dumps(
+            {"error": "samtools not found. Install: conda install -c bioconda samtools"}
+        )
 
     inp_path = _resolve_path(inp)
     if not os.path.isfile(inp_path):
@@ -862,7 +983,9 @@ def samtools_op(args: dict, **kwargs) -> str:
         return json.dumps({"error": f"samtools {op} failed", "stderr": r["stderr"]})
 
     result: dict[str, Any] = {
-        "operation": op, "input": inp, "output": output,
+        "operation": op,
+        "input": inp,
+        "output": output,
         "returncode": r["returncode"],
     }
     if r["stdout"].strip():
@@ -878,6 +1001,7 @@ def samtools_op(args: dict, **kwargs) -> str:
 # ---------------------------------------------------------------------------
 # bio_variant — variant calling / manipulation
 # ---------------------------------------------------------------------------
+
 
 def variant(args: dict, **kwargs) -> str:
     op = args.get("operation", "")
@@ -901,10 +1025,9 @@ def variant(args: dict, **kwargs) -> str:
 def _var_mpileup_call(inp: str, args: dict) -> str:
     bcftools = _which_or_error("bcftools")
     if not bcftools:
-        return json.dumps({
-            "error": "bcftools not found. "
-            "Install: conda install -c bioconda bcftools"
-        })
+        return json.dumps(
+            {"error": "bcftools not found. Install: conda install -c bioconda bcftools"}
+        )
     samtools = _which_or_error("samtools")
     if not samtools:
         return json.dumps({"error": "samtools not found."})
@@ -929,7 +1052,11 @@ def _var_mpileup_call(inp: str, args: dict) -> str:
         subprocess.run(["samtools", "index", inp_path], capture_output=True, timeout=120)
 
     mpileup_cmd = [
-        "bcftools", "mpileup", "-f", ref_path, inp_path,
+        "bcftools",
+        "mpileup",
+        "-f",
+        ref_path,
+        inp_path,
     ]
     if extra:
         mpileup_cmd += extra.split()
@@ -938,17 +1065,24 @@ def _var_mpileup_call(inp: str, args: dict) -> str:
     # Pipe: mpileup | call > output
     p1 = subprocess.Popen(mpileup_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     with open(out_path, "wb") as f:
-        p2 = subprocess.run(call_cmd, stdin=p1.stdout, stdout=f, stderr=subprocess.PIPE, timeout=600)
+        p2 = subprocess.run(
+            call_cmd, stdin=p1.stdout, stdout=f, stderr=subprocess.PIPE, timeout=600
+        )
     p1.stdout.close()
     err = p1.stderr.read().decode() + p2.stderr.decode()
 
     if p1.wait() != 0 or p2.returncode != 0:
         return json.dumps({"error": "bcftools mpileup/call failed", "stderr": err[-2000:]})
 
-    return json.dumps({
-        "operation": "mpileup_call", "input_bam": inp, "reference": ref,
-        "output_vcf": out_path, "variant_count": _count_vcf_records(out_path),
-    })
+    return json.dumps(
+        {
+            "operation": "mpileup_call",
+            "input_bam": inp,
+            "reference": ref,
+            "output_vcf": out_path,
+            "variant_count": _count_vcf_records(out_path),
+        }
+    )
 
 
 def _var_filter(inp: str, args: dict) -> str:
@@ -972,12 +1106,16 @@ def _var_filter(inp: str, args: dict) -> str:
     if r["returncode"] != 0:
         return json.dumps({"error": "bcftools filter failed", "stderr": r["stderr"]})
 
-    return json.dumps({
-        "operation": "filter", "input": inp, "output": out_path,
-        "filter_expr": expr,
-        "input_variants": _count_vcf_records(inp_path),
-        "filtered_variants": _count_vcf_records(out_path),
-    })
+    return json.dumps(
+        {
+            "operation": "filter",
+            "input": inp,
+            "output": out_path,
+            "filter_expr": expr,
+            "input_variants": _count_vcf_records(inp_path),
+            "filtered_variants": _count_vcf_records(out_path),
+        }
+    )
 
 
 def _var_query(inp: str, args: dict) -> str:
@@ -998,11 +1136,15 @@ def _var_query(inp: str, args: dict) -> str:
         return json.dumps({"error": "bcftools query failed", "stderr": r["stderr"]})
 
     lines = r["stdout"].strip().split("\n") if r["stdout"].strip() else []
-    return json.dumps({
-        "operation": "query", "input": inp, "format": qfmt,
-        "record_count": len(lines),
-        "results": lines[:200],
-    })
+    return json.dumps(
+        {
+            "operation": "query",
+            "input": inp,
+            "format": qfmt,
+            "record_count": len(lines),
+            "results": lines[:200],
+        }
+    )
 
 
 def _var_annotate(inp: str, args: dict) -> str:
@@ -1023,9 +1165,13 @@ def _var_annotate(inp: str, args: dict) -> str:
     if r["returncode"] != 0:
         return json.dumps({"error": "bcftools annotate failed", "stderr": r["stderr"]})
 
-    return json.dumps({
-        "operation": "annotate", "input": inp, "output": out_path,
-    })
+    return json.dumps(
+        {
+            "operation": "annotate",
+            "input": inp,
+            "output": out_path,
+        }
+    )
 
 
 def _var_consensus(inp: str, args: dict) -> str:
@@ -1055,10 +1201,14 @@ def _var_consensus(inp: str, args: dict) -> str:
     if proc.returncode != 0:
         return json.dumps({"error": "bcftools consensus failed", "stderr": proc.stderr})
 
-    return json.dumps({
-        "operation": "consensus", "input_vcf": inp, "reference": ref,
-        "output_fasta": out_path,
-    })
+    return json.dumps(
+        {
+            "operation": "consensus",
+            "input_vcf": inp,
+            "reference": ref,
+            "output_fasta": out_path,
+        }
+    )
 
 
 def _count_vcf_records(path: str) -> int:
@@ -1071,7 +1221,6 @@ def _count_vcf_records(path: str) -> int:
             if line.strip() and not line.startswith("#"):
                 count += 1
     return count
-
 
 
 # ---------------------------------------------------------------------------
@@ -1101,7 +1250,9 @@ def get_result(args: dict, **kwargs) -> str:
     summary_path = _RESULTS_DIR / sample_id / "report" / f"{sample_id}_summary.json"
 
     if not summary_path.exists():
-        return json.dumps({"error": f"No results found for {sample_id}. Run bio_analyze_salmonella first."})
+        return json.dumps(
+            {"error": f"No results found for {sample_id}. Run bio_analyze_salmonella first."}
+        )
 
     with summary_path.open() as f:
         summary = json.load(f)
@@ -1176,17 +1327,21 @@ def verify_result(args: dict, **kwargs) -> str:
 
     try:
         from hermes_bacmap.deterministic_verifier import DeterministicVerifier
+
         v = DeterministicVerifier()
         result = v.verify_all(summary)
-        return json.dumps({
-            "passed": result.passed,
-            "failed_count": result.failed_count,
-            "needs_human_review": result.needs_human_review,
-            "checks": [
-                {"name": c.name, "passed": c.passed, "message": c.message}
-                for c in result.checks
-            ],
-        }, ensure_ascii=False)
+        return json.dumps(
+            {
+                "passed": result.passed,
+                "failed_count": result.failed_count,
+                "needs_human_review": result.needs_human_review,
+                "checks": [
+                    {"name": c.name, "passed": c.passed, "message": c.message}
+                    for c in result.checks
+                ],
+            },
+            ensure_ascii=False,
+        )
     except Exception as e:
         return json.dumps({"error": f"Verifier failed: {e}"})
 
@@ -1223,7 +1378,9 @@ def list_samples(args: dict, **kwargs) -> str:
             else:
                 status = "not-started"
 
-            status_list.append({"sample_id": sid, "species": r.get("species", ""), "status": status})
+            status_list.append(
+                {"sample_id": sid, "species": r.get("species", ""), "status": status}
+            )
 
     return json.dumps({"samples": status_list}, ensure_ascii=False)
 
@@ -1246,14 +1403,18 @@ def gene_scan(args: dict, **kwargs) -> str:
 
         if len(db_list) == 1:
             result = scan(
-                contigs, db_name=db_list[0],
-                min_identity=min_identity, min_coverage=min_coverage,
+                contigs,
+                db_name=db_list[0],
+                min_identity=min_identity,
+                min_coverage=min_coverage,
             )
             return json.dumps(result.to_dict(), ensure_ascii=False)
         else:
             results = scan_multi(
-                contigs, db_list,
-                min_identity=min_identity, min_coverage=min_coverage,
+                contigs,
+                db_list,
+                min_identity=min_identity,
+                min_coverage=min_coverage,
             )
             output = {name: r.to_dict() for name, r in results.items()}
             return json.dumps(output, ensure_ascii=False)
@@ -1277,6 +1438,7 @@ def vpa_serotype(args: dict, **kwargs) -> str:
 
     try:
         import sys
+
         sys.path.insert(0, str(_PROJECT_ROOT / "src"))
         from hermes_bacmap.vpa_serotyper import VpaSerotyper
 
@@ -1295,13 +1457,19 @@ def query_metadata(args: dict, **kwargs) -> str:
 
     try:
         import sys
+
         sys.path.insert(0, str(_PROJECT_ROOT / "src"))
         from hermes_bacmap.strain_metadata import StrainMetadataService
 
         strain_id = args.get("strain_id")
         search_kwargs = {}
-        for key in ("province", "outbreak_id", "sample_source",
-                     "isolation_date_from", "isolation_date_to"):
+        for key in (
+            "province",
+            "outbreak_id",
+            "sample_source",
+            "isolation_date_from",
+            "isolation_date_to",
+        ):
             val = args.get(key)
             if val:
                 search_kwargs[key] = val
@@ -1336,16 +1504,20 @@ def add_metadata(args: dict, **kwargs) -> str:
 
     try:
         import sys
+
         sys.path.insert(0, str(_PROJECT_ROOT / "src"))
         from hermes_bacmap.strain_metadata import StrainMetadataService
 
         with StrainMetadataService(db_path) as svc:
             meta = svc.upsert(strain_id, data)
-            return json.dumps({
-                "strain_id": strain_id,
-                "status": "saved",
-                "data": meta.to_dict(),
-            }, ensure_ascii=False)
+            return json.dumps(
+                {
+                    "strain_id": strain_id,
+                    "status": "saved",
+                    "data": meta.to_dict(),
+                },
+                ensure_ascii=False,
+            )
     except Exception as e:
         return json.dumps({"error": f"Add metadata failed: {e}"})
 
@@ -1358,6 +1530,7 @@ def query_lab_results(args: dict, **kwargs) -> str:
 
     try:
         import sys
+
         sys.path.insert(0, str(_PROJECT_ROOT / "src"))
         from hermes_bacmap.lab_results import LabResultService
 
@@ -1400,25 +1573,37 @@ def add_lab_result(args: dict, **kwargs) -> str:
 
     try:
         import sys
+
         sys.path.insert(0, str(_PROJECT_ROOT / "src"))
         from hermes_bacmap.lab_results import LabResultService
 
         optional = {}
-        for key in ("interpretation", "method", "unit", "standard", "tested_date", "tested_by", "lab"):
+        for key in (
+            "interpretation",
+            "method",
+            "unit",
+            "standard",
+            "tested_date",
+            "tested_by",
+            "lab",
+        ):
             val = args.get(key)
             if val:
                 optional[key] = val
 
         with LabResultService(db_path) as svc:
             lr = svc.add(strain_id, category, test_name, result, **optional)
-            return json.dumps({
-                "status": "saved",
-                "id": lr.id,
-                "strain_id": strain_id,
-                "category": category,
-                "test_name": test_name,
-                "result": result,
-            }, ensure_ascii=False)
+            return json.dumps(
+                {
+                    "status": "saved",
+                    "id": lr.id,
+                    "strain_id": strain_id,
+                    "category": category,
+                    "test_name": test_name,
+                    "result": result,
+                },
+                ensure_ascii=False,
+            )
     except Exception as e:
         return json.dumps({"error": f"Add lab result failed: {e}"})
 
@@ -1432,7 +1617,8 @@ def snp_tree(args: dict, **kwargs) -> str:
 
             with GenomeObjectService(db_path) as gos:
                 cohort_objs = [
-                    o for o in gos.list_by_type(ObjectType.ANALYSIS)
+                    o
+                    for o in gos.list_by_type(ObjectType.ANALYSIS)
                     if o.strain_id == "cohort:salmonella-snp"
                 ]
                 if cohort_objs:
@@ -1455,12 +1641,14 @@ def snp_tree(args: dict, **kwargs) -> str:
 
     snp_json = _RESULTS_DIR / "snp" / "snp_summary.json"
     if not snp_json.exists():
-        return json.dumps({
-            "error": "SNP tree not available. Run the SNP pipeline first "
-            "(snp_calling -> joint_variant_calling -> snp_matrix -> "
-            "phylo_tree -> snp_summary), then ingest via "
-            "'python scripts/ingest_results.py --snp'."
-        })
+        return json.dumps(
+            {
+                "error": "SNP tree not available. Run the SNP pipeline first "
+                "(snp_calling -> joint_variant_calling -> snp_matrix -> "
+                "phylo_tree -> snp_summary), then ingest via "
+                "'python scripts/ingest_results.py --snp'."
+            }
+        )
 
     try:
         summary = json.loads(snp_json.read_text())
@@ -1478,23 +1666,24 @@ def search_samples(args: dict, **kwargs) -> str:
 
     db_path = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
     if not db_path.exists():
-        return json.dumps({
-            "error": "GOM database not found. Run "
-            "'python scripts/ingest_results.py --all' first."
-        })
+        return json.dumps(
+            {"error": "GOM database not found. Run 'python scripts/ingest_results.py --all' first."}
+        )
 
     try:
         from hermes_bacmap.genome_object_service import GenomeObjectService, ObjectType
 
         with GenomeObjectService(db_path) as gos:
             all_samples = [
-                o for o in gos.list_by_type(ObjectType.ANALYSIS, limit=500)
+                o
+                for o in gos.list_by_type(ObjectType.ANALYSIS, limit=500)
                 if o.strain_id and not o.strain_id.startswith("cohort:")
             ]
 
             query_lower = query.lower()
             import re as _re
-            st_match = _re.match(r'^ST\s*(\d+)$', query.strip(), _re.IGNORECASE)
+
+            st_match = _re.match(r"^ST\s*(\d+)$", query.strip(), _re.IGNORECASE)
             st_number = st_match.group(1) if st_match else None
 
             seen_strains = set()
@@ -1567,24 +1756,29 @@ def search_samples(args: dict, **kwargs) -> str:
 
                 if score > 0:
                     seen_strains.add(obj.strain_id)
-                    matches.append({
-                        "strain_id": obj.strain_id,
-                        "organism": obj.organism,
-                        "serotype": serovar or "N/A",
-                        "mlst_st": st,
-                        "amr_genes": sorted(set(amr_genes))[:20],
-                        "match_score": score,
-                        "matched_fields": match_reasons[:3],
-                        "version": obj.version,
-                    })
+                    matches.append(
+                        {
+                            "strain_id": obj.strain_id,
+                            "organism": obj.organism,
+                            "serotype": serovar or "N/A",
+                            "mlst_st": st,
+                            "amr_genes": sorted(set(amr_genes))[:20],
+                            "match_score": score,
+                            "matched_fields": match_reasons[:3],
+                            "version": obj.version,
+                        }
+                    )
 
             matches.sort(key=lambda x: x["match_score"], reverse=True)
 
-            return json.dumps({
-                "query": query,
-                "count": len(matches),
-                "results": matches[:50],
-            }, ensure_ascii=False)
+            return json.dumps(
+                {
+                    "query": query,
+                    "count": len(matches),
+                    "results": matches[:50],
+                },
+                ensure_ascii=False,
+            )
     except Exception as e:
         return json.dumps({"error": f"Search failed: {e}"})
 
@@ -1612,15 +1806,24 @@ def annotate_genome(args: dict, **kwargs) -> str:
         result.save(output_path)
 
         summary = result.summary
-        return json.dumps({
-            "sample_id": sample_id,
-            "output": output_path,
-            "summary": summary,
-            "top_genes": [
-                {"gene": f.gene, "product": f.product, "identity": f.identity, "source": f.source}
-                for f in result.features if f.gene and f.identity >= 80
-            ][:20],
-        }, ensure_ascii=False)
+        return json.dumps(
+            {
+                "sample_id": sample_id,
+                "output": output_path,
+                "summary": summary,
+                "top_genes": [
+                    {
+                        "gene": f.gene,
+                        "product": f.product,
+                        "identity": f.identity,
+                        "source": f.source,
+                    }
+                    for f in result.features
+                    if f.gene and f.identity >= 80
+                ][:20],
+            },
+            ensure_ascii=False,
+        )
     except Exception as e:
         return json.dumps({"error": f"Annotation failed: {e}"})
 
@@ -1637,8 +1840,6 @@ def diagnose_failure(args: dict, **kwargs) -> str:
     elif log_path:
         result = diagnose_from_log(log_path)
     else:
-        result = diagnose_from_log(
-            str(_PROJECT_ROOT / "workflows/salmonella/.snakemake/log")
-        )
+        result = diagnose_from_log(str(_PROJECT_ROOT / "workflows/salmonella/.snakemake/log"))
 
     return json.dumps(result.to_dict(), ensure_ascii=False)
