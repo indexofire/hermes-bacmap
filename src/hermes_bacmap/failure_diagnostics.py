@@ -154,7 +154,7 @@ def diagnose(stderr: str) -> Diagnosis:
         result.severity = "high"
     elif result.error_type == "unknown":
         last_lines = stderr.strip().split("\n")[-3:]
-        result.details = "; ".join(log_line.strip() for l in last_lines if l.strip())[:300]
+        result.details = "; ".join(ln.strip() for ln in last_lines if ln.strip())[:300]
 
     return result
 
@@ -179,8 +179,8 @@ def diagnose_from_log(log_path: str) -> Diagnosis:
         )
 
     text = p.read_text(errors="replace")
-    error_lines = [log_line for l in text.split("\n") if any(
-        kw in l.lower() for kw in ("error", "exception", "failed", "traceback")
+    error_lines = [ln for ln in text.split("\n") if any(
+        kw in ln.lower() for kw in ("error", "exception", "failed", "traceback")
     )]
 
     if not error_lines:
