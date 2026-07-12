@@ -32,7 +32,7 @@ rule vpara_virulence:
     shell:
         "mkdir -p $(dirname {output.result}) && "
         "export PATH={params.pixi_bin}:$PATH && "
-        "{params.venv_py} -c \""
+        "{params.python} -c \""
         "import json, subprocess; "
         "contigs='{input.contigs}'; "
         "genes={{}}; "
