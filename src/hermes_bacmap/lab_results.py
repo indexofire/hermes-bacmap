@@ -159,6 +159,7 @@ class LabResultService:
         *,
         category: str | None = None,
         test_name: str | None = None,
+        result: str | None = None,
         interpretation: str | None = None,
         strain_ids: list[str] | None = None,
         limit: int = 200,
@@ -172,6 +173,9 @@ class LabResultService:
         if test_name:
             conditions.append("test_name = ?")
             params.append(test_name)
+        if result:
+            conditions.append("result = ?")
+            params.append(result)
         if interpretation:
             conditions.append("interpretation = ?")
             params.append(interpretation)

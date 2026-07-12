@@ -539,12 +539,11 @@ SNP_TREE = {
 SEARCH_SAMPLES = {
     "name": "bio_search_samples",
     "description": (
-        "Search across all ingested sample results in the Genome Object "
-        "Model using full-text search. Find samples by organism, serotype, "
-        "MLST ST, AMR gene name, plasmid type, or any keyword. Returns "
-        "matching samples with their key attributes (species, serotype, "
-        "MLST, AMR genes). Use this when the user asks 'which samples "
-        "have X' or 'find all Y' type questions."
+        "Search across all ingested sample results to find strains by "
+        "serotype, MLST ST, AMR gene, organism, or free-text keyword. "
+        "Supports multi-field AND queries (e.g., serotype=Typhimurium "
+        "AND amr_gene=blaCTX-M-15). Use for traceability: 'find all "
+        "strains with same serotype' or 'which strains carry gene X'."
     ),
     "parameters": {
         "type": "object",
@@ -552,14 +551,32 @@ SEARCH_SAMPLES = {
             "query": {
                 "type": "string",
                 "description": (
-                    "Search query. Can be organism name (Salmonella, E.coli), "
-                    "serotype (Typhimurium, Enteritidis), MLST ST number "
-                    "(ST19, ST11), AMR gene name (blaCTX-M, tetA), or any "
-                    "keyword found in sample results."
+                    "Free-text search (fallback). Searches organism, "
+                    "strain_id, serotype, MLST, AMR genes via FTS5."
                 ),
             },
+            "serotype": {
+                "type": "string",
+                "description": "Exact serotype match (e.g., Typhimurium, Enteritidis).",
+            },
+            "mlst_st": {
+                "type": "string",
+                "description": "MLST ST number (e.g., ST19, 19). Normalized to ST-prefix.",
+            },
+            "amr_gene": {
+                "type": "string",
+                "description": "AMR gene name, exact match (e.g., blaCTX-M-15, tet(A)).",
+            },
+            "organism": {
+                "type": "string",
+                "description": "Organism name, substring match (e.g., Salmonella, E.coli).",
+            },
+            "limit": {
+                "type": "integer",
+                "description": "Max results (default 50).",
+                "default": 50,
+            },
         },
-        "required": ["query"],
     },
 }
 
@@ -709,9 +726,10 @@ QUERY_LAB_RESULTS = {
     "description": (
         "Query wet lab experiment results (AST drug susceptibility, "
         "classical serology, biochemical tests, PCR) for a sample. "
-        "Supports filtering by sample, category, and interpretation. "
-        "Use this when the user asks about phenotypic results, "
-        "antibiotic resistance testing, or serological findings."
+        "Supports filtering by sample, category, test_name, result, "
+        "and interpretation. Use this when the user asks about "
+        "phenotypic results, antibiotic resistance testing, or "
+        "serological findings."
     ),
     "parameters": {
         "type": "object",
@@ -723,6 +741,14 @@ QUERY_LAB_RESULTS = {
             "category": {
                 "type": "string",
                 "description": "Filter by category: ast, serology, biochemical, pcr, pfge.",
+            },
+            "test_name": {
+                "type": "string",
+                "description": "Filter by test name (e.g., Cefotaxime, Ciprofloxacin, O-antigen).",
+            },
+            "result": {
+                "type": "string",
+                "description": "Filter by result value (e.g., >=8, Positive, Negative).",
             },
             "interpretation": {
                 "type": "string",

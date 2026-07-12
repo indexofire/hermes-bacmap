@@ -1536,16 +1536,22 @@ def query_lab_results(args: dict, **kwargs) -> str:
         sample_id = args.get("sample_id", "")
         category = args.get("category", "")
         interpretation = args.get("interpretation", "")
+        test_name = args.get("test_name", "")
+        result = args.get("result", "")
 
         with LabResultService(db_path) as svc:
             if sample_id:
                 results = svc.get_by_strain(sample_id, category=category or None)
-            elif category or interpretation:
+            elif any([category, interpretation, test_name, result]):
                 search_kwargs: dict = {}
                 if category:
                     search_kwargs["category"] = category
                 if interpretation:
                     search_kwargs["interpretation"] = interpretation
+                if test_name:
+                    search_kwargs["test_name"] = test_name
+                if result:
+                    search_kwargs["result"] = result
                 results = svc.search(**search_kwargs)
             else:
                 results = svc.search(limit=200)
@@ -1658,10 +1664,13 @@ def snp_tree(args: dict, **kwargs) -> str:
 
 
 def search_samples(args: dict, **kwargs) -> str:
-    """Search ingested sample results via GOM full-text search."""
+    """Search ingested samples by structured genotype fields or full-text query."""
     query = args.get("query", "").strip()
-    if not query:
-        return json.dumps({"error": "query is required"})
+    serotype = args.get("serotype", "").strip()
+    mlst_st = args.get("mlst_st", "").strip()
+    amr_gene = args.get("amr_gene", "").strip()
+    organism = args.get("organism", "").strip()
+    limit = args.get("limit", 50)
 
     db_path = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
     if not db_path.exists():
@@ -1670,112 +1679,111 @@ def search_samples(args: dict, **kwargs) -> str:
         )
 
     try:
+        from hermes_bacmap.strain_index import StrainGenotypeIndex
+
+        idx = StrainGenotypeIndex(db_path)
+        has_structured = any([serotype, mlst_st, amr_gene, organism])
+
+        if has_structured:
+            results = idx.search(
+                serotype=serotype or None,
+                mlst_st=mlst_st or None,
+                amr_gene=amr_gene or None,
+                organism=organism or None,
+                limit=limit,
+            )
+            idx.close()
+
+            return json.dumps(
+                {
+                    "filters": {
+                        k: v for k, v in {
+                            "serotype": serotype,
+                            "mlst_st": mlst_st,
+                            "amr_gene": amr_gene,
+                            "organism": organism,
+                        }.items() if v
+                    },
+                    "count": len(results),
+                    "results": [
+                        {
+                            "strain_id": m.strain_id,
+                            "organism": m.organism,
+                            "species": m.species,
+                            "serotype": m.serotype or "N/A",
+                            "mlst_st": m.mlst_st or "N/A",
+                            "amr_genes": sorted(set(m.amr_genes))[:20],
+                            "analysis_date": m.analysis_date,
+                        }
+                        for m in results
+                    ],
+                },
+                ensure_ascii=False,
+            )
+
+        idx.close()
+
+        if not query:
+            return json.dumps({"error": "Provide at least one of: query, serotype, mlst_st, amr_gene, organism"})
+
         from hermes_bacmap.genome_object_service import GenomeObjectService, ObjectType
 
         with GenomeObjectService(db_path) as gos:
-            all_samples = [
-                o
-                for o in gos.list_by_type(ObjectType.ANALYSIS, limit=500)
-                if o.strain_id and not o.strain_id.startswith("cohort:")
-            ]
+            fts_results = gos.search(query, object_type=ObjectType.ANALYSIS, limit=limit * 2)
 
-            query_lower = query.lower()
             import re as _re
-
             st_match = _re.match(r"^ST\s*(\d+)$", query.strip(), _re.IGNORECASE)
             st_number = st_match.group(1) if st_match else None
+            query_lower = query.lower()
 
-            seen_strains = set()
             matches = []
-
-            for obj in all_samples:
-                if obj.strain_id in seen_strains:
+            seen = set()
+            for obj in fts_results:
+                if obj.strain_id in seen or obj.strain_id.startswith("cohort:"):
                     continue
+                seen.add(obj.strain_id)
 
                 p = obj.payload
-                score = 0
-                match_reasons = []
-
                 sero = p.get("serotype", {})
                 serovar = sero.get("sistr", "") if isinstance(sero, dict) else ""
-                if query_lower in serovar.lower():
-                    score += 10
-                    match_reasons.append(f"serotype={serovar}")
 
                 mlst_raw = p.get("mlst", "")
-                st = "N/A"
+                st_val = ""
                 if mlst_raw and isinstance(mlst_raw, str):
                     parts = mlst_raw.strip().split("\t")
-                    if len(parts) >= 2:
-                        st = parts[-1]
-
-                if st_number and st == st_number:
-                    score += 10
-                    match_reasons.append(f"mlst=ST{st}")
-                elif query_lower in mlst_raw.lower() and not st_number:
-                    score += 8
-                    match_reasons.append(f"mlst={st}")
+                    if len(parts) >= 3:
+                        st_val = parts[2]
 
                 amr = p.get("amr", {})
                 amr_genes = []
                 if isinstance(amr, dict):
                     for db_name in ("abricate_card", "abricate_vfdb"):
                         for hit in amr.get(db_name, []):
-                            if isinstance(hit, dict):
-                                gene = hit.get("GENE", "")
-                                if gene:
-                                    amr_genes.append(gene)
-                                if query_lower in gene.lower():
-                                    score += 9
-                                    match_reasons.append(f"amr_gene={gene}")
+                            if isinstance(hit, dict) and hit.get("GENE"):
+                                amr_genes.append(hit["GENE"])
 
-                plasmid = p.get("plasmid", {})
-                if isinstance(plasmid, dict):
-                    for hit in plasmid.get("plasmidfinder", []):
-                        if isinstance(hit, dict):
-                            gene = hit.get("GENE", "")
-                            if query_lower in gene.lower():
-                                score += 7
-                                match_reasons.append(f"plasmid={gene}")
+                reasons = []
+                if serovar and query_lower in serovar.lower():
+                    reasons.append(f"serotype={serovar}")
+                if st_number and st_val == st_number:
+                    reasons.append(f"MLST ST={st_val}")
+                if any(query_lower in g.lower() for g in amr_genes):
+                    matched = [g for g in amr_genes if query_lower in g.lower()][:3]
+                    reasons.append(f"AMR: {', '.join(matched)}")
+                if not reasons:
+                    reasons.append("full-text match")
 
-                if query_lower in (obj.organism or "").lower():
-                    score += 5
-                    match_reasons.append(f"organism={obj.organism}")
-
-                if query_lower in (obj.strain_id or "").lower():
-                    score += 6
-                    match_reasons.append(f"strain_id={obj.strain_id}")
-
-                if score == 0:
-                    fts_results = gos.search(query, object_type=ObjectType.ANALYSIS, limit=50)
-                    fts_ids = {o.object_id for o in fts_results}
-                    if obj.object_id in fts_ids:
-                        score = 1
-                        match_reasons.append("full-text match")
-
-                if score > 0:
-                    seen_strains.add(obj.strain_id)
-                    matches.append(
-                        {
-                            "strain_id": obj.strain_id,
-                            "organism": obj.organism,
-                            "serotype": serovar or "N/A",
-                            "mlst_st": st,
-                            "amr_genes": sorted(set(amr_genes))[:20],
-                            "match_score": score,
-                            "matched_fields": match_reasons[:3],
-                            "version": obj.version,
-                        }
-                    )
-
-            matches.sort(key=lambda x: x["match_score"], reverse=True)
+                matches.append({
+                    "strain_id": obj.strain_id,
+                    "organism": obj.organism,
+                    "serotype": serovar or "N/A",
+                    "mlst_st": f"ST{st_val}" if st_val else "N/A",
+                    "amr_genes": sorted(set(amr_genes))[:20],
+                    "matched_fields": reasons[:3],
+                })
 
             return json.dumps(
-                {
-                    "query": query,
-                    "count": len(matches),
-                    "results": matches[:50],
-                },
+                {"query": query, "count": len(matches), "results": matches[:limit]},
                 ensure_ascii=False,
             )
     except Exception as e:

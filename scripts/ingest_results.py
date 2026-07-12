@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sqlite3
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -24,6 +25,7 @@ from hermes_bacmap.genome_object_service import (
     GenomeObjectService,
     ObjectType,
 )
+from hermes_bacmap.strain_index import StrainGenotypeIndex, _extract_genotype
 
 RESULTS_DIR = ROOT / "results"
 DB_PATH = ROOT / "data" / "hermes_bacmap.sqlite"
@@ -152,6 +154,30 @@ def _register_files(gos: GenomeObjectService, object_id: str, version: int, samp
             )
 
 
+def _populate_genotype_index(
+    index: StrainGenotypeIndex,
+    sample_id: str,
+    payload: dict,
+    organism: str,
+    object_id: str,
+):
+    extracted = _extract_genotype(payload)
+    index.upsert(
+        strain_id=sample_id,
+        organism=organism,
+        species=extracted["species"],
+        serotype=extracted["serotype"],
+        serotype_method=extracted["serotype_method"],
+        mlst_scheme=extracted["mlst_scheme"],
+        mlst_st=extracted["mlst_st"],
+        plasmid_types=extracted["plasmid_types"],
+        amr_genes=extracted["amr_genes"],
+        object_id=object_id,
+        analysis_date=datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
+        pipeline_version=PIPELINE_VERSION,
+    )
+
+
 def _create_new(gos: GenomeObjectService, sample_id: str, summary: dict, summary_path: Path) -> str:
     payload, organism = _build_payload(summary, sample_id)
     object_id = str(uuid4())
@@ -180,6 +206,10 @@ def _create_new(gos: GenomeObjectService, sample_id: str, summary: dict, summary
     gos.log_event(object_id, "amr_finished", {"step": "abricate"})
     gos.log_event(object_id, "report_generated", {"summary_file": str(summary_path)})
 
+    idx = StrainGenotypeIndex(DB_PATH)
+    _populate_genotype_index(idx, sample_id, payload, organism, object_id)
+    idx.close()
+
     print(f"  ✅ {sample_id}: 新建 v1 (object_id={object_id[:12]}...)")
     return object_id
 
@@ -200,6 +230,10 @@ def _create_new_version(gos: GenomeObjectService, existing_id: str, sample_id: s
         "pipeline_version": PIPELINE_VERSION,
     })
     gos.log_event(new_obj.object_id, "report_generated", {"summary_file": str(summary_path)})
+
+    idx = StrainGenotypeIndex(DB_PATH)
+    _populate_genotype_index(idx, sample_id, payload, organism, new_obj.object_id)
+    idx.close()
 
     print(f"  🔄 {sample_id}: 新版本 v{new_obj.version} (pipeline={PIPELINE_VERSION})")
     return new_obj.object_id
@@ -380,10 +414,24 @@ def main() -> int:
     group.add_argument("--sample", type=str)
     group.add_argument("--all", action="store_true")
     group.add_argument("--snp", action="store_true")
+    group.add_argument("--rebuild-index", action="store_true")
     args = parser.parse_args()
 
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     gos = GenomeObjectService(DB_PATH)
+
+    if args.rebuild_index:
+        print("=== 重建基因型索引 ===\n")
+        idx = StrainGenotypeIndex(DB_PATH)
+        gom_conn = sqlite3.connect(str(DB_PATH))
+        gom_conn.row_factory = sqlite3.Row
+        count = idx.rebuild_from_gom(gom_conn)
+        gom_conn.close()
+        idx.close()
+        print(f"\n✓ 索引重建完成: {count} strains indexed")
+        print(f"  Database: {DB_PATH}")
+        gos.close()
+        return 0
 
     if args.snp:
         print("=== 入库 SNP Cohort (per-group) ===\n")
