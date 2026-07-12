@@ -22,7 +22,7 @@ rule typing_mlst:
     shell:
         "mkdir -p $(dirname {output.result}) && "
         "{GMLST_BIN} typing mlst -s {params.scheme} "
-        "-o {output.result} {input.contigs} 2>/dev/null || "
+        "-o {output.result} {input.contigs} || "
         "echo -e 'File\\tScheme\\tST\\n{wildcards.sample}\\t{params.scheme}\\tN/A' > {output.result}"
 
 rule typing_sistr:

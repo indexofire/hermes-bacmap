@@ -21,6 +21,7 @@ rule all:
     input:
         expand(str(WORKDIR) + "/{sample}/report/{sample}_summary.json", sample=SAMPLES),
         expand(str(WORKDIR) + "/{sample}/annotation/annotation.json", sample=SAMPLES),
+        expand(str(WORKDIR) + "/{sample}/vpa/vpa_serotype.json", sample=SAMPLES),
         str(WORKDIR) + "/snp/core.treefile",
         str(WORKDIR) + "/snp/snp_summary.json"
 

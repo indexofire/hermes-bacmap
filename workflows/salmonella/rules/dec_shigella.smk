@@ -15,7 +15,7 @@ rule dec_ecoh_serotype:
         "mkdir -p $(dirname {output.result}) && "
         "export PATH={params.pixi_bin}:$PATH && "
         "{params.venv_py} -m hermes_bacmap.ecoh_serotyper "
-        "{input.contigs} --json > {output.result} 2>/dev/null || "
+        "{input.contigs} --json > {output.result} || "
         "echo '{params.fallback}' > {output.result}"
 
 rule dec_pathotype:
@@ -43,5 +43,5 @@ rule shigella_serotype:
         "mkdir -p $(dirname {output.result}) && "
         "export PATH={params.pixi_bin}:$PATH && "
         "{params.venv_py} -m hermes_bacmap.shigella_serotyper "
-        "{input.contigs} --json > {output.result} 2>/dev/null || "
+        "{input.contigs} --json > {output.result} || "
         "echo '{params.fallback}' > {output.result}"

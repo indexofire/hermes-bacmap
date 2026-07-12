@@ -16,7 +16,7 @@ rule snp_calling:
     shell:
         "mkdir -p {params.outdir} && "
         "export PATH={params.pixi}:$PATH && "
-        "bwa mem -t {threads} -Y -M {params.ref} {input.r1} {input.r2} 2>/dev/null | "
+        "bwa mem -t {threads} -Y -M {params.ref} {input.r1} {input.r2} | "
         "samtools sort -@ 4 -o {output.bam} && "
         "samtools index {output.bam}"
 
@@ -43,11 +43,11 @@ rule joint_variant_calling:
         shell(
             "export PATH={params.pixi}:$PATH && "
             "bcftools mpileup -f {params.ref} -q 20 -Q 20 --max-depth 200 "
-            "{bams} 2>/dev/null | "
-            "bcftools call -mv --ploidy 1 2>/dev/null | "
-            "bcftools reheader -s {output.vcfgz}.rename.tsv 2>/dev/null | "
-            "bcftools view -Oz -o {output.vcfgz} 2>/dev/null && "
-            "bcftools index {output.vcfgz} 2>/dev/null",
+            "{bams} | "
+            "bcftools call -mv --ploidy 1 | "
+            "bcftools reheader -s {output.vcfgz}.rename.tsv | "
+            "bcftools view -Oz -o {output.vcfgz} && "
+            "bcftools index {output.vcfgz}",
             bams=bam_list,
         )
 

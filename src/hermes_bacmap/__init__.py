@@ -125,6 +125,18 @@ def register(ctx):
         schema=schemas.VPA_SEROTYPE,
         handler=tools.vpa_serotype,
     )
+    ctx.register_tool(
+        name="bio_query_metadata",
+        toolset="bioinfo",
+        schema=schemas.QUERY_METADATA,
+        handler=tools.query_metadata,
+    )
+    ctx.register_tool(
+        name="bio_add_metadata",
+        toolset="bioinfo",
+        schema=schemas.ADD_METADATA,
+        handler=tools.add_metadata,
+    )
 
     # Bundle skills with common pipeline guidance.
     # Skills live at <project_root>/skills/ — two levels up from this file
@@ -138,4 +150,4 @@ def register(ctx):
             if child.is_dir() and skill_md.exists():
                 ctx.register_skill(child.name, skill_md)
 
-    logger.info("hermes_bacmap plugin registered 19 tools")
+    logger.info("hermes_bacmap plugin registered 21 tools")

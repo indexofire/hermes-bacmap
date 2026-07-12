@@ -113,6 +113,18 @@ else:
 summary["steps"]["dec"]["primary_serotype"] = primary_serotype
 summary["steps"]["dec"]["serotype_method"] = serotype_method
 
+vpa_serotype = read_json(snakemake.input.vpa_serotype, {})
+if not isinstance(vpa_serotype, dict):
+    vpa_serotype = {}
+if vpa_serotype.get("predicted_serotype"):
+    summary["steps"]["vpa_serotype"] = {
+        "predicted_serotype": vpa_serotype.get("predicted_serotype", "OUT:KUT"),
+        "o_locus": vpa_serotype.get("o_locus", "None"),
+        "k_locus": vpa_serotype.get("k_locus", "None"),
+        "o_confidence": vpa_serotype.get("o_confidence", "Unknown"),
+        "k_confidence": vpa_serotype.get("k_confidence", "Unknown"),
+    }
+
 
 Path(snakemake.output.summary).parent.mkdir(parents=True, exist_ok=True)
 Path(snakemake.output.summary).write_text(

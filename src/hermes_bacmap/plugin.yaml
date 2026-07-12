@@ -30,6 +30,8 @@ provides_tools:
   - bio_annotate
   - bio_diagnose
   - bio_vpa_serotype
+  - bio_query_metadata
+  - bio_add_metadata
 provides_skills:
   - bio-router
   - run-pipeline

@@ -12,11 +12,11 @@ rule vpara_targets:
         "blastn -query {input.contigs} -db {params.db} "
         "-outfmt '6 qseqid sseqid pident length slen evalue bitscore' "
         "-evalue 1e-50 -word_size 28 -num_threads {threads} "
-        "> {output.result} 2>/dev/null; "
+        "> {output.result}; "
         "if [ -s {output.result} ]; then "
         "  if blastn -query {input.contigs} -db {params.db} "
         "  -outfmt '6 sseqid' -evalue 1e-50 -word_size 28 "
-        "  2>/dev/null | grep -qi 'toxR\\|tlh'; then "
+        "  | grep -qi 'toxR\\|tlh'; then "
         "    echo 'V_parahaemolyticus' > {output.verdict}; "
         "  else echo 'ambiguous_vpara' > {output.verdict}; fi; "
         "else echo 'not_V_parahaemolyticus' > {output.verdict}; fi"
@@ -42,7 +42,7 @@ rule vpara_virulence:
         "  hits=[l for l in r.stdout.split('\\n') if g.upper() in l.upper()]; "
         "  genes[g]=len(hits)>0; "
         "json.dump({{k:v for k,v in genes.items()}},open('{output.result}','w')); "
-        "\" 2>/dev/null || echo '{{\"tdh\":false,\"trh\":false,\"tlh\":false}}' > {output.result}"
+        "\" || echo '{{\"tdh\":false,\"trh\":false,\"tlh\":false}}' > {output.result}"
 
 rule vpara_serotype:
     input:

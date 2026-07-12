@@ -11,5 +11,5 @@ rule species_identify:
         "mkdir -p $(dirname {output.result}) && "
         "export PATH={params.pixi_bin}:$PATH && "
         "{params.venv_py} -m hermes_bacmap.species_identifier "
-        "{input.contigs} --json > {output.result} 2>/dev/null || "
+        "{input.contigs} --json > {output.result} || "
         "echo '{params.fallback}' > {output.result}"

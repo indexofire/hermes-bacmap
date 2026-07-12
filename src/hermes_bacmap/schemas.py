@@ -632,3 +632,54 @@ VPA_SEROTYPE = {
         "required": ["contigs_path"],
     },
 }
+
+
+QUERY_METADATA = {
+    "name": "bio_query_metadata",
+    "description": (
+        "Query strain background metadata (patient info, isolation details, "
+        "outbreak linkage) from the strain_metadata table. Supports filtering "
+        "by province, outbreak_id, sample_source, date range, and custom "
+        "extra JSON fields. Use this when the user asks about sample "
+        "background, epidemiological info, or outbreak investigations."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "strain_id": {
+                "type": "string",
+                "description": "Specific strain ID to look up (optional).",
+            },
+            "province": {"type": "string", "description": "Filter by province."},
+            "outbreak_id": {"type": "string", "description": "Filter by outbreak ID."},
+            "sample_source": {"type": "string", "description": "Filter by sample source (clinical/food/environment)."},
+            "isolation_date_from": {"type": "string", "description": "Date range start (YYYY-MM-DD)."},
+            "isolation_date_to": {"type": "string", "description": "Date range end (YYYY-MM-DD)."},
+        },
+    },
+}
+
+
+ADD_METADATA = {
+    "name": "bio_add_metadata",
+    "description": (
+        "Add or update strain background metadata (patient name, age, "
+        "isolation date, province, outbreak ID, etc.). Creates a new record "
+        "or updates an existing one. Use this when the user wants to record "
+        "or modify epidemiological information for a sample."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "strain_id": {
+                "type": "string",
+                "description": "Strain/sample identifier.",
+            },
+            "data": {
+                "type": "object",
+                "description": "Metadata fields to set. Core fields: patient_name, patient_age, patient_gender, isolation_date, province, city, sample_source, outbreak_id. Custom fields stored in extra JSON.",
+            },
+        },
+        "required": ["strain_id", "data"],
+    },
+}

@@ -13,6 +13,7 @@ rule report_summary:
         ectyper = str(WORKDIR) + "/{sample}/dec/ecoh_serotype.json",
         pathotype = str(WORKDIR) + "/{sample}/dec/pathotype.tsv",
         shigella_serotype = str(WORKDIR) + "/{sample}/dec/shigella_serotype.json",
+        vpa_serotype = str(WORKDIR) + "/{sample}/vpa/vpa_serotype.json",
     output:
         summary = str(WORKDIR) + "/{sample}/report/{sample}_summary.json"
     script:

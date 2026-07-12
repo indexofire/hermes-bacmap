@@ -1307,6 +1307,69 @@ def vpa_serotype(args: dict, **kwargs) -> str:
         return json.dumps({"error": f"VPA serotyping failed: {e}"})
 
 
+def query_metadata(args: dict, **kwargs) -> str:
+    """Query strain background metadata."""
+    db_path = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
+    if not db_path.exists():
+        return json.dumps({"error": "Database not found. Run analysis first."})
+
+    try:
+        import sys
+        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
+        from hermes_bacmap.strain_metadata import StrainMetadataService
+
+        strain_id = args.get("strain_id")
+        search_kwargs = {}
+        for key in ("province", "outbreak_id", "sample_source",
+                     "isolation_date_from", "isolation_date_to"):
+            val = args.get(key)
+            if val:
+                search_kwargs[key] = val
+
+        with StrainMetadataService(db_path) as svc:
+            if strain_id:
+                meta = svc.get(strain_id)
+                if not meta:
+                    return json.dumps({"error": f"Strain {strain_id} not found"})
+                return json.dumps(meta.to_dict(), ensure_ascii=False)
+            else:
+                results = svc.search(**search_kwargs) if search_kwargs else svc.list_all()
+                return json.dumps(
+                    {"count": len(results), "results": [m.to_dict() for m in results]},
+                    ensure_ascii=False,
+                )
+    except Exception as e:
+        return json.dumps({"error": f"Query failed: {e}"})
+
+
+def add_metadata(args: dict, **kwargs) -> str:
+    """Add or update strain background metadata."""
+    strain_id = args.get("strain_id", "")
+    data = args.get("data", {})
+
+    if not strain_id:
+        return json.dumps({"error": "strain_id is required"})
+    if not data or not isinstance(data, dict):
+        return json.dumps({"error": "data dict is required"})
+
+    db_path = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
+
+    try:
+        import sys
+        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
+        from hermes_bacmap.strain_metadata import StrainMetadataService
+
+        with StrainMetadataService(db_path) as svc:
+            meta = svc.upsert(strain_id, data)
+            return json.dumps({
+                "strain_id": strain_id,
+                "status": "saved",
+                "data": meta.to_dict(),
+            }, ensure_ascii=False)
+    except Exception as e:
+        return json.dumps({"error": f"Add metadata failed: {e}"})
+
+
 def snp_tree(args: dict, **kwargs) -> str:
     """Retrieve cohort-level SNP phylogenetic tree and distance matrix."""
     db_path = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"

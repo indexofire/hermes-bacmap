@@ -151,6 +151,56 @@ def pipeline_status() -> dict:
     }
 
 
+@app.get("/api/metadata")
+def get_metadata(
+    strain_id: str = "",
+    province: str = "",
+    outbreak_id: str = "",
+    sample_source: str = "",
+    isolation_date_from: str = "",
+    isolation_date_to: str = "",
+) -> dict:
+    from hermes_bacmap.strain_metadata import StrainMetadataService
+
+    db = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
+    with StrainMetadataService(db) as svc:
+        if strain_id:
+            meta = svc.get(strain_id)
+            if not meta:
+                return JSONResponse({"error": f"Strain {strain_id} not found"}, status_code=404)
+            return meta.to_dict()
+
+        search_kwargs: dict = {}
+        if province:
+            search_kwargs["province"] = province
+        if outbreak_id:
+            search_kwargs["outbreak_id"] = outbreak_id
+        if sample_source:
+            search_kwargs["sample_source"] = sample_source
+        if isolation_date_from:
+            search_kwargs["isolation_date_from"] = isolation_date_from
+        if isolation_date_to:
+            search_kwargs["isolation_date_to"] = isolation_date_to
+
+        results = svc.search(**search_kwargs) if search_kwargs else svc.list_all()
+        return {"count": len(results), "results": [m.to_dict() for m in results]}
+
+
+@app.get("/api/lab-results")
+def get_lab_results(sample_id: str = "", category: str = "") -> dict:
+    from hermes_bacmap.lab_results import LabResultService
+
+    db = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
+    with LabResultService(db) as svc:
+        if sample_id:
+            results = svc.get_by_strain(sample_id, category=category or None)
+        elif category:
+            results = svc.search(category=category)
+        else:
+            results = svc.search(limit=200)
+        return {"count": len(results), "results": [r.to_dict() for r in results]}
+
+
 @app.get("/", response_class=HTMLResponse)
 def index() -> str:
     return (Path(__file__).parent / "templates" / "index.html").read_text()
