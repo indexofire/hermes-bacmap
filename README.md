@@ -56,12 +56,12 @@ uv pip install -e ".[dev]"
 
 ## 支持的病原
 
-| 病原 | 物种鉴定靶基因 | 血清型 | MLST | AMR | SNP/系统发育 | 状态 |
+| 病原 | 物种鉴定 | 血清型 | MLST | AMR | SNP/系统发育 | 状态 |
 |---|---|---|---|---|---|---|
-| **Salmonella** | invA | SISTR | gmlst (salmonella_2) | abricate (CARD/VFDB/PlasmidFinder) | bwa+bcftools+iqtree | ✅ V0.3 |
-| **DEC** (E. coli) | uidA | ecoh_serotyper (Python) | gmlst | abricate | bwa+bcftools+iqtree | ✅ V0.2 |
-| **Shigella / EIEC** | ipaH | shigella_serotyper (58 serotypes) | gmlst | abricate | bwa+bcftools+iqtree | ✅ V0.2 |
-| **V. parahaemolyticus** | toxR + tlh | native | gmlst | abricate | bwa+bcftools+iqtree | ✅ V0.4 (物种鉴定) |
+| **Salmonella** | invA (marker) / GTDB-Tk (standard) | SISTR | gmlst (salmonella_2) | abricate (CARD/VFDB/PlasmidFinder) | bwa+bcftools+iqtree | ✅ V0.3 |
+| **DEC** (E. coli) | uidA (marker) / GTDB-Tk (standard) | ecoh_serotyper (Python) | gmlst | abricate | bwa+bcftools+iqtree | ✅ V0.2 |
+| **Shigella / EIEC** | ipaH (marker) / GTDB-Tk (standard) | shigella_serotyper (58 serotypes) | gmlst | abricate | bwa+bcftools+iqtree | ✅ V0.2 |
+| **V. parahaemolyticus** | toxR + tlh (marker) / GTDB-Tk (standard) | native | gmlst | abricate | bwa+bcftools+iqtree | ✅ V0.4 (物种鉴定) |
 
 ## 核心模块
 
@@ -75,7 +75,7 @@ uv pip install -e ".[dev]"
 | `gene_scanner.py` | 420 | 基因扫描引擎（委托 engine.SequenceMatcher） |
 | `shigella_serotyper.py` | 207 | Shigella 血清型（移植 ShigATyper） |
 | `deterministic_verifier.py` | 186 | 确定性规则校验（species/MLST/serotype/AMR） |
-| `species_identifier.py` | 121 | 统一物种鉴定（invA/uidA/ipaH/toxR/tlh） |
+| `species_identifier.py` | 121 | 物种鉴定（双模式：marker genes / GTDB-Tk） |
 | `ecoh_serotyper.py` | 121 | E. coli O:H 血清型（委托 gene_scanner） |
 
 ## 项目结构

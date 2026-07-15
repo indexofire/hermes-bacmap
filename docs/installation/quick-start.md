@@ -96,6 +96,19 @@ hermes plugins enable hermes_bacmap
 export BACMAP_DATA_DIR=/path/to/hermes-bacmap/data
 ```
 
+如果使用标准物种鉴定模式（CheckM2 + GTDB-Tk），还需设置：
+
+```bash
+export CHECKM2DB=/data/databases/checkm2_db
+export GTDBDB=/data/databases/gtdb_r220
+```
+
+并在 `workflows/bacmap/config/config.yaml` 中切换模式：
+
+```yaml
+species_mode: standard   # simple（默认）或 standard
+```
+
 ## 7. 验证安装
 
 ### 7.1 跑测试

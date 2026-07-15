@@ -65,6 +65,27 @@
 | gmlst | 0.1.0 | MLST（PubMLST schemes） |
 | prodigal | ≥ 2.6 | CDS 预测（pyrodigal 后端） |
 
+### 可选：标准物种鉴定（CheckM2 + GTDB-Tk）
+
+默认使用靶标基因快速鉴定物种。如需标准规范（基因组污染校验 + 分类学验证），安装以下外部数据库：
+
+| 数据库 | 大小 | 环境变量 | 下载 |
+|---|---|---|---|
+| CheckM2 DB | ~3 GB | `CHECKM2DB` | [CheckM2](https://github.com/chklovski/CheckM2) |
+| GTDB-Tk DB | ~70 GB | `GTDBDB` | [GTDB-Tk](https://github.com/Ecogenomics/GtDBTk) |
+
+```bash
+# 安装数据库后设置环境变量
+export CHECKM2DB=/data/databases/checkm2_db
+export GTDBDB=/data/databases/gtdb_r220
+
+# 或写入 ~/.bashrc 持久化
+echo 'export CHECKM2DB=/data/databases/checkm2_db' >> ~/.bashrc
+echo 'export GTDBDB=/data/databases/gtdb_r220' >> ~/.bashrc
+```
+
+未设置环境变量时，`species_mode: standard` 自动降级为 `simple`（仅靶标基因）。
+
 ### 可选：GPU 与本地 LLM
 
 仅当需要离线推理或数据不出境时才配置本地 LLM，详见[本地 LLM 配置](local-llm.md)。

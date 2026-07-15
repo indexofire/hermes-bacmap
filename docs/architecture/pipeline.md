@@ -1,6 +1,15 @@
 # Snakemake 管线
 
-工作流引擎采用 **Snakemake 7.32**（Python DSL），定义在 `workflows/bacmap/`。主入口 `Snakefile` 编排 per-sample DAG 与 cohort SNP DAG，共 **22 条规则**，物种路由全自动。
+工作流引擎采用 **Snakemake 7.32**（Python DSL），定义在 `workflows/bacmap/`。主入口 `Snakefile` 编排 per-sample DAG 与 cohort SNP DAG，共 **24 条规则**，物种路由全自动。
+
+## 物种鉴定：双模式
+
+| 模式 | 方法 | 配置 | 外部依赖 |
+|---|---|---|---|
+| `simple`（默认） | 靶标基因 BLAST（invA/uidA/ipaH/toxR/tlh） | `species_mode: simple` | 无 |
+| `standard`（可选） | CheckM2 完整度/污染 + GTDB-Tk 分类学 | `species_mode: standard` | `$CHECKM2DB`, `$GTDBDB` |
+
+`standard` 模式在 `simple` 结果基础上追加 CheckM2 和 GTDB-Tk 结果，并自动比对两种方法的一致性。外部数据库未配置时自动降级为 `simple`。
 
 ## DAG 概览
 

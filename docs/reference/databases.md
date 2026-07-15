@@ -129,6 +129,36 @@ ls data/reference/prokka_sprot.phr
 
 若注释率 <30%（全是 hypothetical protein），通常是此索引缺失，重建即可。详见[故障排查](troubleshooting.md)。
 
+## 外部数据库（可选：标准物种鉴定）
+
+默认使用内建靶标基因库（invA/uidA/ipaH/toxR/tlh）进行快速物种鉴定。如需标准规范（CheckM2 污染校验 + GTDB-Tk 分类学验证），需外部安装以下数据库：
+
+| 数据库 | 大小 | 环境变量 | 用途 | 来源 |
+|---|---|---|---|---|
+| CheckM2 DB | ~3 GB | `$CHECKM2DB` | 基因组完整度与污染评估 | [CheckM2 GitHub](https://github.com/chklovski/CheckM2) |
+| GTDB-Tk DB | ~70 GB | `$GTDBDB` | 基于基因组分类学的物种鉴定 | [GTDB-Tk GitHub](https://github.com/Ecogenomics/GtDBTk) |
+
+安装后设置环境变量，系统自动检测可用性：
+
+```bash
+export CHECKM2DB=/data/databases/checkm2_db
+export GTDBDB=/data/databases/gtdb_r220
+```
+
+未设置时，`species_mode: standard` 自动降级为 `simple`（仅靶标基因），不报错。
+
+切换模式：编辑 `workflows/bacmap/config/config.yaml`：
+
+```yaml
+species_mode: standard   # simple（默认）| standard（CheckM2 + GTDB-Tk）
+```
+
+或通过 Hermes Agent 自然语言调用：
+
+```
+> 用标准方法验证 SAM-TYP-001 的物种    # → bio_validate_taxonomy(mode="standard")
+```
+
 ## 数据库版本与证据链
 
 每个 ANALYSIS 对象入库时记录数据库版本到三元证据链：
