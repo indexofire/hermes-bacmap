@@ -56,7 +56,7 @@ class Feature:
     na_seq: str = ""
 
     def to_dict(self) -> dict[str, Any]:
-        return {k: v for k, v in self.__dict__.items() if v != ""}
+        return dict(self.__dict__)
 
 
 @dataclass
@@ -197,10 +197,12 @@ def _run_blastp(
 def _parse_prokka_header(sseqid: str) -> tuple[str, str]:
     parts = sseqid.split("~~~")
     if len(parts) >= 4:
-        return parts[1], parts[3].strip()
-    if len(parts) >= 2:
-        return parts[0], parts[-1].strip()
-    return sseqid, "hypothetical protein"
+        return parts[1].strip(), parts[3].strip()
+    if len(parts) == 3:
+        return parts[1].strip(), parts[2].strip()
+    if len(parts) == 2:
+        return parts[1].strip(), ""
+    return sseqid.strip(), "hypothetical protein"
 
 
 def annotate(contigs_path: str | Path, sample_id: str = "") -> AnnotationResult:

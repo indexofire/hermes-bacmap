@@ -110,4 +110,4 @@ class Hit:
         )
 
     def to_dict(self) -> dict[str, Any]:
-        return {k: v for k, v in self.__dict__.items() if v != ""}
+        return dict(self.__dict__)

@@ -42,7 +42,7 @@ def merge_intervals(hits: Sequence[Hit], subject_length: int = 0) -> tuple[float
         else:
             merged[-1] = (merged[-1][0], max(merged[-1][1], e))
 
-    covered = sum(e - s for s, e in merged)
+    covered = sum(e - s + 1 for s, e in merged)
     coverage = min((covered / subject_length) * 100.0, 100.0)
     avg_id = (id_sum / total_aln) if total_aln > 0 else 0.0
     return round(coverage, 2), round(avg_id, 2)
@@ -73,7 +73,7 @@ def classify_allele(
 
     Returns ("exact", 90) / ("novel", 63) / ("partial", 18) / ("missing", 0).
     """
-    if identity >= 99.99 and coverage >= 99.9:
+    if identity >= 99.99 and coverage >= 99.9 and min_identity <= 99.99:
         return "exact", 90
     if coverage >= min_coverage and identity >= min_identity:
         return "novel", 63

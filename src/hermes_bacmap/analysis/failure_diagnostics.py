@@ -145,7 +145,7 @@ def diagnose(stderr: str) -> Diagnosis:
         result.details = f"{result.details}; exit code {exit_m.group(1)}".strip("; ")
 
     file_m = _FILE_RE.search(stderr)
-    if file_m and err_type == "missing_input":
+    if file_m and result.error_type == "missing_input":
         result.details = f"{result.details}; missing file: {file_m.group(1)}"
 
     if result.error_type in ("oom", "disk_full"):

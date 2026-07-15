@@ -1624,7 +1624,7 @@ def snp_tree(args: dict, **kwargs) -> str:
                 cohort_objs = [
                     o
                     for o in gos.list_by_type(ObjectType.ANALYSIS)
-                    if o.strain_id == "cohort:salmonella-snp"
+                    if o.strain_id and o.strain_id.startswith("cohort:") and o.strain_id.endswith("-snp")
                 ]
                 if cohort_objs:
                     latest = max(cohort_objs, key=lambda o: o.version)

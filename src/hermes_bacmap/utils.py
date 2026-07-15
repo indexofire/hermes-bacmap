@@ -32,7 +32,15 @@ def parse_mlst(mlst_tsv: str) -> dict[str, Any]:
             result["alleles"][col_lower] = data[i]
 
     if "st" not in result:
-        result["st"] = data[-1] if data else "N/A"
+        st_header_idx = None
+        for i, col in enumerate(header):
+            if col.lower() == "st":
+                st_header_idx = i
+                break
+        if st_header_idx is not None and st_header_idx < len(data):
+            result["st"] = data[st_header_idx]
+        else:
+            result["st"] = "N/A"
 
     return result
 
@@ -48,8 +56,9 @@ def parse_abricate_tsv(tsv_text: str) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     for line in lines[1:]:
         parts = line.split("\t")
-        if len(parts) >= len(header):
-            rows.append(dict(zip(header, parts)))
+        if len(parts) < len(header):
+            parts += [""] * (len(header) - len(parts))
+        rows.append(dict(zip(header, parts)))
     return rows
 
 
@@ -60,5 +69,5 @@ def read_json_file(path: str | Path) -> dict | None:
         return None
     try:
         return json.loads(p.read_text())
-    except (json.JSONDecodeError, UnicodeDecodeError):
+    except (json.JSONDecodeError, UnicodeDecodeError, OSError):
         return None

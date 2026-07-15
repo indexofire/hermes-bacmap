@@ -19,14 +19,14 @@ _SPECIES_MIN_IDENTITY = 85.0
 _SPECIES_MIN_COVERAGE = 30.0
 
 _GENE_TO_SPECIES = {
-    "invA": ("Salmonella", "high"),
-    "uidA": ("DEC", "high"),
-    "ipaH": ("Shigella/EIEC", "high"),
-    "toxR": ("V_parahaemolyticus", "high"),
+    "inva": ("Salmonella", "high"),
+    "uida": ("DEC", "high"),
+    "ipah": ("Shigella/EIEC", "high"),
+    "toxr": ("V_parahaemolyticus", "high"),
     "tlh": ("V_parahaemolyticus", "high"),
 }
 
-_SPECIES_PRIORITY = ["invA", "ipaH", "toxR", "tlh", "uidA"]
+_SPECIES_PRIORITY = ["inva", "ipah", "toxr", "tlh", "uida"]
 
 
 @dataclass
@@ -63,9 +63,10 @@ def identify(contigs_fasta: str | Path) -> SpeciesIdResult:
 
     gene_hits: dict[str, dict] = {}
     for hit in scan_result.genes:
-        if hit.gene in _GENE_TO_SPECIES:
-            if hit.gene not in gene_hits or hit.identity > gene_hits[hit.gene]["identity"]:
-                gene_hits[hit.gene] = {
+        gene_lower = hit.gene.lower()
+        if gene_lower in _GENE_TO_SPECIES:
+            if gene_lower not in gene_hits or hit.identity > gene_hits[gene_lower]["identity"]:
+                gene_hits[gene_lower] = {
                     "gene": hit.gene,
                     "identity": hit.identity,
                     "coverage": hit.coverage,
