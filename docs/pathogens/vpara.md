@@ -108,7 +108,7 @@ hermes chat
 #### Python API
 
 ```python
-from hermes_bacmap.vpa_serotyper import VpaSerotyper
+from hermes_bacmap.typing.vpa_serotyper import VpaSerotyper
 
 s = VpaSerotyper()
 result = s.analyze("contigs.fasta", "SAM-VPA-001")

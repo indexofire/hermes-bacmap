@@ -62,7 +62,7 @@ rule all
 
 ## 物种路由（五基因系统）
 
-`species_identify` 将 5 个物种特异性靶基因合并为 1 个 FASTA 库（`species_markers.fasta`），**一次 BLAST 调用**完成所有物种鉴定：
+`species_identify` 将 5 个物种特异性靶基因合并为 1 个 FASTA 库（`species/markers.fasta`），**一次 BLAST 调用**完成所有物种鉴定：
 
 | 靶基因 | 目标物种 | 参考序列 | 长度 |
 |---|---|---|---|
@@ -76,7 +76,7 @@ rule all
 
 ```
 contigs.fasta
-    ↓ BLAST vs species_markers.fasta（1 次调用）
+    ↓ BLAST vs species/markers.fasta（1 次调用）
     ↓
     invA 阳性     → Salmonella → typing_mlst + typing_sistr
     uidA 阳性     → E. coli/DEC → dec_ecoh_serotype + dec_pathotype
@@ -104,8 +104,8 @@ else:
 | 物种 | 工具 | 数据库 | 输出 |
 |---|---|---|---|
 | Salmonella | SISTR | salmonella_atdb | serovar + serogroup + O/H antigen |
-| DEC / EIEC | ecoh_serotyper | ecoh_sequences.fasta（597 seqs） | O:H serotype |
-| Shigella | shigella_serotyper | shigella_ref.fasta（95 seqs） | species + 58 种 serotype |
+| DEC / EIEC | ecoh_serotyper | serotype/ecoh.fasta（597 seqs） | O:H serotype |
+| Shigella | shigella_serotyper | serotype/shigella.fasta（95 seqs） | species + 58 种 serotype |
 
 ## SNP 管线（5 步）
 

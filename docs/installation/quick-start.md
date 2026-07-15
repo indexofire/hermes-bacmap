@@ -57,7 +57,7 @@ makeblastdb -in data/reference/amr/vfdb.fasta          -dbtype nucl -out data/re
 makeblastdb -in data/reference/plasmid/plasmidfinder.fasta -dbtype nucl -out data/reference/plasmidfinder
 makeblastdb -in data/reference/serotype/ecoh.fasta     -dbtype nucl -out data/reference/ecoh
 makeblastdb -in data/reference/serotype/shigella.fasta -dbtype nucl -out data/reference/shigella_ref
-makeblastdb -in data/reference/virulence/vpara_targets.fasta -dbtype nucl -out data/reference/vpara_targets
+makeblastdb -in data/reference/virulence/virulence/vpara_targets.fasta -dbtype nucl -out data/reference/vpara_targets
 
 # 蛋白库（Prokka 注释）
 makeblastdb -in data/reference/annotation/prokka_sprot.fasta -dbtype prot -out data/reference/prokka_sprot

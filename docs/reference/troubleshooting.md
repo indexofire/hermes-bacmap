@@ -17,9 +17,9 @@
 | `Directory cannot be locked` | Snakemake 锁未释放 | `cd workflows/salmonella && snakemake --unlock` |
 | `signal 9 (SIGKILL)` | Shovill / SPAdes OOM | `--cores 4` 或改 `--ram 4G` |
 | `MissingInputException` | FASTQ 路径错误或文件缺失 | 检查 `samples.tsv`；必要时 `download_gold_standard.py` |
-| `database 'card' not found` | BLAST DB 索引缺失 | `makeblastdb -in card_sequences.fasta -dbtype nucl -out card` |
+| `database 'card' not found` | BLAST DB 索引缺失 | `makeblastdb -in amr/card.fasta -dbtype nucl -out card` |
 | SISTR 输出 `N/A` | 组装碎片化或非 Salmonella | 检查 N50 >10kb 与 `species_id.json`；确认 `which sistr` |
-| gmlst 挂起/报错 | 未使用 Python 3.12 | `uv venv .venv-gmlst --python 3.12 && uv pip install --python .venv-gmlst/bin/python gmlst` |
+| gmlst 挂起/报错 | 未使用 Python 3.12 | `uv venv pixi (gmlst now included) --python 3.12 && uv pip install --python pixi (gmlst now included)/bin/python gmlst` |
 | SNP 矩阵全 0 | 参考基因组含多条序列或 BAM 无数据 | 确认参考仅 1 条 chromosome；检查 `samtools flagstat` 与 VCF 变异数 |
 | 注释率 <30% | Prokka DB 索引缺失或 contigs 过短 | 检查 `prokka_sprot.phr`；重建 `-dbtype prot`；contigs ≥200bp |
 
@@ -51,14 +51,14 @@ python scripts/run_analysis.py --sample SAM-XXX --cores 4
 gmlst 需要 Python 3.12+。验证：
 
 ```bash
-.venv-gmlst/bin/gmlst --version
+pixi run gmlst --version
 ```
 
 若缺失：
 
 ```bash
-uv venv .venv-gmlst --python 3.12
-uv pip install --python .venv-gmlst/bin/python gmlst
+uv venv pixi (gmlst now included) --python 3.12
+uv pip install --python pixi (gmlst now included)/bin/python gmlst
 ```
 
 ## 数据库缺失
@@ -70,17 +70,17 @@ Error: database 'card' not found
 修复示例：
 
 ```bash
-makeblastdb -in data/reference/card_sequences.fasta -dbtype nucl -out data/reference/card
-makeblastdb -in data/reference/vfdb_sequences.fasta -dbtype nucl -out data/reference/vfdb
-makeblastdb -in data/reference/plasmidfinder_sequences.fasta -dbtype nucl -out data/reference/plasmidfinder
-makeblastdb -in data/reference/species_markers.fasta -dbtype nucl -out data/reference/species_markers
+makeblastdb -in data/reference/amr/card.fasta -dbtype nucl -out data/reference/card
+makeblastdb -in data/reference/amr/vfdb.fasta -dbtype nucl -out data/reference/vfdb
+makeblastdb -in data/reference/plasmid/plasmidfinder.fasta -dbtype nucl -out data/reference/plasmidfinder
+makeblastdb -in data/reference/species/markers.fasta -dbtype nucl -out data/reference/species_markers
 ```
 
 ## SNP 空结果排查
 
 1. 参考基因组必须 chromosome-only：
    ```bash
-   grep -c "^>" data/reference/salmonella_LT2_ref.fasta   # 应为 1
+   grep -c "^>" data/reference/genomes/salmonella_LT2.fasta   # 应为 1
    ```
 2. 检查 BAM：
    ```bash

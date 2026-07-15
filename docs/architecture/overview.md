@@ -112,7 +112,7 @@ snp_summary (距离矩阵 + Newick → JSON)
 ```
 LLM 生成
   ↓
-Layer 1 · JSON Schema 校验        schemas.py 定义 18 个 tool 的输入输出契约
+Layer 1 · JSON Schema 校验        schemas.py 定义 23 个 tool 的输入输出契约
   ↓
 Layer 2 · Deterministic Verifier  确定性规则校验（species/MLST/serotype/AMR）
   ↓
@@ -132,9 +132,9 @@ Layer 3 · AI 解读                  Skills 知识库（interpret-results）
 
 | 模块 | 行数 | 职责 |
 |---|---|---|
-| `tools.py` | 1572 | 18 个 Hermes tool handler 实现 |
+| `tools.py` | 1572 | 23 个 Hermes tool handler 实现 |
 | `genome_object_service.py` | 644 | GOM：SQLite CRUD + 版本 + 事件 + 文件 + FTS5 |
-| `schemas.py` | 608 | 18 个 tool 的 JSON Schema 定义 |
+| `schemas.py` | 608 | 23 个 tool 的 JSON Schema 定义 |
 | `genome_annotator.py` | 288 | 基因组注释（pyrodigal + Prokka DBs） |
 | `engine/` | 800 | 算法抽象层（8 个文件） |
 | `gene_scanner.py` | 420 | 通用基因扫描引擎（委托 engine.SequenceMatcher） |
@@ -142,7 +142,7 @@ Layer 3 · AI 解读                  Skills 知识库（interpret-results）
 | `deterministic_verifier.py` | 186 | 四层确定性规则校验 |
 | `species_identifier.py` | 121 | 五基因合并物种鉴定 |
 | `ecoh_serotyper.py` | 121 | E. coli O:H 血清型 |
-| `__init__.py` | 123 | 插件注册（18 tools + 4 skills 自动发现） |
+| `__init__.py` | 123 | 插件注册（23 tools + 4 skills 自动发现） |
 
 ## 项目目录
 
@@ -161,7 +161,7 @@ hermes-bacmap/
 │   └── scripts/                 collect_summary / SNP matrix
 ├── scripts/                     编排脚本（run_analysis / ingest / report）
 ├── skills/                      4 个 Hermes Skills
-├── tests/                       96 tests
+├── tests/                       193 tests
 ├── data/reference/              13 个参考数据库
 ├── web/                         FastAPI Web UI
 ├── pixi.toml                    生信工具依赖

@@ -34,7 +34,7 @@
 
 ### V0.4 架构精简
 
-- `species_markers.fasta` 统一物种鉴定
+- `species/markers.fasta` 统一物种鉴定
 - `gene_scanner` 替代重复 BLAST 逻辑
 - `collect_summary.py` 自动选择 primary serotype
 

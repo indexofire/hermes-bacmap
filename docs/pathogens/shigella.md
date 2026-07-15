@@ -10,7 +10,7 @@
 ## 血清型鉴定 Serotyping
 
 - **Tool**: `shigella_serotyper`
-- **Database**: `data/reference/shigella_ref.fasta` (95 seqs)
+- **Database**: `data/reference/serotype/shigella.fasta` (95 seqs)
 - **Method**: ported from ShigATyper (CFSAN)
 - **覆盖**: 58 种血清型
 

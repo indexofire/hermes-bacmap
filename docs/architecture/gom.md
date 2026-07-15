@@ -121,7 +121,7 @@ Context Manager 用法：
 
 ```python
 from pathlib import Path
-from hermes_bacmap.genome_object_service import GenomeObjectService
+from hermes_bacmap.services.genome_object_service import GenomeObjectService
 
 with GenomeObjectService(Path("data/hermes_bacmap.sqlite")) as gos:
     obj = gos.create(my_genome_object)

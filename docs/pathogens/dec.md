@@ -9,7 +9,7 @@
 ## 血清型鉴定 Serotyping
 
 - **Tool**: `ecoh_serotyper` (Python, 597 sequences DB)
-- **Database**: `data/reference/ecoh_sequences.fasta`
+- **Database**: `data/reference/serotype/ecoh.fasta`
 - **O antigen markers**: `wzm`, `wzt`, `wzx`, `wzy`
 - **H antigen markers**: `fliC`, `flkA`, `fllA`, `flnA`
 - **Output**: O 型 + H 型，例如 O157:H7

@@ -129,7 +129,7 @@ for skill_dir in (Path(__file__).parent.parent.parent / "skills").iterdir():
         ctx.register_skill(skill_dir.name, skill_md)
 ```
 
-18 个 tools 与 4 个 skills 全部通过此机制注册，无需手动声明。
+23 个 tools 与 4 个 skills 全部通过此机制注册，无需手动声明。
 
 ## 手动加载 Skill
 

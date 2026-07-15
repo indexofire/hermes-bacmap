@@ -204,7 +204,7 @@ GenomeObject(
     - 低覆盖区域（missing_rate >10%）应谨慎
 
 !!! info "参考基因组选择"
-    本案例用 LT2（NC_003197.2，4.8 Mb 染色体）。若分析非 Typhimurium 血清型，可换更近缘参考以降低缺失率。参考必须**仅染色体**，排除质粒（`grep -c "^>" salmonella_LT2_ref.fasta` 应为 1）。
+    本案例用 LT2（NC_003197.2，4.8 Mb 染色体）。若分析非 Typhimurium 血清型，可换更近缘参考以降低缺失率。参考必须**仅染色体**，排除质粒（`grep -c "^>" genomes/salmonella_LT2.fasta` 应为 1）。
 
 ## 相关
 

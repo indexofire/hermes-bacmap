@@ -270,7 +270,7 @@ CREATE TABLE file_artifacts (
 
 ### 设计
 
-将 5 个物种特异性靶基因合并为 1 个 FASTA 数据库（`species_markers.fasta`），一次 BLAST 调用完成所有物种鉴定。
+将 5 个物种特异性靶基因合并为 1 个 FASTA 数据库（`species/markers.fasta`），一次 BLAST 调用完成所有物种鉴定。
 
 | 靶基因 | 目标物种 | 参考序列 | 长度 |
 |---|---|---|---|
@@ -284,7 +284,7 @@ CREATE TABLE file_artifacts (
 
 ```
 contigs.fasta
-    ↓ BLAST vs species_markers.fasta (1 次调用)
+    ↓ BLAST vs species/markers.fasta (1 次调用)
     ↓
     invA 阳性 → Salmonella → 走 Salmonella 分型管线
     uidA 阳性 → E. coli/DEC → 走 DEC 管线 (ecoh_serotyper + pathotype)
@@ -309,8 +309,8 @@ contigs.fasta
 | 物种 | 工具 | 数据库 | 输出 |
 |---|---|---|---|
 | Salmonella | SISTR | salmonella_atdb | serovar + serogroup + O/H antigen |
-| DEC / EIEC | ecoh_serotyper (Python) | ecoh_sequences.fasta (753KB, 597 seqs) | O:H serotype + interpretation |
-| Shigella | shigella_serotyper (Python) | shigella_ref.fasta (122KB, 95 seqs) | species + serotype (58 种) |
+| DEC / EIEC | ecoh_serotyper (Python) | serotype/ecoh.fasta (753KB, 597 seqs) | O:H serotype + interpretation |
+| Shigella | shigella_serotyper (Python) | serotype/shigella.fasta (122KB, 95 seqs) | species + serotype (58 种) |
 
 ### ecoh_serotyper
 
@@ -535,7 +535,7 @@ LLM 生成结果 → Layer 1: JSON Schema 校验 → Layer 2: 确定性规则校
 ### 代码接口
 
 ```python
-from hermes_bacmap.deterministic_verifier import DeterministicVerifier
+from hermes_bacmap.analysis.deterministic_verifier import DeterministicVerifier
 
 v = DeterministicVerifier()
 result = v.verify_all(summary_dict)
@@ -733,7 +733,7 @@ mcp_servers:
 **extra JSON** 存储自定义字段（不受表结构限制），UPSERT 时自动合并已有 extra。
 
 ```python
-from hermes_bacmap.strain_metadata import StrainMetadataService
+from hermes_bacmap.services.strain_metadata import StrainMetadataService
 
 svc = StrainMetadataService("data/hermes_bacmap.sqlite")
 
@@ -764,7 +764,7 @@ results = svc.search(extra={"report_status": "已报"})
 | pcr | invA | result=positive, method=qPCR |
 
 ```python
-from hermes_bacmap.lab_results import LabResultService
+from hermes_bacmap.services.lab_results import LabResultService
 
 svc = LabResultService("data/hermes_bacmap.sqlite")
 
@@ -871,7 +871,7 @@ ruff + mypy --strict + markdownlint + trailing-whitespace + detect-secrets
 
 | 文件 | 大小 | 内容 |
 |---|---|---|
-| `species_markers.fasta` | 8.3 KB | 5 基因合并库（invA + uidA + ipaH + toxR + tlh） |
+| `species/markers.fasta` | 8.3 KB | 5 基因合并库（invA + uidA + ipaH + toxR + tlh） |
 | `salmonella_invA.fasta` | 2.3 KB | invA 独立库（M90846.1, 2176bp） |
 | `uidA_ecoli.fasta` | 1.3 KB | uidA (NC_000913.3, 1190bp) |
 | `ipaH_shigella.fasta` | 1.9 KB | ipaH (NC_004337.2, 1827bp) |
@@ -882,30 +882,30 @@ ruff + mypy --strict + markdownlint + trailing-whitespace + detect-secrets
 
 | 文件 | 大小 | 来源 |
 |---|---|---|
-| `card_sequences.fasta` | 6.5 MB | CARD (Comprehensive Antibiotic Resistance Database) |
-| `vfdb_sequences.fasta` | 6.3 MB | VFDB (Virulence Factor Database) |
-| `plasmidfinder_sequences.fasta` | 437 KB | PlasmidFinder (CGE) |
+| `amr/card.fasta` | 6.5 MB | CARD (Comprehensive Antibiotic Resistance Database) |
+| `amr/vfdb.fasta` | 6.3 MB | VFDB (Virulence Factor Database) |
+| `plasmid/plasmidfinder.fasta` | 437 KB | PlasmidFinder (CGE) |
 
 ### 血清型数据库
 
 | 文件 | 大小 | 内容 |
 |---|---|---|
-| `ecoh_sequences.fasta` | 782 KB | E. coli O/H 抗原（597 seqs） |
-| `shigella_ref.fasta` | 122 KB | Shigella 抗原（95 seqs，移植自 ShigATyper） |
+| `serotype/ecoh.fasta` | 782 KB | E. coli O/H 抗原（597 seqs） |
+| `serotype/shigella.fasta` | 122 KB | Shigella 抗原（95 seqs，移植自 ShigATyper） |
 
 ### SNP 参考基因组
 
 | 文件 | 大小 | 内容 |
 |---|---|---|
-| `salmonella_LT2_ref.fasta` | 4.7 MB | NC_003197.2 (S. enterica LT2 染色体, 4,857,450bp) |
+| `genomes/salmonella_LT2.fasta` | 4.7 MB | NC_003197.2 (S. enterica LT2 染色体, 4,857,450bp) |
 
 ### V. parahaemolyticus 毒力数据库
 
 | 文件 | 大小 | 内容 |
 |---|---|---|
-| `tdh_vpara.fasta` | 1.2 KB | tdh (D90238.1, 耐热直接溶血素) |
-| `trh_vpara.fasta` | 1.7 KB | trh (AY586619.1, TDH-related 溶血素) |
-| `vpara_targets.fasta` | 5.7 KB | toxR + tlh 合并库 |
+| `virulence/tdh.fasta` | 1.2 KB | tdh (D90238.1, 耐热直接溶血素) |
+| `virulence/trh.fasta` | 1.7 KB | trh (AY586619.1, TDH-related 溶血素) |
+| `virulence/vpara_targets.fasta` | 5.7 KB | toxR + tlh 合并库 |
 
 ---
 
@@ -970,5 +970,5 @@ snakemake 7.32.*      # 工作流引擎
 ### 独立环境
 
 ```
-.venv-gmlst/          # Python 3.12 (gmlst 需要 ≥3.12)
+pixi (gmlst now included)/          # Python 3.12 (gmlst 需要 ≥3.12)
 ```

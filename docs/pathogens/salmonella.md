@@ -4,7 +4,7 @@
 
 - **Species**: *Salmonella enterica*
 - **Target gene**: `invA` (M90846.1, 2176 bp)
-- **Database**: `data/reference/species_markers.fasta`
+- **Database**: `data/reference/species/markers.fasta`
 - **Routing rule**: invA 阳性 → Salmonella pipeline
 
 ## 血清型鉴定 Serotyping
@@ -21,7 +21,7 @@
 
 ## MLST
 
-- **Tool**: `gmlst` (Python 3.12 `.venv-gmlst`)
+- **Tool**: `gmlst` (Python 3.12 `pixi (gmlst now included)`)
 - **Scheme**: `salmonella_2` (PubMLST)
 - **Loci**: `aroC`, `dnaN`, `hemD`, `hisD`, `purE`, `sucA`, `thrA`
 

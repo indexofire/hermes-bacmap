@@ -1,8 +1,8 @@
 # 尚存问题清单
 
-> **最后更新**: 2026-07-04
-> **测试状态**: 96 passed, 0 failed
-> **来源**: 代码审计（engine 层 + pipeline 脚本）
+> **最后更新**: 2026-07-16
+> **测试状态**: 193 passed, 0 failed
+> **来源**: 代码审计 Round 1-9（58 bugs 已修复）
 
 ---
 
@@ -107,7 +107,7 @@
 
 ### A4. 端到端集成测试（CI）
 
-- **状态**: CI 只跑 96 个 unit tests，无 Snakemake DAG 端到端测试
+- **状态**: CI 只跑 193 个 unit tests，无 Snakemake DAG 端到端测试
 - **优先级**: 中
 
 ### A5. Tool 重命名（可选）

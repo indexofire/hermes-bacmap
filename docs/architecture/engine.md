@@ -98,7 +98,7 @@ from hermes_bacmap.engine import ReadMapper
 
 result = ReadMapper.map(
     reads=["sample_R1.fq.gz", "sample_R2.fq.gz"],
-    reference="data/reference/salmonella_LT2_ref.fasta",
+    reference="data/reference/genomes/salmonella_LT2.fasta",
     out_bam="results/sample/snp/snps.bam",
     mode="auto",
 )
@@ -235,7 +235,7 @@ for r in results:
 `gene_scanner.py` 提供 `normalize_synonyms()` 和 `resolve_gene_name()` 处理基因名别名：
 
 ```python
-from hermes_bacmap.gene_scanner import normalize_synonyms, resolve_gene_name
+from hermes_bacmap.analysis.gene_scanner import normalize_synonyms, resolve_gene_name
 
 syn = normalize_synonyms({"stx1": ["stx1a", "stxA1"]})
 resolve_gene_name("stx1a", syn)  # → "stx1"
@@ -257,4 +257,4 @@ resolve_gene_name("stx1a", syn)  # → "stx1"
 
 - [GOM 数据模型](gom.md) — Hit 结果最终序列化进 `payload_json`
 - [Snakemake 管线](pipeline.md) — 管线规则通过 `bio_gene_scan` Hermes tool 间接使用 engine
-- [工具列表](../reference/tools.md) — 18 个 tool 中 `bio_blast` / `bio_align` / `bio_gene_scan` 均基于 engine
+- [工具列表](../reference/tools.md) — 23 个 tool 中 `bio_blast` / `bio_align` / `bio_gene_scan` 均基于 engine

@@ -50,7 +50,7 @@ UPSERT 时 extra JSON **自动合并**（不覆盖已有扩展字段）。
 ### Python API
 
 ```python
-from hermes_bacmap.strain_metadata import StrainMetadataService
+from hermes_bacmap.services.strain_metadata import StrainMetadataService
 
 svc = StrainMetadataService("data/hermes_bacmap.sqlite")
 
@@ -119,7 +119,7 @@ SAM-DEC-012	SAM-DEC-012	李四	28	上海	2024-04-18	clinical
 ### Python API
 
 ```python
-from hermes_bacmap.lab_results import LabResultService
+from hermes_bacmap.services.lab_results import LabResultService
 
 svc = LabResultService("data/hermes_bacmap.sqlite")
 
