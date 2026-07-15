@@ -22,7 +22,9 @@ uv.lock
 .coverage
 htmlcov/
 
-# Runtime data — not tracked
+# Runtime data — not tracked (except data/reference/)
+data/*
+!data/reference/
 data/*.sqlite
 data/*.sqlite-wal
 data/*.sqlite-shm
