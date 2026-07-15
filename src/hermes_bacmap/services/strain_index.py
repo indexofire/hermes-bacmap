@@ -364,10 +364,14 @@ def _extract_genotype(payload: dict[str, Any]) -> dict[str, Any]:
     serotype_val = ""
     serotype_method = ""
     serotype_data = payload.get("serotype", {})
-    if isinstance(serotype_data, dict):
+    if isinstance(serotype_data, str):
+        serotype_val = serotype_data
+    elif isinstance(serotype_data, dict):
         serotype_val = serotype_data.get("sistr", "") or serotype_data.get("serotype", "")
         if serotype_val and serotype_val != "N/A":
             serotype_method = "SISTR"
+    else:
+        serotype_val = ""
     if not serotype_val:
         dec = payload.get("dec", {})
         if isinstance(dec, dict):
@@ -388,8 +392,10 @@ def _extract_genotype(payload: dict[str, Any]) -> dict[str, Any]:
             row = dict(zip(headers, fields))
             mlst_scheme = row.get("SCHEME", "")
             mlst_st = row.get("ST", "")
-            if mlst_st and mlst_st != "N/A":
+            if mlst_st and mlst_st not in ("N/A", "-", ""):
                 mlst_st = f"ST{mlst_st}" if not mlst_st.upper().startswith("ST") else mlst_st
+            else:
+                mlst_st = ""
 
     amr_genes: list[dict[str, Any]] = []
     amr_data = payload.get("amr", {})

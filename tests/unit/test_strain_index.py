@@ -213,3 +213,53 @@ class TestExtractGenotype:
         assert result["serotype"] == "O157:H7"
         assert result["serotype_method"] == "ecoh_serotyper (DEC/EIEC)"
         assert result["mlst_st"] == "ST11"
+
+
+class TestExtractGenotypeEdgeCases:
+    def test_st_dash_not_prefixed(self):
+        payload = {
+            "species_verdict": "Salmonella",
+            "mlst": "FILE\tSCHEME\tST\taroC\ncontigs\tsalmonella_2\t-\t10",
+        }
+        result = _extract_genotype(payload)
+        assert result["mlst_st"] in ("", "-")
+        assert result["mlst_st"] != "ST-"
+
+    def test_st_na_not_prefixed(self):
+        payload = {
+            "species_verdict": "Salmonella",
+            "mlst": "FILE\tSCHEME\tST\taroC\ncontigs\tsalmonella_2\tN/A\t10",
+        }
+        result = _extract_genotype(payload)
+        assert result["mlst_st"] == ""
+
+    def test_serotype_as_string(self):
+        payload = {
+            "species_verdict": "Salmonella",
+            "serotype": "Typhimurium",
+        }
+        result = _extract_genotype(payload)
+        assert result["serotype"] == "Typhimurium"
+
+    def test_serotype_as_none(self):
+        payload = {
+            "species_verdict": "Salmonella",
+            "serotype": None,
+        }
+        result = _extract_genotype(payload)
+        assert result["serotype"] == ""
+
+    def test_amr_gene_empty_name_skipped(self):
+        payload = {
+            "species_verdict": "Salmonella",
+            "amr": {
+                "abricate_card": [
+                    {"GENE": "", "%COVERAGE": "100.00"},
+                    {"GENE": "blaCTX-M-15", "%COVERAGE": "100.00"},
+                    {"GENE": "  ", "%COVERAGE": "100.00"},
+                ],
+            },
+        }
+        result = _extract_genotype(payload)
+        assert len(result["amr_genes"]) == 1
+        assert result["amr_genes"][0]["gene"] == "blaCTX-M-15"
