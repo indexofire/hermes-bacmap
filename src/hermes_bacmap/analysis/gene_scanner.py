@@ -34,6 +34,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from hermes_bacmap.config import REF_DIR as _REF_DIR
+
 _DEFAULT_MIN_IDENTITY = 80.0
 _DEFAULT_MIN_COVERAGE = 80.0
 _EVALUE = 1e-10
@@ -149,8 +151,8 @@ class ScanResult:
 
 
 _DB_SEARCH_PATHS = [
-    Path(__file__).resolve().parents[2] / "data" / "reference",
-    Path(__file__).resolve().parents[2] / ".pixi/envs/default/db",
+    _REF_DIR,
+    Path(__file__).resolve().parents[3] / ".pixi/envs/default/db",
     Path.home() / ".pixi/envs/default/db",
 ]
 
@@ -298,7 +300,7 @@ def setup_db(
         Path to the BLAST DB prefix.
     """
     if output_dir is None:
-        output_dir = Path(__file__).resolve().parents[2] / "data/reference"
+        output_dir = _REF_DIR
 
     output_dir.mkdir(parents=True, exist_ok=True)
 

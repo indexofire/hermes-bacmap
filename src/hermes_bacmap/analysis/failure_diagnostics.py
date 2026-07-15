@@ -12,7 +12,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+from hermes_bacmap.config import PROJECT_ROOT as _PROJECT_ROOT
 
 
 @dataclass

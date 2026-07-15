@@ -1,5 +1,5 @@
-# Hermes-bacmap Salmonella 分析流程配置
-# project.md §7.1 核心 9 步 pipeline
+# Hermes-bacmap 分析流程配置
+# 路径可通过环境变量覆盖: BACMAP_RESULTS_DIR, BACMAP_DATA_DIR
 
 threads: 8
 workdir: "results"

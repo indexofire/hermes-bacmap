@@ -24,13 +24,14 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from hermes_bacmap.engine._env import _PROJECT_ROOT, PIXI_BIN, PIXI_PYTHON  # noqa: E402
+from hermes_bacmap.config import PROJECT_ROOT as _PROJECT_ROOT, RESULTS_DIR as _RESULTS_DIR, DB_PATH as _DEFAULT_DB_PATH  # noqa: E402
+from hermes_bacmap.config import PIXI_BIN, PIXI_PYTHON  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
 _BIOPYTHON_AVAILABLE: bool | None = None
 
-_RESULTS_DIR = _PROJECT_ROOT / "results"
+
 _PIXI_ENV: dict[str, str] = dict(os.environ)
 _PIXI_ENV["PATH"] = ":".join([PIXI_BIN, _PIXI_ENV.get("PATH", "")])
 
@@ -1450,7 +1451,7 @@ def vpa_serotype(args: dict, **kwargs) -> str:
 
 def query_metadata(args: dict, **kwargs) -> str:
     """Query strain background metadata."""
-    db_path = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
+    db_path = _DEFAULT_DB_PATH
     if not db_path.exists():
         return json.dumps({"error": "Database not found. Run analysis first."})
 
@@ -1499,7 +1500,7 @@ def add_metadata(args: dict, **kwargs) -> str:
     if not data or not isinstance(data, dict):
         return json.dumps({"error": "data dict is required"})
 
-    db_path = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
+    db_path = _DEFAULT_DB_PATH
 
     try:
         import sys
@@ -1523,7 +1524,7 @@ def add_metadata(args: dict, **kwargs) -> str:
 
 def query_lab_results(args: dict, **kwargs) -> str:
     """Query wet lab experiment results."""
-    db_path = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
+    db_path = _DEFAULT_DB_PATH
     if not db_path.exists():
         return json.dumps({"error": "Database not found."})
 
@@ -1574,7 +1575,7 @@ def add_lab_result(args: dict, **kwargs) -> str:
     if not all([strain_id, category, test_name, result]):
         return json.dumps({"error": "strain_id, category, test_name, result are required"})
 
-    db_path = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
+    db_path = _DEFAULT_DB_PATH
 
     try:
         import sys
@@ -1615,7 +1616,7 @@ def add_lab_result(args: dict, **kwargs) -> str:
 
 def snp_tree(args: dict, **kwargs) -> str:
     """Retrieve cohort-level SNP phylogenetic tree and distance matrix."""
-    db_path = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
+    db_path = _DEFAULT_DB_PATH
     if db_path.exists():
         try:
             from hermes_bacmap.services.genome_object_service import GenomeObjectService, ObjectType
@@ -1672,7 +1673,7 @@ def search_samples(args: dict, **kwargs) -> str:
     organism = args.get("organism", "").strip()
     limit = args.get("limit", 50)
 
-    db_path = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
+    db_path = _DEFAULT_DB_PATH
     if not db_path.exists():
         return json.dumps(
             {"error": "GOM database not found. Run 'python scripts/ingest_results.py --all' first."}

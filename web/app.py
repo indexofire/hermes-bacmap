@@ -18,7 +18,8 @@ from fastapi.staticfiles import StaticFiles
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
-_RESULTS_DIR = _PROJECT_ROOT / "results"
+from hermes_bacmap.config import RESULTS_DIR as _RESULTS_DIR, DB_PATH as _DB_PATH
+
 _WORKFLOW_DIR = _PROJECT_ROOT / "workflows" / "salmonella"
 _SAMPLES_TSV = _WORKFLOW_DIR / "config" / "samples.tsv"
 
@@ -162,7 +163,7 @@ def get_metadata(
 ) -> dict:
     from hermes_bacmap.services.strain_metadata import StrainMetadataService
 
-    db = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
+    db = _DB_PATH
     with StrainMetadataService(db) as svc:
         if strain_id:
             meta = svc.get(strain_id)
@@ -190,7 +191,7 @@ def get_metadata(
 def get_lab_results(sample_id: str = "", category: str = "") -> dict:
     from hermes_bacmap.services.lab_results import LabResultService
 
-    db = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
+    db = _DB_PATH
     with LabResultService(db) as svc:
         if sample_id:
             results = svc.get_by_strain(sample_id, category=category or None)

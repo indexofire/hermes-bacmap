@@ -21,9 +21,7 @@ from typing import Any
 
 import pyrodigal
 
-from hermes_bacmap.engine._env import _PROJECT_ROOT
-
-_REF_DIR = _PROJECT_ROOT / "data" / "reference"
+from hermes_bacmap.config import REF_DIR as _REF_DIR
 
 _MIN_CONTIG_LEN = 200
 _SINGLE_MODE_THRESHOLD = 100_000
