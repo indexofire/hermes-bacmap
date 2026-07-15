@@ -1,9 +1,21 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
-REF = _PROJECT_ROOT / "data" / "reference"
+
+
+def _resolve_ref_dir() -> Path:
+    env = os.environ.get("BACMAP_DATA_DIR")
+    if env:
+        p = Path(env) / "reference"
+        if p.exists():
+            return p
+    return _PROJECT_ROOT / "data" / "reference"
+
+
+REF = _resolve_ref_dir()
 
 
 SPECIES_MARKERS = REF / "species" / "markers.fasta"

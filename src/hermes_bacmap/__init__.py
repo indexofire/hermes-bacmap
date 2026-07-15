@@ -155,7 +155,7 @@ def register(ctx):
     # (src/hermes_bacmap/__init__.py → ../../skills/).
     from pathlib import Path
 
-    skills_dir = Path(__file__).resolve().parents[2] / "skills"
+    skills_dir = Path(__file__).resolve().parent / "skills"
     if skills_dir.is_dir():
         for child in sorted(skills_dir.iterdir()):
             skill_md = child / "SKILL.md"

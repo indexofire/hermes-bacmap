@@ -6,21 +6,25 @@ AI Native 病原微生物基因组智能分析平台 — [Hermes Agent](https://
 
 1. 参照[Hermes Agent](https://hermes-agent.nousresearch.com/)安装说明完成[Hermes](https://hermes-agent.nousresearch.com)的安装。
 
-2. 下载源代码
+2. 下载源代码并安装生信依赖
 
 ```bash
-# 克隆hermes-bacmap代码仓库到本地
-git clone https://github.com/indexofire/hermes-bacmap
-
-# 将插件安装到hermes中
-ln -s `pwd`/hermes-bacmap/src/hermes-bacmap $HOME/.hermes/plugins
-
-# 安装生信依赖
+git clone https://github.com/indexofire/hermes-bacmap.git
 cd hermes-bacmap
 pixi install
 ```
 
-3. 启动hermes
+3. 将插件安装到 Hermes
+
+```bash
+# 安装到 Hermes 的 Python 环境（自动注册 entry-point + 依赖）
+pip install -e . --python ~/.hermes/hermes-agent/venv/bin/python
+
+# 启用插件
+hermes plugins enable hermes_bacmap
+```
+
+4. 启动hermes
 
 启动`hermes agent`后，可以与其交互，开始让AI帮助进行食源性病原微生物的菌株基因组分析工作。
 
@@ -159,14 +163,14 @@ hermes chat
 ## 部署到 Hermes
 
 ```bash
-# 1. 安装依赖到 Hermes venv
-uv pip install --python ~/.hermes/hermes-agent/venv/bin/python biopython pydantic pyrodigal mappy sourmash
+# 1. 安装插件 + 依赖到 Hermes venv（entry-point 自动注册）
+pip install -e . --python ~/.hermes/hermes-agent/venv/bin/python
 
-# 2. 链接插件目录
-ln -sf ~/repo/github/hermes-bacmap/src/hermes_bacmap ~/.hermes/plugins/hermes_bacmap
-
-# 3. 启用插件
+# 2. 启用插件
 hermes plugins enable hermes_bacmap
+
+# 3. 如果数据库不在默认位置，设置环境变量
+export BACMAP_DATA_DIR=/path/to/hermes-bacmap/data
 ```
 
-完整指南见 **[docs/hermes-chat-guide.md](docs/hermes-chat-guide.md)**。
+完整指南见 **[docs/installation/quick-start.md](docs/installation/quick-start.md)**。
