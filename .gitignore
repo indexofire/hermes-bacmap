@@ -22,19 +22,24 @@ uv.lock
 .coverage
 htmlcov/
 
-# Data — too large for git
-data/
+# Runtime data — not tracked
+data/*.sqlite
+data/*.sqlite-wal
+data/*.sqlite-shm
 results/
 tests/fixtures/gold_standard/salmonella/data/
 external/
 
-# Databases
+# Derived indexes — rebuildable via bwa index / makeblastdb / samtools faidx
 *.fasta.bwt
 *.fasta.pac
 *.fasta.ann
 *.fasta.amb
 *.fasta.sa
+*.fasta.fai
 *_blastdb.*
+prokka_*.p**
+data/reference/vpa_serotype/ref_sketches.sig
 
 # SQLite
 *.sqlite
