@@ -201,7 +201,8 @@ def scan(
     if not query.exists():
         raise FileNotFoundError(f"Query not found: {query}")
 
-    is_fastq = query.suffix in (".fastq", ".fq", ".fastq.gz", ".fq.gz")
+    name_lower = query.name.lower()
+    is_fastq = name_lower.endswith((".fastq", ".fq", ".fastq.gz", ".fq.gz"))
 
     if is_fastq:
         return _scan_reads(query, reads_r2, db_name, min_identity, min_coverage, threads)

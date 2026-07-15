@@ -65,9 +65,8 @@ class TestKmaBackendParsing:
 class TestGeneScannerInputRouting:
     def test_fastq_detected_by_extension(self):
         from pathlib import Path
-        assert Path("reads.fastq").suffix in (".fastq", ".fq")
-        assert Path("reads.fastq.gz").suffix in (".fastq", ".fq", ".fastq.gz", ".fq.gz")
+        for name in ["reads.fastq", "reads.fq", "reads.fastq.gz", "reads.fq.gz"]:
+            assert name.endswith((".fastq", ".fq", ".fastq.gz", ".fq.gz"))
 
     def test_fasta_not_treated_as_fastq(self):
-        from pathlib import Path
-        assert Path("contigs.fasta").suffix not in (".fastq", ".fq", ".fastq.gz", ".fq.gz")
+        assert not "contigs.fasta".endswith((".fastq", ".fq", ".fastq.gz", ".fq.gz"))
