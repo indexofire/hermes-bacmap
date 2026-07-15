@@ -13,11 +13,12 @@ import hashlib
 import json
 import sqlite3
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
 from _common import ROOT
+
 sys.path.insert(0, str(ROOT / "src"))
 
 from hermes_bacmap.services.genome_object_service import (
@@ -173,7 +174,7 @@ def _populate_genotype_index(
         plasmid_types=extracted["plasmid_types"],
         amr_genes=extracted["amr_genes"],
         object_id=object_id,
-        analysis_date=datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
+        analysis_date=datetime.now(UTC).replace(tzinfo=None).isoformat(),
         pipeline_version=PIPELINE_VERSION,
     )
 
@@ -181,7 +182,7 @@ def _populate_genotype_index(
 def _create_new(gos: GenomeObjectService, sample_id: str, summary: dict, summary_path: Path) -> str:
     payload, organism = _build_payload(summary, sample_id)
     object_id = str(uuid4())
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = datetime.now(UTC).replace(tzinfo=None)
 
     obj = GenomeObject(
         object_id=object_id,
@@ -215,7 +216,7 @@ def _create_new(gos: GenomeObjectService, sample_id: str, summary: dict, summary
 
 
 def _create_new_version(gos: GenomeObjectService, existing_id: str, sample_id: str, summary: dict, summary_path: Path) -> str:
-    payload, _ = _build_payload(summary, sample_id)
+    payload, organism = _build_payload(summary, sample_id)
     new_obj = gos.create_new_version(
         existing_id,
         payload,
@@ -351,7 +352,7 @@ def _create_cohort_new(
     payload, organism = _build_cohort_payload(snp_data, group)
     cohort_strain_id = f"cohort:{group}-snp"
     object_id = str(uuid4())
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = datetime.now(UTC).replace(tzinfo=None)
 
     obj = GenomeObject(
         object_id=object_id,

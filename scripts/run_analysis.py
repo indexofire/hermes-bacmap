@@ -17,9 +17,9 @@ import argparse
 import json
 import subprocess
 import sys
-from pathlib import Path
 
 from _common import ROOT
+
 PIXI_BIN = ROOT / ".pixi/envs/default/bin"
 WORKFLOW_DIR = ROOT / "workflows/salmonella"
 RESULTS_DIR = ROOT / "results"
@@ -156,7 +156,7 @@ def interpret_summary(sample: str) -> None:
             genes = [r.get("Gene symbol", "?") for r in amrfp if isinstance(r, dict)]
             print(f"  💊 AMR genes ({len(genes)}): {', '.join(genes[:10])}")
         else:
-            print(f"  💊 AMR genes: none found (susceptible)")
+            print("  💊 AMR genes: none found (susceptible)")
 
     print(f"\n  Full report: {summary_path}")
 
@@ -218,11 +218,11 @@ def main() -> int:
 
     if success:
         if args.snp:
-            print(f"\n✅ SNP cohort analysis 完成。")
+            print("\n✅ SNP cohort analysis 完成。")
             print(f"   Tree: {RESULTS_DIR / 'snp' / 'core.treefile'}")
             print(f"   Summary: {RESULTS_DIR / 'snp' / 'snp_summary.json'}")
-            print(f"   Report: python scripts/generate_report.py --cohort")
-            print(f"   Ingest: python scripts/ingest_results.py --snp")
+            print("   Report: python scripts/generate_report.py --cohort")
+            print("   Ingest: python scripts/ingest_results.py --snp")
         elif args.sample:
             interpret_summary(args.sample)
         else:
@@ -241,7 +241,7 @@ def main() -> int:
                 print(f"\n⚠️  {len(failed)} sample(s) failed: {', '.join(failed)}")
                 print(f"\n✅ 部分完成 ({len(failed)} 失败)。")
                 return 1
-        print(f"\n✅ 全部完成。")
+        print("\n✅ 全部完成。")
         return 0
     else:
         import sys as _sys
@@ -250,14 +250,14 @@ def main() -> int:
 
         diag = diagnose_from_log(str(WORKFLOW_DIR / ".snakemake/log"))
 
-        print(f"\n❌ Snakemake 失败。诊断结果:")
+        print("\n❌ Snakemake 失败。诊断结果:")
         print(f"   类型: {diag.error_type}")
         print(f"   原因: {diag.details}")
         if diag.rule_name:
             print(f"   规则: {diag.rule_name}")
         print(f"   修复: {diag.suggested_fix}")
         if diag.recovery_commands:
-            print(f"   命令:")
+            print("   命令:")
             for cmd in diag.recovery_commands:
                 print(f"     $ {cmd}")
         print(f"\n   手动检查: {WORKFLOW_DIR}/.snakemake/log/")

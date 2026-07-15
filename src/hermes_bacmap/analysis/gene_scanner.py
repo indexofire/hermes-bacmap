@@ -149,7 +149,7 @@ class ScanResult:
 
 
 _DB_SEARCH_PATHS = [
-    Path(__file__).resolve().parents[2] / "data/reference",
+    Path(__file__).resolve().parents[2] / "data" / "reference",
     Path(__file__).resolve().parents[2] / ".pixi/envs/default/db",
     Path.home() / ".pixi/envs/default/db",
 ]

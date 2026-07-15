@@ -6,25 +6,22 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
 
 import pytest
 
 from hermes_bacmap.services.genome_object_service import (
     CompositeTriplet,
-    FileArtifact,
+    GenomeObject,
+    GenomeObjectService,
     GOMImmutableError,
     GOMNotFoundError,
     GOMValidationError,
-    GenomeObject,
-    GenomeObjectService,
     ObjectType,
     new_artifact_id,
     new_event_id,
     new_object_id,
 )
-
 
 
 class TestGenomeObjectSchema:
@@ -460,7 +457,7 @@ class TestEventsLog:
         with GenomeObjectService(tmp_db_path) as svc:
             svc.create(sample_sample_object)
             svc.log_event(sample_sample_object.object_id, "uploaded", {})
-            cutoff = datetime.now(timezone.utc)
+            cutoff = datetime.now(UTC)
             svc.log_event(sample_sample_object.object_id, "qc_finished", {})
             recent = svc.list_events(sample_sample_object.object_id, since=cutoff)
             assert len(recent) == 1

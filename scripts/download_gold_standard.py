@@ -22,6 +22,7 @@ import urllib.request
 from pathlib import Path
 
 from _common import ROOT
+
 CSV_PATH = ROOT / "tests/fixtures/gold_standard/salmonella/gold_standard.csv"
 DATA_DIR = ROOT / "tests/fixtures/gold_standard/salmonella/data"
 ENA_API = "https://www.ebi.ac.uk/ena/portal/api/filereport"
@@ -71,7 +72,6 @@ def download(url: str, dest: Path) -> bool:
 def process_strain(row: dict, dry_run: bool = False) -> dict | None:
     strain_id = row["strain_id"]
     srr = row["sra_accession"]
-    species = row["species"]
 
     if not srr or srr.startswith("PENDING"):
         print(f"  ⊘ {strain_id}: SRR pending, skipped")
@@ -141,7 +141,7 @@ def process_strain(row: dict, dry_run: bool = False) -> dict | None:
                 print(f"✓ MD5 verified ({elapsed:.0f}s, {speed:.1f} MB/s)")
                 files_to_verify.append((dest, dest_name))
             else:
-                print(f"✗ MD5 mismatch!")
+                print("✗ MD5 mismatch!")
                 print(f"    expected: {expected_md5}")
                 print(f"    actual:   {actual_md5}")
                 dest.unlink(missing_ok=True)

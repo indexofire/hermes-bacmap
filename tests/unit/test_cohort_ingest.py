@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import json
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
@@ -14,7 +12,6 @@ from hermes_bacmap.services.genome_object_service import (
     GenomeObjectService,
     ObjectType,
 )
-
 
 COHORT_STRAIN_ID = "cohort:salmonella-snp"
 SNP_PIPELINE_VERSION = "snp-pipeline-v0.3"
@@ -44,7 +41,7 @@ def _create_cohort_object(
     pipeline_version: str = SNP_PIPELINE_VERSION,
 ) -> str:
     object_id = str(uuid4())
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = datetime.now(UTC).replace(tzinfo=None)
     obj = GenomeObject(
         object_id=object_id,
         object_type=ObjectType.ANALYSIS,
@@ -117,7 +114,7 @@ class TestCohortSNPIngest:
             cohort_oid = _create_cohort_object(gos, snp_data)
 
             sample_oid = str(uuid4())
-            now = datetime.now(timezone.utc).replace(tzinfo=None)
+            now = datetime.now(UTC).replace(tzinfo=None)
             gos.create(GenomeObject(
                 object_id=sample_oid,
                 object_type=ObjectType.ANALYSIS,

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -14,7 +13,7 @@ def tmp_db_path(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def now_utc() -> datetime:
-    return datetime(2026, 6, 27, 10, 0, 0, tzinfo=timezone.utc)
+    return datetime(2026, 6, 27, 10, 0, 0, tzinfo=UTC)
 
 
 @pytest.fixture

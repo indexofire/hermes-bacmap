@@ -6,9 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from hermes_bacmap.services.strain_metadata import StrainMetadataService, StrainMeta
-from hermes_bacmap.services.lab_results import LabResultService, LabResult
-
+from hermes_bacmap.services.lab_results import LabResultService
+from hermes_bacmap.services.strain_metadata import StrainMetadataService
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -273,5 +272,5 @@ class TestIntegration:
 
             assert meta.patient_name == "张三"
             assert len(labs) == 2
-            sero = [l for l in labs if l.category == "serology"][0]
+            sero = [lr for lr in labs if lr.category == "serology"][0]
             assert sero.result == "O4"

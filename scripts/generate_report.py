@@ -14,44 +14,13 @@ from datetime import datetime
 from pathlib import Path
 
 from _common import ROOT
+
 sys.path.insert(0, str(ROOT / "src"))
 
 from hermes_bacmap.analysis.deterministic_verifier import DeterministicVerifier
+from hermes_bacmap.utils import parse_abricate_tsv, parse_mlst
 
 RESULTS_DIR = ROOT / "results"
-
-
-def _parse_mlst_line(mlst_text: str) -> dict:
-    if not mlst_text:
-        return {"st": "N/A", "alleles": {}}
-    lines = mlst_text.strip().split("\n")
-    if len(lines) < 2:
-        return {"st": "N/A", "alleles": {}}
-    header = lines[0].split("\t")
-    data = lines[-1].split("\t")
-    result = {"alleles": {}}
-    for i, h in enumerate(header):
-        if i < len(data):
-            if h.lower() == "st":
-                result["st"] = data[i]
-            else:
-                result["alleles"][h] = data[i]
-    return result
-
-
-def _parse_abricate_tsv(tsv_text: str) -> list[dict]:
-    if not tsv_text:
-        return []
-    lines = tsv_text.strip().split("\n")
-    if len(lines) < 2:
-        return []
-    header = lines[0].split("\t")
-    rows = []
-    for line in lines[1:]:
-        parts = line.split("\t")
-        if len(parts) >= len(header):
-            rows.append(dict(zip(header, parts)))
-    return rows
 
 
 def _row(label: str, value: str, ok: bool = True) -> str:
@@ -80,7 +49,7 @@ def generate_html(sample_id: str, summary: dict, verification, output_path: Path
     sp = steps.get("species", {})
     verdict = sp.get("verdict", "N/A") if isinstance(sp, dict) else str(sp)
 
-    mlst_info = _parse_mlst_line(steps.get("mlst", ""))
+    mlst_info = parse_mlst(steps.get("mlst", ""))
     st = mlst_info.get("st", "N/A")
     alleles = mlst_info.get("alleles", {})
 
@@ -91,15 +60,14 @@ def generate_html(sample_id: str, summary: dict, verification, output_path: Path
     h1 = sero.get("h1", "") if isinstance(sero, dict) else ""
     h2 = sero.get("h2", "") if isinstance(sero, dict) else ""
 
-    amr = steps.get("amr", {})
-    card_genes = _parse_abricate_tsv("")
+    card_genes = parse_abricate_tsv("")
     card_path = RESULTS_DIR / sample_id / "amr" / "abricate_card.tsv"
     if card_path.exists():
-        card_genes = _parse_abricate_tsv(card_path.read_text())
+        card_genes = parse_abricate_tsv(card_path.read_text())
     vfdb_path = RESULTS_DIR / sample_id / "amr" / "abricate_vfdb.tsv"
-    vfdb_genes = _parse_abricate_tsv(vfdb_path.read_text()) if vfdb_path.exists() else []
+    vfdb_genes = parse_abricate_tsv(vfdb_path.read_text()) if vfdb_path.exists() else []
     plasmid_path = RESULTS_DIR / sample_id / "plasmid" / "abricate_plasmidfinder.tsv"
-    plasmid_genes = _parse_abricate_tsv(plasmid_path.read_text()) if plasmid_path.exists() else []
+    plasmid_genes = parse_abricate_tsv(plasmid_path.read_text()) if plasmid_path.exists() else []
 
     asm_stats = steps.get("assembly", "")
     asm_parts = asm_stats.strip().split("\n")[-1].split("\t") if asm_stats else []
@@ -197,7 +165,6 @@ def _distance_color(d: int, max_d: int) -> str:
 
 
 def generate_cohort_html(snp_summary: dict, output_path: Path):
-    import json as _json
 
     newick = snp_summary.get("tree_newick", "")
     n_sites = snp_summary.get("n_snp_sites", 0)

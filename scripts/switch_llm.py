@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import argparse
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -71,7 +70,6 @@ def update_model_section(config_text: str, provider_name: str) -> str:
     lines = config_text.split("\n")
     new_lines: list[str] = []
     in_model_section = False
-    model_done = False
 
     for line in lines:
         if line.startswith("model:"):
@@ -82,7 +80,6 @@ def update_model_section(config_text: str, provider_name: str) -> str:
             new_lines.append(f"  base_url: {cfg['base_url']}")
             if "api_key" in cfg:
                 new_lines.append(f"  api_key: {cfg['api_key']}")
-            model_done = True
             continue
 
         if in_model_section:
@@ -172,16 +169,16 @@ def main() -> int:
     if args.provider != "zai":
         alive = check_service(args.provider)
         if alive:
-            print(f"  Service: ✅ running")
+            print("  Service: ✅ running")
         else:
-            print(f"  Service: ❌ not responding (see note above)")
+            print("  Service: ❌ not responding (see note above)")
 
     config_text = read_config()
     new_text = update_model_section(config_text, args.provider)
     write_config(new_text)
 
-    print(f"\n✓ Hermes config updated. Restart Hermes to apply:")
-    print(f"  hermes chat  (or restart existing session)")
+    print("\n✓ Hermes config updated. Restart Hermes to apply:")
+    print("  hermes chat  (or restart existing session)")
     return 0
 
 

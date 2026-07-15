@@ -8,7 +8,7 @@ Usage:
 
     hits = SequenceMatcher.match(
         query="contigs.fasta",
-        db_prefix="data/reference/card",
+        db_prefix="data/reference/amr/card",
         mode="blastn",
     )
 """
