@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Salmonella 自动分析编排器。
+"""病原菌自动分析编排器（4种病原通用）。
 
 一次命令自动完成：QC → 组装 → 物种验证 → MLST → 血清型 → AMR → 毒力 → 报告。
 Snakemake DAG 自动编排所有依赖，无需人为逐步触发。
@@ -162,7 +162,7 @@ def interpret_summary(sample: str) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Salmonella 自动分析编排器")
+    parser = argparse.ArgumentParser(description="病原菌自动分析编排器（4种病原通用）")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--sample", type=str, help="Sample ID to analyze")
     group.add_argument("--all", action="store_true", help="Analyze all samples")

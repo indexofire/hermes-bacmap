@@ -19,7 +19,7 @@ provides_tools:
   - bio_align
   - bio_samtools
   - bio_variant
-  - bio_analyze_salmonella
+  - bio_analyze_pathogen
   - bio_get_result
   - bio_verify_result
   - bio_generate_report

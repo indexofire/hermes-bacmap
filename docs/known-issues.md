@@ -112,6 +112,6 @@
 
 ### A5. Tool 重命名（可选）
 
-- **状态**: `bio_analyze_salmonella` → `bio_analyze_pathogen`？名称暗示只支持 Salmonella，但实际支持 4 种病原
+- **状态**: `bio_analyze_pathogen` → `bio_analyze_pathogen`？名称暗示只支持 Salmonella，但实际支持 4 种病原
 - **风险**: 低（LLM 每次会话重新读 schema）
 - **优先级**: 低

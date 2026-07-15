@@ -49,7 +49,7 @@ python scripts/run_analysis.py --sample SAM-TYP-001
 > 分析 SAM-TYP-001
 ```
 
-Agent 调用 `bio_analyze_salmonella`，触发 Snakemake DAG。每步进度实时输出：
+Agent 调用 `bio_analyze_pathogen`，触发 Snakemake DAG。每步进度实时输出：
 
 ```
 启动分析 SAM-TYP-001 ...

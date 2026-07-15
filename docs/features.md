@@ -108,7 +108,7 @@
 
 | Tool | 功能 | 输入 | 输出 |
 |---|---|---|---|
-| `bio_analyze_salmonella` | 触发 Snakemake 全流程（跨病原自动路由） | sample_id | summary.json |
+| `bio_analyze_pathogen` | 触发 Snakemake 全流程（跨病原自动路由） | sample_id | summary.json |
 | `bio_get_result` | 获取单株紧凑结果摘要 | sample_id | JSON (species/mlst/serotype/amr) |
 | `bio_verify_result` | 运行 Deterministic Verifier | sample_id | VerificationResult |
 | `bio_generate_report` | 生成 HTML 报告（单株 / 全量 / cohort） | sample_id 或 --cohort | HTML 文件 |

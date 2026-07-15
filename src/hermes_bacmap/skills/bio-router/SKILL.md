@@ -31,7 +31,7 @@ Load the appropriate skill below based on what the user needs.
 User says...
 │
 ├── "分析 / analyze" + sample name
-│   → Call tool: bio_analyze_salmonella
+│   → Call tool: bio_analyze_pathogen
 │   → Load skill: hermes_bacmap:run-pipeline (for pipeline details)
 │
 ├── "注释 / annotate" + contigs
@@ -67,7 +67,7 @@ User says...
 
 | Tool | Purpose |
 |---|---|
-| `bio_analyze_salmonella` | Run Snakemake pipeline |
+| `bio_analyze_pathogen` | Run Snakemake pipeline |
 | `bio_annotate` | Genome annotation (pyrodigal + Prokka DBs) |
 | `bio_get_result` | Retrieve sample summary |
 | `bio_verify_result` | Deterministic verification |

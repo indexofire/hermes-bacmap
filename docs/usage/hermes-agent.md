@@ -35,7 +35,7 @@ hermes chat
 > 分析 SAM-TYP-001
 ```
 
-调用 `bio_analyze_salmonella`，触发 Snakemake 全流程。Agent 会先确认样本存在，然后报告每步进度：
+调用 `bio_analyze_pathogen`，触发 Snakemake 全流程。Agent 会先确认样本存在，然后报告每步进度：
 
 ```
 启动分析 SAM-TYP-001 ...
@@ -167,7 +167,7 @@ Agent 通常自动加载，也可手动指定：
 
 ```
 用户输入
-├── "分析 / analyze" + 样本名  → bio_analyze_salmonella + 加载 run-pipeline
+├── "分析 / analyze" + 样本名  → bio_analyze_pathogen + 加载 run-pipeline
 ├── "注释 / annotate"          → bio_annotate + 加载 interpret-results
 ├── "X 是什么意思"             → 加载 interpret-results
 ├── "比较 / compare"           → bio_snp_tree + 加载 interpret-results

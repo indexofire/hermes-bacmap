@@ -1229,7 +1229,7 @@ def _count_vcf_records(path: str) -> int:
 # ---------------------------------------------------------------------------
 
 
-def analyze_salmonella(args: dict, **kwargs) -> str:
+def analyze_pathogen(args: dict, **kwargs) -> str:
     """Trigger full analysis pipeline via Snakemake.
     Works for Salmonella, DEC, Shigella, EIEC — species routing is automatic
     via three-gene identification (invA/uidA/ipaH)."""
@@ -1252,7 +1252,7 @@ def get_result(args: dict, **kwargs) -> str:
 
     if not summary_path.exists():
         return json.dumps(
-            {"error": f"No results found for {sample_id}. Run bio_analyze_salmonella first."}
+            {"error": f"No results found for {sample_id}. Run bio_analyze_pathogen first."}
         )
 
     with summary_path.open() as f:

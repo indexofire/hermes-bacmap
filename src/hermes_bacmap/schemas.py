@@ -401,8 +401,8 @@ VARIANT = {
 # High-level analysis tools (project.md §7 Salmonella pipeline)
 # ---------------------------------------------------------------------------
 
-ANALYZE_SALMONELLA = {
-    "name": "bio_analyze_salmonella",
+ANALYZE_PATHOGEN = {
+    "name": "bio_analyze_pathogen",
     "description": (
         "Run the full pathogen analysis pipeline (QC, assembly, species "
         "identification via invA/uidA/ipaH three-gene routing, MLST, "

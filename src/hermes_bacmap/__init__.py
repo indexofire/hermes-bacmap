@@ -60,10 +60,10 @@ def register(ctx):
 
     # High-level analysis tools (project.md §7)
     ctx.register_tool(
-        name="bio_analyze_salmonella",
+        name="bio_analyze_pathogen",
         toolset="bioinfo",
-        schema=schemas.ANALYZE_SALMONELLA,
-        handler=tools.analyze_salmonella,
+        schema=schemas.ANALYZE_PATHOGEN,
+        handler=tools.analyze_pathogen,
     )
     ctx.register_tool(
         name="bio_get_result",

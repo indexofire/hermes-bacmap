@@ -42,7 +42,7 @@ Tier 3 · references/ 目录
 用户输入
 │
 ├── "分析 / analyze" + 样本名
-│   → Call tool: bio_analyze_salmonella
+│   → Call tool: bio_analyze_pathogen
 │   → Load skill: hermes_bacmap:run-pipeline
 │
 ├── "注释 / annotate" + contigs
