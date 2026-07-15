@@ -205,6 +205,13 @@ def _parse_prokka_header(sseqid: str) -> tuple[str, str]:
     return sseqid.strip(), "hypothetical protein"
 
 
+def _make_locus_tag(sample_id: str, index: int) -> str:
+    import hashlib
+    base = sample_id.upper().replace("-", "").replace("_", "") or "SAMPLE"
+    suffix = hashlib.md5(sample_id.encode()).hexdigest()[:4].upper()
+    return f"{base[:8]}_{suffix}_{index:05d}"
+
+
 def annotate(contigs_path: str | Path, sample_id: str = "") -> AnnotationResult:
     contigs_file = Path(contigs_path)
     if not contigs_file.exists():
@@ -231,7 +238,7 @@ def annotate(contigs_path: str | Path, sample_id: str = "") -> AnnotationResult:
     with tempfile.NamedTemporaryFile(mode="w", suffix=".faa", delete=False) as tmp:
         proteins_faa = Path(tmp.name)
         for i, (contig_name, begin, end, strand, na_seq, prot_seq) in enumerate(predictions, 1):
-            locus_tag = f"{sample_id[:8].upper()}_{i:05d}"
+            locus_tag = _make_locus_tag(sample_id, i)
             tmp.write(f">{locus_tag}\n{prot_seq}\n")
 
     try:
@@ -251,7 +258,7 @@ def annotate(contigs_path: str | Path, sample_id: str = "") -> AnnotationResult:
         proteins_faa.unlink(missing_ok=True)
 
     for i, (contig_name, begin, end, strand, na_seq, prot_seq) in enumerate(predictions, 1):
-        locus_tag = f"{sample_id[:8].upper()}_{i:05d}"
+        locus_tag = _make_locus_tag(sample_id, i)
         feat = Feature(
             locus_tag=locus_tag,
             ftype="CDS",

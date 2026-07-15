@@ -43,6 +43,11 @@ class TestParseMlst:
         r = parse_mlst("FILE\tSCHEME\tST")
         assert r["st"] == "N/A"
 
+    def test_multi_sample_uses_first_data_line(self):
+        tsv = "FILE\tSCHEME\tST\taroC\ns1\tsal_2\t19\t10\ns2\tsal_2\t11\t7"
+        r = parse_mlst(tsv)
+        assert r["st"] == "19"
+
 
 class TestParseAbricateTsv:
     def test_normal(self):
@@ -58,11 +63,12 @@ class TestParseAbricateTsv:
         assert r[0]["GENE"] == "blaCTX-M"
         assert r[0].get("PRODUCT") == "" or r[0].get("PRODUCT") is None
 
-    def test_hash_prefix_normalized(self):
+    def test_hash_prefix_stripped(self):
         tsv = "#FILE\tGENE\nfile1\tblaCTX-M"
         r = parse_abricate_tsv(tsv)
         assert len(r) == 1
-        assert "FILE" in r[0] or "#FILE" in r[0]
+        assert "FILE" in r[0]
+        assert "#FILE" not in r[0]
 
     def test_empty(self):
         assert parse_abricate_tsv("") == []

@@ -39,7 +39,7 @@ _DEFAULT_MIN_COVERAGE = 80.0
 _EVALUE = 1e-10
 _WORD_SIZE = 28
 
-_HEADER_RE = re.compile(r">(\S+?)(?:~~~(.+?))?(?:~~~(.+?))?(?:~~~\s*(.+))?")
+
 
 
 def normalize_synonyms(raw: dict[str, Any]) -> dict[str, list[str]]:

@@ -10,6 +10,9 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 @dataclass
@@ -165,7 +168,7 @@ def diagnose_from_log(log_path: str) -> Diagnosis:
 
     p = Path(log_path)
     if not p.exists():
-        log_dir = Path("workflows/salmonella/.snakemake/log")
+        log_dir = _PROJECT_ROOT / "workflows" / "salmonella" / ".snakemake" / "log"
         if log_dir.exists():
             logs = sorted(log_dir.glob("*.snakemake.log"))
             if logs:

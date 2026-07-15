@@ -64,3 +64,24 @@ class TestGenomeAnnotatorParseProkkaHeader:
         from hermes_bacmap.analysis.genome_annotator import _parse_prokka_header
         gene, product = _parse_prokka_header("just_a_name")
         assert gene != ""
+
+
+class TestGenomeAnnotatorLocusTag:
+    def test_locus_tag_has_no_leading_underscore(self):
+        from hermes_bacmap.analysis.genome_annotator import _make_locus_tag
+        tag = _make_locus_tag("", 1)
+        assert not tag.startswith("_")
+
+    def test_locus_tag_unique_for_similar_ids(self):
+        from hermes_bacmap.analysis.genome_annotator import _make_locus_tag
+        t1 = _make_locus_tag("SAM-DEC-001", 1)
+        t2 = _make_locus_tag("SAM-DEC-002", 1)
+        assert t1 != t2
+
+
+class TestFailureDiagnosticsAbsolutePath:
+    def test_log_dir_uses_project_root(self):
+        from hermes_bacmap.analysis import failure_diagnostics
+        import inspect
+        src = inspect.getsource(failure_diagnostics.diagnose_from_log)
+        assert 'Path("workflows' not in src or "_PROJECT_ROOT" in src or "parents[" in src

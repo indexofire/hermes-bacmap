@@ -612,7 +612,11 @@ class GenomeObjectService:
         if not query.strip():
             return []
 
-        fts_query = " OR ".join(f'"{term}"' for term in query.split() if term.strip())
+        fts_query = " OR ".join(
+            f'"{term.replace("\"", "\"\"")}"'
+            for term in query.split()
+            if term.strip()
+        )
 
         sql = """
             SELECT DISTINCT g.* FROM genome_objects g

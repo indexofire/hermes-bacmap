@@ -49,6 +49,14 @@ class TestMergeIntervals:
         assert cov == 100.0
 
 
+class TestMergeIntervalsReverseStrand:
+    def test_reverse_strand_coverage(self):
+        h = Hit(query_id="q", subject_id="s", identity=99.0,
+                subject_start=500, subject_end=100, alignment_length=401)
+        cov, _ = merge_intervals([h], subject_length=0)
+        assert cov > 0
+
+
 class TestClassifyAllele:
     def test_exact(self):
         label, score = classify_allele(100.0, 100.0)
@@ -74,6 +82,14 @@ class TestClassifyAllele:
         label, score = classify_allele(80.0, 30.0)
         assert label == "missing"
         assert score == 0
+
+
+class TestMergeIntervalsReverseStrand:
+    def test_reverse_strand_subject_length(self):
+        h = Hit(query_id="q", subject_id="s", identity=99.0,
+                subject_start=500, subject_end=100, alignment_length=401)
+        cov, _ = merge_intervals([h], subject_length=0)
+        assert cov > 0
 
 
 class TestHitToDict:

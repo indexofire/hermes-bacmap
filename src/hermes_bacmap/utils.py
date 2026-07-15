@@ -19,7 +19,7 @@ def parse_mlst(mlst_tsv: str) -> dict[str, Any]:
         return {"st": "N/A", "alleles": {}}
 
     header = lines[0].split("\t")
-    data = lines[-1].split("\t")
+    data = lines[1].split("\t")
 
     result: dict[str, Any] = {"alleles": {}}
     for i, col in enumerate(header):
@@ -52,7 +52,7 @@ def parse_abricate_tsv(tsv_text: str) -> list[dict[str, str]]:
     lines = tsv_text.strip().split("\n")
     if len(lines) < 2:
         return []
-    header = lines[0].split("\t")
+    header = [h.lstrip("#") for h in lines[0].split("\t")]
     rows: list[dict[str, str]] = []
     for line in lines[1:]:
         parts = line.split("\t")
