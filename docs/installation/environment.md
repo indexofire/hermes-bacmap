@@ -12,9 +12,6 @@
 | GPU | 不需要 | 不需要 | 可选，≥16 GB VRAM（本地 LLM） |
 | 网络 | 下载阶段需要 | 同左 | 本地推理后可离线 |
 
-!!! note "为何 RAM 要求较高"
-    Shovill（SPAdes 组装）单株峰值约 8–16 GB；SNP 联合变异检测（bcftools mpileup）对多样本 BAM 同时读取。推荐档可流畅完成 96 株/run 批处理。
-
 ## 操作系统
 
 | OS | 支持 | 说明 |
@@ -23,28 +20,30 @@
 | macOS (arm64) | 非官方 | pixi 生信工具多为 x86_64 原生，arm 需 Rosetta |
 | Windows / WSL2 | 不支持 | pixi 部分包无 Windows 构建，建议用 Linux |
 
-!!! warning "Snakemake 版本锁定"
-    必须使用 **Snakemake 7.32.x**。v8+ 的锁机制与 CLI 行为有破坏性变更，会导致管线失败。
-
 ## 软件依赖
 
-### Python 环境（uv）
+### 包管理工具
+
+| 工具 | 版本 | 用途 |
+|---|---|---|
+| [pixi](https://pixi.sh) | ≥ 0.30 | 生信 CLI + Python 运行时（生产用户唯一需要） |
+| [uv](https://docs.astral.sh/uv/) | ≥ 0.3 | Python 开发工具（仅开发者需要：pytest / ruff / mypy） |
+
+### Python 环境
 
 | 项 | 要求 |
 |---|---|
-| Python | **3.11+**（主开发环境） |
-| Python 3.12 | gmlst 独立环境需要（`.venv-gmlst`） |
-| 包管理 | [uv](https://docs.astral.sh/uv/) ≥ 0.3 |
+| Python | **3.12**（pixi 自动安装，统一用于运行时和开发） |
 
-核心 Python 依赖（`pyproject.toml`）：
+核心 Python 依赖（`pyproject.toml` 声明，`pixi install` 自动拉取）：
 
 | 包 | 版本 | 用途 |
 |---|---|---|
 | biopython | ≥ 1.83 | 序列操作 |
 | pydantic | ≥ 2.0 | 数据模型 / Tool schema |
-| pytest | ≥ 8.0 | 测试 |
-| ruff | ≥ 0.5 | lint + format |
-| mypy | ≥ 1.10 | 类型检查（--strict） |
+| pyrodigal | ≥ 3.0 | 基因组注释（替代 Prokka CLI） |
+| mappy | ≥ 2.24 | minimap2 Python 绑定 |
+| sourmash | ≥ 4.8 | K-mer 比较（V.para 血清型） |
 
 ### 生信工具（pixi）
 
@@ -56,22 +55,15 @@
 | shovill | ≥ 1.1.0 | 基因组组装（SPAdes 后端） |
 | blast | ≥ 2.16 | 本地 BLAST（物种鉴定 / 基因扫描） |
 | bwa | ≥ 0.7.17 | 读段比对（SNP 管线） |
-| samtools | ≥ 1.20 | BAM 操作（9 个子命令） |
+| samtools | ≥ 1.20 | BAM 操作 |
 | bcftools | ≥ 1.20 | 变异检测（联合 calling） |
 | seqkit | ≥ 2.8 | 序列统计 |
 | sistr_cmd | ≥ 1.1.3 | Salmonella 血清型 |
 | abricate | ≥ 1.4.0 | AMR / 毒力 / 质粒检测 |
 | iqtree | ≥ 3.1.2 | 最大似然系统发育树 |
 | snakemake | 7.32.* | 工作流引擎 |
-| gmlst | 0.1.0 | MLST（独立 Python 3.12 环境） |
-
-### 可选：Web UI 依赖
-
-| 工具 | 版本 | 用途 |
-|---|---|---|
-| Node.js | ≥ 18 | 前端构建（如需修改 React 资源） |
-
-Web UI 后端（FastAPI + uvicorn）随 Python 主环境安装，前端静态资源已预编译到 `web/static/`，无需 Node.js 即可运行。
+| gmlst | 0.1.0 | MLST（PubMLST schemes） |
+| prodigal | ≥ 2.6 | CDS 预测（pyrodigal 后端） |
 
 ### 可选：GPU 与本地 LLM
 
@@ -85,21 +77,22 @@ Web UI 后端（FastAPI + uvicorn）随 Python 主环境安装，前端静态资
 
 无 GPU 时默认使用云端 Z.AI（GLM-5.2），零 GPU 即可运行。
 
-## 三套环境概览
+## 双环境架构
 
-Hermes-bacmap 使用三个相互隔离的环境，避免依赖冲突：
+Hermes-bacmap 使用两个相互隔离的环境：
 
 | 环境 | 管理工具 | Python | 内容 |
 |---|---|---|---|
-| `.venv` | uv | 3.11 | Hermes 插件、biopython、pydantic、FastAPI、测试 |
-| `.pixi/envs/default` | pixi | — | 生信 CLI 工具（blast / bwa / samtools / ...） |
-| `.venv-gmlst` | uv | 3.12 | 仅 gmlst（上游要求 Python ≥ 3.12） |
+| `.pixi/envs/default` | pixi | 3.12 | 生信 CLI + 全部 Python 运行时依赖（biopython、pyrodigal、gmlst 等） |
+| `.venv` | uv | 3.12 | 开发工具（pytest、ruff、mypy）— 仅开发者需要 |
 
 ```bash
-# 验证三套环境
-source .venv/bin/activate && python -c "import hermes_bacmap"   # 主环境
-pixi run snakemake --version                                     # pixi 环境
-.venv-gmlst/bin/gmlst --version                                  # gmlst 环境
+# 生产用户只需 pixi
+pixi install
+
+# 开发者额外需要 uv
+uv venv --python 3.12
+uv pip install -e ".[dev]"
 ```
 
-三套环境就绪后，进入[快速安装](quick-start.md)下载参考数据库并验证。
+环境就绪后，进入[快速安装](quick-start.md)构建数据库索引并部署插件。
