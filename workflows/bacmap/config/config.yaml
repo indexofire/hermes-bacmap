@@ -5,6 +5,8 @@ threads: 8
 workdir: "results"
 project_root: "../.."
 
+species_mode: "simple"
+
 samples_file: "config/samples.tsv"
 
 databases:

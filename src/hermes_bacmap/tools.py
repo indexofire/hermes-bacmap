@@ -1791,6 +1791,26 @@ def search_samples(args: dict, **kwargs) -> str:
         return json.dumps({"error": f"Search failed: {e}"})
 
 
+def validate_taxonomy(args: dict, **kwargs) -> str:
+    """Validate genome taxonomy — simple (marker genes) or standard (CheckM2 + GTDB-Tk)."""
+    sample_id = args.get("sample_id", "")
+    mode = args.get("mode", "simple")
+
+    contigs = _RESULTS_DIR / sample_id / "assembly" / "contigs.fasta"
+    if not contigs.exists():
+        return json.dumps({"error": f"Contigs not found for {sample_id}. Run analysis first."})
+
+    try:
+        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
+        from hermes_bacmap.analysis.taxonomic_validator import validate_genome
+
+        output_dir = _RESULTS_DIR / sample_id / "taxonomy"
+        result = validate_genome(contigs, mode=mode, output_dir=output_dir)
+        return json.dumps(result.to_dict(), ensure_ascii=False)
+    except Exception as e:
+        return json.dumps({"error": f"Taxonomy validation failed: {e}"})
+
+
 def annotate_genome(args: dict, **kwargs) -> str:
     """Annotate assembled contigs with pyrodigal + Prokka DBs."""
     contigs_path = args.get("contigs_path", "")

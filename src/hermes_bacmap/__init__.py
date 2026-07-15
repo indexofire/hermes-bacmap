@@ -114,6 +114,12 @@ def register(ctx):
         handler=tools.annotate_genome,
     )
     ctx.register_tool(
+        name="bio_validate_taxonomy",
+        toolset="bioinfo",
+        schema=schemas.VALIDATE_TAXONOMY,
+        handler=tools.validate_taxonomy,
+    )
+    ctx.register_tool(
         name="bio_diagnose",
         toolset="bioinfo",
         schema=schemas.DIAGNOSE,
@@ -162,4 +168,4 @@ def register(ctx):
             if child.is_dir() and skill_md.exists():
                 ctx.register_skill(child.name, skill_md)
 
-    logger.info("hermes_bacmap plugin registered 23 tools")
+    logger.info("hermes_bacmap plugin registered 24 tools")

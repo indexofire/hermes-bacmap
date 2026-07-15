@@ -27,6 +27,9 @@ RESULTS_DIR = _env_path("BACMAP_RESULTS_DIR", _DEV_ROOT / "results")
 PIXI_BIN = str(_DEV_ROOT / ".pixi" / "envs" / "default" / "bin")
 PIXI_PYTHON = str(_DEV_ROOT / ".pixi" / "envs" / "default" / "bin" / "python")
 
+CHECKM2_DB = _env_path("CHECKM2DB", None) if os.environ.get("CHECKM2DB") else None
+GTDB_DB = _env_path("GTDBDB", None) if os.environ.get("GTDBDB") else None
+
 
 def pixi_path() -> str:
     return f"{PIXI_BIN}:{os.environ.get('PATH', '')}"

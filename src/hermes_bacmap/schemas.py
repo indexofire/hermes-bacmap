@@ -581,6 +581,33 @@ SEARCH_SAMPLES = {
 }
 
 
+VALIDATE_TAXONOMY = {
+    "name": "bio_validate_taxonomy",
+    "description": (
+        "Validate genome taxonomy and quality. Two modes: 'simple' "
+        "(default, marker-gene based, fast) and 'standard' (CheckM2 "
+        "completeness/contamination + GTDB-Tk taxonomy, requires "
+        "external databases). Use 'standard' when user asks for "
+        "rigorous species verification or contamination check."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "sample_id": {
+                "type": "string",
+                "description": "Sample ID with assembled contigs.",
+            },
+            "mode": {
+                "type": "string",
+                "description": "Validation mode: 'simple' (marker genes, default) or 'standard' (CheckM2 + GTDB-Tk).",
+                "default": "simple",
+            },
+        },
+        "required": ["sample_id"],
+    },
+}
+
+
 ANNOTATE = {
     "name": "bio_annotate",
     "description": (

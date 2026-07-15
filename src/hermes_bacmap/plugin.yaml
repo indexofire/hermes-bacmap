@@ -28,6 +28,7 @@ provides_tools:
   - bio_snp_tree
   - bio_search_samples
   - bio_annotate
+  - bio_validate_taxonomy
   - bio_diagnose
   - bio_vpa_serotype
   - bio_query_metadata
