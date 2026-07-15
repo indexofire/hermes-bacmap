@@ -13,7 +13,7 @@ rule species_identify:
         "mkdir -p $(dirname {params.out}) && "
         "{params.python} -c \""
         "import sys; sys.path.insert(0, '{params.src_path}'); "
-        "from hermes_bacmap.species_identifier import identify; "
+        "from hermes_bacmap.analysis.species_identifier import identify; "
         "import json; r = identify('{params.contigs}'); "
         "json.dump(r.to_dict() if hasattr(r,'to_dict') else r, "
         "open('{params.out}', 'w'), ensure_ascii=False, indent=2)"

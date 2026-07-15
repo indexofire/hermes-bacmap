@@ -16,7 +16,7 @@ from pathlib import Path
 from _common import ROOT
 sys.path.insert(0, str(ROOT / "src"))
 
-from hermes_bacmap.deterministic_verifier import DeterministicVerifier
+from hermes_bacmap.analysis.deterministic_verifier import DeterministicVerifier
 
 RESULTS_DIR = ROOT / "results"
 

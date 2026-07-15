@@ -1325,7 +1325,7 @@ def verify_result(args: dict, **kwargs) -> str:
         summary = json.load(f)
 
     try:
-        from hermes_bacmap.deterministic_verifier import DeterministicVerifier
+        from hermes_bacmap.analysis.deterministic_verifier import DeterministicVerifier
 
         v = DeterministicVerifier()
         result = v.verify_all(summary)
@@ -1398,7 +1398,7 @@ def gene_scan(args: dict, **kwargs) -> str:
     db_list = [d.strip() for d in database.split(",")]
 
     try:
-        from hermes_bacmap.gene_scanner import scan, scan_multi
+        from hermes_bacmap.analysis.gene_scanner import scan, scan_multi
 
         if len(db_list) == 1:
             result = scan(
@@ -1439,7 +1439,7 @@ def vpa_serotype(args: dict, **kwargs) -> str:
         import sys
 
         sys.path.insert(0, str(_PROJECT_ROOT / "src"))
-        from hermes_bacmap.vpa_serotyper import VpaSerotyper
+        from hermes_bacmap.typing.vpa_serotyper import VpaSerotyper
 
         serotyper = VpaSerotyper()
         result = serotyper.analyze(contigs_path, sample_id)
@@ -1458,7 +1458,7 @@ def query_metadata(args: dict, **kwargs) -> str:
         import sys
 
         sys.path.insert(0, str(_PROJECT_ROOT / "src"))
-        from hermes_bacmap.strain_metadata import StrainMetadataService
+        from hermes_bacmap.services.strain_metadata import StrainMetadataService
 
         strain_id = args.get("strain_id")
         search_kwargs = {}
@@ -1505,7 +1505,7 @@ def add_metadata(args: dict, **kwargs) -> str:
         import sys
 
         sys.path.insert(0, str(_PROJECT_ROOT / "src"))
-        from hermes_bacmap.strain_metadata import StrainMetadataService
+        from hermes_bacmap.services.strain_metadata import StrainMetadataService
 
         with StrainMetadataService(db_path) as svc:
             meta = svc.upsert(strain_id, data)
@@ -1531,7 +1531,7 @@ def query_lab_results(args: dict, **kwargs) -> str:
         import sys
 
         sys.path.insert(0, str(_PROJECT_ROOT / "src"))
-        from hermes_bacmap.lab_results import LabResultService
+        from hermes_bacmap.services.lab_results import LabResultService
 
         sample_id = args.get("sample_id", "")
         category = args.get("category", "")
@@ -1580,7 +1580,7 @@ def add_lab_result(args: dict, **kwargs) -> str:
         import sys
 
         sys.path.insert(0, str(_PROJECT_ROOT / "src"))
-        from hermes_bacmap.lab_results import LabResultService
+        from hermes_bacmap.services.lab_results import LabResultService
 
         optional = {}
         for key in (
@@ -1618,7 +1618,7 @@ def snp_tree(args: dict, **kwargs) -> str:
     db_path = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
     if db_path.exists():
         try:
-            from hermes_bacmap.genome_object_service import GenomeObjectService, ObjectType
+            from hermes_bacmap.services.genome_object_service import GenomeObjectService, ObjectType
 
             with GenomeObjectService(db_path) as gos:
                 cohort_objs = [
@@ -1679,7 +1679,7 @@ def search_samples(args: dict, **kwargs) -> str:
         )
 
     try:
-        from hermes_bacmap.strain_index import StrainGenotypeIndex
+        from hermes_bacmap.services.strain_index import StrainGenotypeIndex
 
         idx = StrainGenotypeIndex(db_path)
         has_structured = any([serotype, mlst_st, amr_gene, organism])
@@ -1726,7 +1726,7 @@ def search_samples(args: dict, **kwargs) -> str:
         if not query:
             return json.dumps({"error": "Provide at least one of: query, serotype, mlst_st, amr_gene, organism"})
 
-        from hermes_bacmap.genome_object_service import GenomeObjectService, ObjectType
+        from hermes_bacmap.services.genome_object_service import GenomeObjectService, ObjectType
 
         with GenomeObjectService(db_path) as gos:
             fts_results = gos.search(query, object_type=ObjectType.ANALYSIS, limit=limit * 2)
@@ -1807,7 +1807,7 @@ def annotate_genome(args: dict, **kwargs) -> str:
         output_path = str(_RESULTS_DIR / sample_id / "annotation" / "annotation.json")
 
     try:
-        from hermes_bacmap.genome_annotator import annotate
+        from hermes_bacmap.analysis.genome_annotator import annotate
 
         result = annotate(contigs_path, sample_id)
         result.save(output_path)
@@ -1837,7 +1837,7 @@ def annotate_genome(args: dict, **kwargs) -> str:
 
 def diagnose_failure(args: dict, **kwargs) -> str:
     """Diagnose pipeline failure from Snakemake log or stderr text."""
-    from hermes_bacmap.failure_diagnostics import diagnose, diagnose_from_log
+    from hermes_bacmap.analysis.failure_diagnostics import diagnose, diagnose_from_log
 
     stderr_text = args.get("stderr_text", "")
     log_path = args.get("log_path", "")

@@ -9,7 +9,7 @@ from uuid import uuid4
 
 import pytest
 
-from hermes_bacmap.genome_object_service import (
+from hermes_bacmap.services.genome_object_service import (
     GenomeObject,
     GenomeObjectService,
     ObjectType,

@@ -13,7 +13,7 @@ Usage:
     python -m hermes_bacmap.gene_scanner contigs.fasta --db ecoh --json
 
     # Python API
-    from hermes_bacmap.gene_scanner import scan
+    from hermes_bacmap.analysis.gene_scanner import scan
     result = scan("contigs.fasta", db_name="card")
     genes = result.genes
 
@@ -303,11 +303,16 @@ def setup_db(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     if fasta_source is None:
-        for base in _DB_SEARCH_PATHS:
-            candidate = base / db_name / "sequences"
-            if candidate.exists():
-                fasta_source = candidate
-                break
+        from hermes_bacmap.db import DB_NAME_TO_SOURCE
+        src = DB_NAME_TO_SOURCE.get(db_name)
+        if src and src.exists():
+            fasta_source = src
+        else:
+            for base in _DB_SEARCH_PATHS:
+                candidate = base / db_name / "sequences"
+                if candidate.exists():
+                    fasta_source = candidate
+                    break
         if fasta_source is None:
             raise FileNotFoundError(f"Source FASTA for '{db_name}' not found")
 

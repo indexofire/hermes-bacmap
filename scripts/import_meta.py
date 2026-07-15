@@ -23,8 +23,8 @@ from pathlib import Path
 from _common import ROOT
 sys.path.insert(0, str(ROOT / "src"))
 
-from hermes_bacmap.strain_metadata import StrainMetadataService
-from hermes_bacmap.lab_results import LabResultService
+from hermes_bacmap.services.strain_metadata import StrainMetadataService
+from hermes_bacmap.services.lab_results import LabResultService
 
 DB_PATH = ROOT / "data" / "hermes_bacmap.sqlite"
 

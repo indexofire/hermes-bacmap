@@ -246,7 +246,7 @@ def main() -> int:
     else:
         import sys as _sys
         _sys.path.insert(0, str(ROOT / "src"))
-        from hermes_bacmap.failure_diagnostics import diagnose_from_log
+        from hermes_bacmap.analysis.failure_diagnostics import diagnose_from_log
 
         diag = diagnose_from_log(str(WORKFLOW_DIR / ".snakemake/log"))
 

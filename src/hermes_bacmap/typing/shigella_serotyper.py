@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from hermes_bacmap.gene_scanner import scan
+from hermes_bacmap.analysis.gene_scanner import scan
 
 _FLEXNERI_RULES = [
     ("Shigella flexneri serotype 6", ["Sf6_wzx"]),

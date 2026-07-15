@@ -160,7 +160,7 @@ def get_metadata(
     isolation_date_from: str = "",
     isolation_date_to: str = "",
 ) -> dict:
-    from hermes_bacmap.strain_metadata import StrainMetadataService
+    from hermes_bacmap.services.strain_metadata import StrainMetadataService
 
     db = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
     with StrainMetadataService(db) as svc:
@@ -188,7 +188,7 @@ def get_metadata(
 
 @app.get("/api/lab-results")
 def get_lab_results(sample_id: str = "", category: str = "") -> dict:
-    from hermes_bacmap.lab_results import LabResultService
+    from hermes_bacmap.services.lab_results import LabResultService
 
     db = _PROJECT_ROOT / "data" / "hermes_bacmap.sqlite"
     with LabResultService(db) as svc:

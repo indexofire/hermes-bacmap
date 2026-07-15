@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from hermes_bacmap.gene_scanner import scan
+from hermes_bacmap.analysis.gene_scanner import scan
 
 _SPECIES_MIN_IDENTITY = 85.0
 _SPECIES_MIN_COVERAGE = 30.0

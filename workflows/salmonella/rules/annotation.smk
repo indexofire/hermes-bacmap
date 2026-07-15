@@ -13,7 +13,7 @@ rule genome_annotation:
         "mkdir -p $(dirname {params.out}) && "
         "{params.python} -c \""
         "import sys; sys.path.insert(0, '{params.src_path}'); "
-        "from hermes_bacmap.genome_annotator import annotate; "
+        "from hermes_bacmap.analysis.genome_annotator import annotate; "
         "r = annotate('{params.contigs}', '{params.sample}'); "
         "r.save('{params.out}')"
         "\""

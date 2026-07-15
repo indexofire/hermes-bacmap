@@ -137,7 +137,7 @@ def sample_genome_object(
 
     需要 import 在测试内部，避免在 conftest 顶部 import 未实现的模块导致 collect 失败。
     """
-    from hermes_bacmap.genome_object_service import GenomeObject, ObjectType
+    from hermes_bacmap.services.genome_object_service import GenomeObject, ObjectType
 
     return GenomeObject(
         object_id=fixed_object_id.replace("0001", "0002"),
@@ -162,7 +162,7 @@ def sample_sample_object(
     now_utc: datetime,
 ):
     """完整的、合法的 Sample GenomeObject 实例。"""
-    from hermes_bacmap.genome_object_service import GenomeObject, ObjectType
+    from hermes_bacmap.services.genome_object_service import GenomeObject, ObjectType
 
     return GenomeObject(
         object_id=fixed_object_id,

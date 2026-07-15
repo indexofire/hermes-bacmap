@@ -13,17 +13,17 @@ _WD = str(WORKDIR)
 # ──────────────────────────────────────────────────────────────
 _SPECIES_GROUPS = {
     "salmonella": {
-        "ref": str(PROJECT_ROOT / "data/reference/salmonella_LT2_ref.fasta"),
+        "ref": str(PROJECT_ROOT / "data/reference/genomes/salmonella_LT2.fasta"),
         "species": ["Salmonella"],
         "organism": "Salmonella enterica",
     },
     "ecoli": {
-        "ref": str(PROJECT_ROOT / "data/reference/ecoli_k12_ref.fasta"),
+        "ref": str(PROJECT_ROOT / "data/reference/genomes/ecoli_k12.fasta"),
         "species": ["E.coli", "Shigella"],
         "organism": "Escherichia coli / Shigella",
     },
     "vpara": {
-        "ref": str(PROJECT_ROOT / "data/reference/vpara_rimd_ref.fasta"),
+        "ref": str(PROJECT_ROOT / "data/reference/genomes/vpara_rimd.fasta"),
         "species": ["V.parahaemolyticus"],
         "organism": "Vibrio parahaemolyticus",
     },

@@ -8,7 +8,7 @@ project_root: "../.."
 samples_file: "config/samples.tsv"
 
 databases:
-  invA_ref: "../../data/reference/salmonella_invA.fasta"
+  invA_ref: "../../data/reference/species/markers.fasta"
   amrfinderplus_db: "../../data/db/amrfinderplus"
   vfdb: "vfdb"
   card: "card"

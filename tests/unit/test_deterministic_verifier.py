@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from hermes_bacmap.deterministic_verifier import (
+from hermes_bacmap.analysis.deterministic_verifier import (
     CheckResult,
     DeterministicVerifier,
     VerificationResult,

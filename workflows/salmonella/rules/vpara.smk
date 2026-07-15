@@ -5,7 +5,7 @@ rule vpara_targets:
         result = str(WORKDIR) + "/{sample}/vpara/targets_blastn.tsv",
         verdict = str(WORKDIR) + "/{sample}/vpara/species_verdict.txt"
     params:
-        db = str(PROJECT_ROOT / "data/reference/vpara_targets_blastdb")
+        db = str(PROJECT_ROOT / "data/reference/virulence/vpara_targets_blastdb")
     threads: 4
     shell:
         "mkdir -p $(dirname {output.result}) && "
@@ -28,7 +28,7 @@ rule vpara_virulence:
         result = str(WORKDIR) + "/{sample}/vpara/virulence.json"
     params:
         python = str(PROJECT_ROOT / ".pixi/envs/default/bin/python"),
-        db = str(PROJECT_ROOT / "data/reference/vpara_targets_blastdb")
+        db = str(PROJECT_ROOT / "data/reference/virulence/vpara_targets_blastdb")
     shell:
         "mkdir -p $(dirname {output.result}) && "
         "{params.python} -c \""
@@ -58,7 +58,7 @@ rule vpara_serotype:
         "mkdir -p $(dirname {params.out}) && "
         "{params.python} -c \""
         "import sys, json; sys.path.insert(0, '{params.src_path}'); "
-        "from hermes_bacmap.vpa_serotyper import VpaSerotyper; "
+        "from hermes_bacmap.typing.vpa_serotyper import VpaSerotyper; "
         "s = VpaSerotyper(); "
         "r = s.analyze('{params.contigs}', '{params.sample}'); "
         "json.dump(r.to_dict(), open('{params.out}', 'w'), ensure_ascii=False, indent=2)"

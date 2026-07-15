@@ -20,12 +20,12 @@ from uuid import uuid4
 from _common import ROOT
 sys.path.insert(0, str(ROOT / "src"))
 
-from hermes_bacmap.genome_object_service import (
+from hermes_bacmap.services.genome_object_service import (
     GenomeObject,
     GenomeObjectService,
     ObjectType,
 )
-from hermes_bacmap.strain_index import StrainGenotypeIndex, _extract_genotype
+from hermes_bacmap.services.strain_index import StrainGenotypeIndex, _extract_genotype
 
 RESULTS_DIR = ROOT / "results"
 DB_PATH = ROOT / "data" / "hermes_bacmap.sqlite"

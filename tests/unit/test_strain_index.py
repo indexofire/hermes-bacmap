@@ -9,7 +9,7 @@ import pytest
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
-from hermes_bacmap.strain_index import StrainGenotypeIndex, _extract_genotype  # noqa: E402
+from hermes_bacmap.services.strain_index import StrainGenotypeIndex, _extract_genotype  # noqa: E402
 
 
 @pytest.fixture

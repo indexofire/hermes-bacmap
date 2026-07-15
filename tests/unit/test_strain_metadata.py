@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from hermes_bacmap.strain_metadata import StrainMetadataService, StrainMeta
-from hermes_bacmap.lab_results import LabResultService, LabResult
+from hermes_bacmap.services.strain_metadata import StrainMetadataService, StrainMeta
+from hermes_bacmap.services.lab_results import LabResultService, LabResult
 
 
 # ---------------------------------------------------------------------------

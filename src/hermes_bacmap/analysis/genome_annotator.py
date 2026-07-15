@@ -6,7 +6,7 @@ Replaces Prokka (Perl) with:
   - JSON output optimized for AI/Hermes consumption
 
 Usage:
-    from hermes_bacmap.genome_annotator import annotate
+    from hermes_bacmap.analysis.genome_annotator import annotate
     result = annotate("results/SAM-TYP-001/assembly/contigs.fasta")
     result.save("results/SAM-TYP-001/annotation/annotation.json")
 """

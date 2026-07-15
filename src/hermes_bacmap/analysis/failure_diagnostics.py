@@ -1,7 +1,7 @@
 """Pipeline failure diagnostics — parse Snakemake errors and suggest fixes.
 
 Usage:
-    from hermes_bacmap.failure_diagnostics import diagnose
+    from hermes_bacmap.analysis.failure_diagnostics import diagnose
     result = diagnose(stderr_text)
     print(result.summary)
     print(result.suggested_fix)
