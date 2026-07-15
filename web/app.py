@@ -20,7 +20,7 @@ sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
 from hermes_bacmap.config import RESULTS_DIR as _RESULTS_DIR, DB_PATH as _DB_PATH
 
-_WORKFLOW_DIR = _PROJECT_ROOT / "workflows" / "salmonella"
+_WORKFLOW_DIR = _PROJECT_ROOT / "workflows" / "bacmap"
 _SAMPLES_TSV = _WORKFLOW_DIR / "config" / "samples.tsv"
 
 app = FastAPI(title="Hermes-bacmap", version="0.5.0")

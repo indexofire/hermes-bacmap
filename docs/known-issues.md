@@ -52,7 +52,7 @@
 
 ### L3. (已完成 — 2>/dev/null 已清理)
 
-- **位置**: `workflows/salmonella/rules/snp.smk`（多个 shell 块）
+- **位置**: `workflows/bacmap/rules/snp.smk`（多个 shell 块）
 - **问题**: `bwa mem`、`bcftools mpileup/call`、`bcftools reheader/view/index` 的 stderr 都被 `2>/dev/null` 丢弃。工具失败时无诊断信息。
 - **当前影响**: 当 SNP 管线失败时，Snakemake 只显示 "Error code 1"，无 stderr 输出。
 - **修复方案**: 将 `2>/dev/null` 改为 `2>{log}` 写入日志文件，或完全移除让 Snakemake 捕获。
@@ -67,7 +67,7 @@
 
 ### L5. (已完成 — annotation 已加入 rule all)
 
-- **位置**: `workflows/salmonella/Snakefile:rule all`
+- **位置**: `workflows/bacmap/Snakefile:rule all`
 - **问题**: `rule all` 包含 per-sample summary + SNP cohort summary，但不包含 `{sample}/annotation/annotation.json`。annotation 规则存在且可用，但需要单独触发。
 - **当前影响**: `snakemake` 或 `run_analysis.py --all` 不会自动运行注释。
 - **修复方案**: 在 `rule all` 的 input 中添加 `expand(str(WORKDIR) + "/{sample}/annotation/annotation.json", sample=SAMPLES)`。

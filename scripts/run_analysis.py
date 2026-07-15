@@ -21,7 +21,7 @@ import sys
 from _common import ROOT
 
 PIXI_BIN = ROOT / ".pixi/envs/default/bin"
-WORKFLOW_DIR = ROOT / "workflows/salmonella"
+WORKFLOW_DIR = ROOT / "workflows/bacmap"
 RESULTS_DIR = ROOT / "results"
 
 

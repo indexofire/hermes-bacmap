@@ -115,7 +115,7 @@ rule snp_matrix:
     output:
         fasta = str(WORKDIR) + "/snp/{group}/core_snps.fasta"
     params:
-        script = str(PROJECT_ROOT / "workflows/salmonella/scripts/generate_snp_matrix.py"),
+        script = str(PROJECT_ROOT / "workflows/bacmap/scripts/generate_snp_matrix.py"),
         python = str(PROJECT_ROOT / ".pixi/envs/default/bin/python")
     shell:
         "mkdir -p $(dirname {output.fasta}) && "
@@ -155,7 +155,7 @@ rule snp_summary:
     output:
         summary = str(WORKDIR) + "/snp/{group}/snp_summary.json"
     params:
-        script = str(PROJECT_ROOT / "workflows/salmonella/scripts/generate_snp_summary.py"),
+        script = str(PROJECT_ROOT / "workflows/bacmap/scripts/generate_snp_summary.py"),
         python = str(PROJECT_ROOT / ".pixi/envs/default/bin/python"),
         group = "{group}",
         organism = lambda wc: _SPECIES_GROUPS[wc.group]["organism"]

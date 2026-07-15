@@ -51,14 +51,14 @@ _PATTERNS: list[tuple[str, re.Pattern, str, str, list[str]]] = [
         re.compile(r"Directory cannot be locked|Error locking directory|lock.*exist", re.I),
         "Snakemake 工作目录被锁定，可能由前一次中断的运行留下",
         "解锁工作目录后重试",
-        ["cd workflows/salmonella && snakemake --unlock"],
+        ["cd workflows/bacmap && snakemake --unlock"],
     ),
     (
         "missing_input",
         re.compile(r"MissingInputException|Missing input files", re.I),
         "缺少输入文件，可能 FASTQ 路径错误或文件未下载",
         "检查 samples.tsv 中的路径，确保 FASTQ 文件存在",
-        ["cat workflows/salmonella/config/samples.tsv",
+        ["cat workflows/bacmap/config/samples.tsv",
          "python scripts/download_gold_standard.py"],
     ),
     (
@@ -88,14 +88,14 @@ _PATTERNS: list[tuple[str, re.Pattern, str, str, list[str]]] = [
         "管线执行超时（可能卡在 I/O 或死锁）",
         "检查是否有僵尸进程，或增加超时时间",
         ["ps aux | grep -E 'bwa|samtools|blast' | grep -v grep",
-         "cd workflows/salmonella && snakemake --unlock"],
+         "cd workflows/bacmap && snakemake --unlock"],
     ),
     (
         "disk_full",
         re.compile(r"No space left on device|disk full|ENOSPC", re.I),
         "磁盘空间不足",
         "清理临时文件或更换更大磁盘",
-        ["df -h", "rm -rf workflows/salmonella/.snakemake/tmp/*"],
+        ["df -h", "rm -rf workflows/bacmap/.snakemake/tmp/*"],
     ),
     (
         "permission",
@@ -168,7 +168,7 @@ def diagnose_from_log(log_path: str) -> Diagnosis:
 
     p = Path(log_path)
     if not p.exists():
-        log_dir = _PROJECT_ROOT / "workflows" / "salmonella" / ".snakemake" / "log"
+        log_dir = _PROJECT_ROOT / "workflows" / "bacmap" / ".snakemake" / "log"
         if log_dir.exists():
             logs = sorted(log_dir.glob("*.snakemake.log"))
             if logs:

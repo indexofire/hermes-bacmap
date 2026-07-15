@@ -14,7 +14,7 @@
 
 | 错误现象 | 根因 | 修复方法 |
 |---|---|---|
-| `Directory cannot be locked` | Snakemake 锁未释放 | `cd workflows/salmonella && snakemake --unlock` |
+| `Directory cannot be locked` | Snakemake 锁未释放 | `cd workflows/bacmap && snakemake --unlock` |
 | `signal 9 (SIGKILL)` | Shovill / SPAdes OOM | `--cores 4` 或改 `--ram 4G` |
 | `MissingInputException` | FASTQ 路径错误或文件缺失 | 检查 `samples.tsv`；必要时 `download_gold_standard.py` |
 | `database 'card' not found` | BLAST DB 索引缺失 | `makeblastdb -in amr/card.fasta -dbtype nucl -out card` |
@@ -32,7 +32,7 @@ Error: Directory cannot be locked. Please make sure that nothing else uses the d
 修复：
 
 ```bash
-cd workflows/salmonella
+cd workflows/bacmap
 snakemake --unlock
 ```
 
@@ -44,7 +44,7 @@ Shovill 组装峰值可达 8–16 GB。低配机器出现 `SIGKILL` 时：
 python scripts/run_analysis.py --sample SAM-XXX --cores 4
 ```
 
-或编辑 `workflows/salmonella/rules/assembly.smk`，将 `--ram` 限制为 4G。
+或编辑 `workflows/bacmap/rules/assembly.smk`，将 `--ram` 限制为 4G。
 
 ## gmlst 环境
 
@@ -94,6 +94,6 @@ makeblastdb -in data/reference/species/markers.fasta -dbtype nucl -out data/refe
 ## 仍无法解决？
 
 1. 查看状态：`python scripts/run_analysis.py --status`
-2. 查看 Snakemake 最新日志：`ls -t workflows/salmonella/.snakemake/logs/*.snakemake.log | head -1 | xargs tail -80`
+2. 查看 Snakemake 最新日志：`ls -t workflows/bacmap/.snakemake/logs/*.snakemake.log | head -1 | xargs tail -80`
 3. 通过 `bio_diagnose` 提交完整日志
 

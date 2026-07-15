@@ -6,7 +6,7 @@
 Error: Directory cannot be locked. Please make sure that nothing else uses the directory.
 ```
 
-Fix: `cd workflows/salmonella && snakemake --unlock`
+Fix: `cd workflows/bacmap && snakemake --unlock`
 
 ## Shovill OOM
 
@@ -20,7 +20,7 @@ Or edit shovill params in `assembly.smk`: `--ram 4G`
 ## Missing FASTQ Files
 
 If `run_analysis.py` fails with MissingInputException:
-1. Check samples.tsv paths: `cat workflows/salmonella/config/samples.tsv`
+1. Check samples.tsv paths: `cat workflows/bacmap/config/samples.tsv`
 2. Verify FASTQ exists: `ls tests/fixtures/gold_standard/salmonella/data/SAM-XXX/`
 3. Download from ENA: `python scripts/download_gold_standard.py`
 

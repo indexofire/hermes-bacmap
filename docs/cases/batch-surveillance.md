@@ -13,7 +13,7 @@ Hermes 自动根据物种标记基因将样本路由到对应分析管线。
 python scripts/run_analysis.py --all
 ```
 
-- 自动读取 `workflows/salmonella/config/samples.tsv`
+- 自动读取 `workflows/bacmap/config/samples.tsv`
 - 每个样本执行：QC → 组装 → 物种鉴定 → 血清型 / MLST / AMR / 毒力
 - 构建 cohort-level SNP 树（Salmonella）
 

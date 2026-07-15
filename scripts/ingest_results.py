@@ -449,7 +449,7 @@ def main() -> int:
 
     if args.all:
         import csv
-        samples_tsv = ROOT / "workflows/salmonella/config/samples.tsv"
+        samples_tsv = ROOT / "workflows/bacmap/config/samples.tsv"
         with samples_tsv.open() as f:
             samples = [r["sample"] for r in csv.DictReader(f, delimiter="\t")]
     else:

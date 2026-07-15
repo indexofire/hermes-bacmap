@@ -155,7 +155,7 @@ hermes-bacmap/
 │   ├── genome_object_service.py GOM
 │   ├── deterministic_verifier.py 校验
 │   └── ...
-├── workflows/salmonella/        Snakemake 流程
+├── workflows/bacmap/        Snakemake 流程
 │   ├── Snakefile                主入口
 │   ├── rules/                   9 个 .smk（22 rules）
 │   └── scripts/                 collect_summary / SNP matrix

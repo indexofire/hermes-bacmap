@@ -88,7 +88,7 @@ hermes-bacmap/
 │   ├── tools.py                Tool handler 实现
 │   ├── genome_object_service.py  GOM（SQLite + 版本管理）
 │   └── deterministic_verifier.py  确定性规则校验
-├── workflows/salmonella/        Snakemake 分析流程
+├── workflows/bacmap/        Snakemake 分析流程
 │   ├── Snakefile               主入口（per-sample + cohort DAG）
 │   ├── config/                 配置 + 样本表
 │   ├── rules/                  8 个 rule 文件（21 rules）

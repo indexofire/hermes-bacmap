@@ -174,15 +174,15 @@ Deterministic Verifier 自动校验：species ✅、MLST ✅、serotype ✅、AM
 
 ```bash
 # 1. 查看 Snakemake 日志
-ls workflows/salmonella/.snakemake/logs/
-cat workflows/salmonella/.snakemake/logs/*.snakemake.log | tail -50
+ls workflows/bacmap/.snakemake/logs/
+cat workflows/bacmap/.snakemake/logs/*.snakemake.log | tail -50
 
 # 2. 诊断（Hermes Agent）
 > 上次分析失败了，帮我看看
 # → 调用 bio_diagnose，解析日志，返回错误类型与修复命令
 
 # 3. 常见问题
-#    · 目录被锁：cd workflows/salmonella && snakemake --unlock
+#    · 目录被锁：cd workflows/bacmap && snakemake --unlock
 #    · Shovill OOM：python scripts/run_analysis.py --sample SAM-TYP-001 --cores 4
 #    · 缺失数据库：见参考数据库页
 

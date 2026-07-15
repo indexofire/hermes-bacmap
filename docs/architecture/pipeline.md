@@ -1,6 +1,6 @@
 # Snakemake 管线
 
-工作流引擎采用 **Snakemake 7.32**（Python DSL），定义在 `workflows/salmonella/`。主入口 `Snakefile` 编排 per-sample DAG 与 cohort SNP DAG，共 **22 条规则**，物种路由全自动。
+工作流引擎采用 **Snakemake 7.32**（Python DSL），定义在 `workflows/bacmap/`。主入口 `Snakefile` 编排 per-sample DAG 与 cohort SNP DAG，共 **22 条规则**，物种路由全自动。
 
 ## DAG 概览
 
@@ -190,6 +190,6 @@ python scripts/run_analysis.py --snp
 python scripts/run_analysis.py --status
 ```
 
-Snakemake 状态持久化在 `workflows/salmonella/.snakemake/`，中断后可断点续跑。若目录被锁：`cd workflows/salmonella && snakemake --unlock`。
+Snakemake 状态持久化在 `workflows/bacmap/.snakemake/`，中断后可断点续跑。若目录被锁：`cd workflows/bacmap && snakemake --unlock`。
 
 更多故障处理见[故障排查](../reference/troubleshooting.md)。

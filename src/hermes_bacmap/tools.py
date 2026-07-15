@@ -1360,7 +1360,7 @@ def list_samples(args: dict, **kwargs) -> str:
     """List all samples and their analysis status."""
     import csv
 
-    samples_tsv = _PROJECT_ROOT / "workflows/salmonella/config/samples.tsv"
+    samples_tsv = _PROJECT_ROOT / "workflows/bacmap/config/samples.tsv"
     if not samples_tsv.exists():
         return json.dumps({"error": "samples.tsv not found"})
 
@@ -1848,6 +1848,6 @@ def diagnose_failure(args: dict, **kwargs) -> str:
     elif log_path:
         result = diagnose_from_log(log_path)
     else:
-        result = diagnose_from_log(str(_PROJECT_ROOT / "workflows/salmonella/.snakemake/log"))
+        result = diagnose_from_log(str(_PROJECT_ROOT / "workflows/bacmap/.snakemake/log"))
 
     return json.dumps(result.to_dict(), ensure_ascii=False)

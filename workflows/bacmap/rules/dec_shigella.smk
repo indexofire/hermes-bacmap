@@ -28,7 +28,7 @@ rule dec_pathotype:
     output:
         result = str(WORKDIR) + "/{sample}/dec/pathotype.tsv"
     params:
-        py_script = str(PROJECT_ROOT / "workflows/salmonella/scripts/call_pathotype.py"),
+        py_script = str(PROJECT_ROOT / "workflows/bacmap/scripts/call_pathotype.py"),
         python = str(PROJECT_ROOT / ".pixi/envs/default/bin/python")
     shell:
         "mkdir -p $(dirname {output.result}) && "

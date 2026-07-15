@@ -1,5 +1,5 @@
-# Hermes-bacmap Salmonella 端到端分析流程
-# project.md §7.1 核心 9 步 pipeline
+# Hermes-bacmap 端到端分析流程（4 病原通用，物种自动路由）
+# project.md §7.1 核心 pipeline
 
 import pandas as pd
 from pathlib import Path
