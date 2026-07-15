@@ -184,29 +184,37 @@ def _parse_db_header(sseqid: str) -> tuple[str, str, str, str]:
 
 
 def scan(
-    contigs_fasta: str | Path,
+    query: str | Path,
     db_name: str = "card",
     *,
+    reads_r2: str | Path | None = None,
     min_identity: float = _DEFAULT_MIN_IDENTITY,
     min_coverage: float = _DEFAULT_MIN_COVERAGE,
     threads: int = 4,
 ) -> ScanResult:
-    """Scan contigs against a gene database.
+    """Scan contigs or reads against a gene database.
 
-    Args:
-        contigs_fasta: Path to assembled contigs.
-        db_name: Database name (card, vfdb, ecoh, plasmidfinder, resfinder, ...).
-        min_identity: Minimum % identity.
-        min_coverage: Minimum % coverage.
-        threads: BLAST threads.
-
-    Returns:
-        ScanResult with all gene hits and summary.
+    Assembly input (FASTA): uses BLAST or minimap2 backend.
+    Reads input (FASTQ): uses KMA backend.
     """
-    contigs = Path(contigs_fasta)
-    if not contigs.exists():
-        raise FileNotFoundError(f"Contigs not found: {contigs}")
+    query = Path(query)
+    if not query.exists():
+        raise FileNotFoundError(f"Query not found: {query}")
 
+    is_fastq = query.suffix in (".fastq", ".fq", ".fastq.gz", ".fq.gz")
+
+    if is_fastq:
+        return _scan_reads(query, reads_r2, db_name, min_identity, min_coverage, threads)
+    return _scan_assembly(query, db_name, min_identity, min_coverage, threads)
+
+
+def _scan_assembly(
+    contigs: Path,
+    db_name: str,
+    min_identity: float,
+    min_coverage: float,
+    threads: int,
+) -> ScanResult:
     db_path = _find_db(db_name)
 
     from hermes_bacmap.engine import SequenceMatcher
@@ -254,6 +262,81 @@ def scan(
     result.build_summary()
 
     return result
+
+
+def _scan_reads(
+    reads_r1: Path,
+    reads_r2: Path | None,
+    db_name: str,
+    min_identity: float,
+    min_coverage: float,
+    threads: int,
+) -> ScanResult:
+    kma_index = _find_kma_index(db_name)
+    if not kma_index:
+        raise FileNotFoundError(
+            f"KMA index for '{db_name}' not found. "
+            f"Run gene_scanner.setup_db('{db_name}', build_kma=True) to create it."
+        )
+
+    from hermes_bacmap.engine.backends.kma import KmaBackend
+
+    backend = KmaBackend(threads=threads)
+    hits = backend.find(
+        reads_r1=reads_r1,
+        reads_r2=reads_r2,
+        index_prefix=kma_index,
+        min_coverage=min_coverage,
+        min_identity=min_identity,
+    )
+
+    result = ScanResult(query=str(reads_r1), database=db_name)
+    gene_map: dict[str, int] = {}
+
+    for hit in hits:
+        gene, accession, product, _ = _parse_db_header(hit.subject_id)
+        if not gene:
+            continue
+
+        gene_hit = GeneHit(
+            gene=gene,
+            identity=hit.identity,
+            coverage=hit.subject_coverage,
+            evalue=hit.evalue,
+            depth=hit.bit_score,
+            contig="",
+            accession=accession,
+            product=product[:200] if product else "",
+        )
+
+        if gene in gene_map:
+            idx = gene_map[gene]
+            if gene_hit.identity > result.genes[idx].identity:
+                result.genes[idx] = gene_hit
+        else:
+            gene_map[gene] = len(result.genes)
+            result.genes.append(gene_hit)
+
+        result.all_hits.append({
+            "gene": gene_hit.gene,
+            "identity": gene_hit.identity,
+            "coverage": gene_hit.coverage,
+            "depth": gene_hit.depth,
+            "backend": "kma",
+        })
+
+    result.genes.sort(key=lambda h: (-h.identity, h.gene))
+    result.total_hits = len(result.genes)
+    result.build_summary()
+    return result
+
+
+def _find_kma_index(db_name: str) -> Path | None:
+    for base in _DB_SEARCH_PATHS:
+        candidate = base / f"{db_name}_kma"
+        if (candidate / "name").exists():
+            return candidate
+    return None
 
 
 def scan_multi(
@@ -333,6 +416,34 @@ def setup_db(
 
     print(f"✓ BLAST DB '{db_name}' created at {db_prefix}")
     return db_prefix
+
+
+def setup_kma_index(
+    db_name: str, fasta_source: Path | str | None = None, output_dir: Path | None = None
+) -> Path:
+    if output_dir is None:
+        output_dir = _REF_DIR
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    if fasta_source is None:
+        from hermes_bacmap.db import DB_NAME_TO_SOURCE
+        src = DB_NAME_TO_SOURCE.get(db_name)
+        if src and src.exists():
+            fasta_source = src
+        else:
+            raise FileNotFoundError(f"Source FASTA for '{db_name}' not found")
+
+    kma_index_dir = output_dir / f"{db_name}_kma"
+
+    try:
+        from hermes_bacmap.engine.backends.kma import KmaBackend
+        backend = KmaBackend()
+        backend.make_index(Path(fasta_source), kma_index_dir)
+        print(f"✓ KMA index '{db_name}' created at {kma_index_dir}")
+    except RuntimeError as e:
+        print(f"  ⚠ KMA not available, skipping: {e}")
+
+    return kma_index_dir
 
 
 def setup_all_databases(output_dir: Path | None = None) -> list[str]:

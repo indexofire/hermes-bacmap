@@ -16,6 +16,7 @@ _BUILTINS = {
     "minimap2": ("hermes_bacmap.engine.backends.minimap2", "MinimapBackend"),
     "mash": ("hermes_bacmap.engine.backends.kmer", "MashBackend"),
     "sourmash": ("hermes_bacmap.engine.backends.kmer", "SourmashBackend"),
+    "kma": ("hermes_bacmap.engine.backends.kma", "KmaBackend"),
 }
 
 

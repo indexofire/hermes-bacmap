@@ -121,8 +121,12 @@ def _determine_boydii_type(detected: set[str]) -> tuple[int | None, str]:
     return None, "low"
 
 
-def serotype(contigs_fasta: str | Path, **kwargs) -> ShigellaSerotypeResult:
-    scan_result = scan(contigs_fasta, db_name="shigella_ref", **kwargs)
+def serotype(
+    query: str | Path,
+    reads_r2: str | Path | None = None,
+    **kwargs,
+) -> ShigellaSerotypeResult:
+    scan_result = scan(query, db_name="shigella_ref", reads_r2=reads_r2, **kwargs)
     detected = set(scan_result.unique_genes)
 
     result = ShigellaSerotypeResult(detected_genes=sorted(detected))
