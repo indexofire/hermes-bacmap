@@ -40,3 +40,4 @@ provides_skills:
   - run-pipeline
   - interpret-results
   - bioinfo-analysis
+  - ncbi-datasets
