@@ -41,3 +41,4 @@ provides_skills:
   - interpret-results
   - bioinfo-analysis
   - ncbi-datasets
+  - seqkit-operations
