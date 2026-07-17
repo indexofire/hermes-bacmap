@@ -49,6 +49,8 @@ class BlastBackend:
         if not Path(f"{db_prefix}{ext}").exists():
             fasta_candidates = [
                 Path(f"{db_prefix}.fasta"),
+                Path(f"{db_prefix}.fna"),
+                Path(f"{db_prefix}.fa"),
                 Path(f"{db_prefix}_sequences.fasta"),
                 Path(f"{db_prefix}_abricate.fasta"),
             ]

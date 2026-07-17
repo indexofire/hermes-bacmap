@@ -44,4 +44,6 @@ def get_backend(name: str, **kwargs: Any):
 
 
 def available() -> list[str]:
-    return sorted(_BUILTINS.keys())
+    names = set(_BUILTINS.keys())
+    names.update(_REG.available().keys())
+    return sorted(names)

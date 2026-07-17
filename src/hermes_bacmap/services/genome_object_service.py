@@ -121,7 +121,8 @@ class GenomeObject:
         if self.object_type == ObjectType.ANALYSIS:
             if not self.pipeline_version:
                 raise GOMValidationError(
-                    "ANALYSIS GenomeObject requires pipeline_version (project.md §4.5 evidence chain)"
+                    "ANALYSIS GenomeObject requires pipeline_version"
+                    " (project.md §4.5 evidence chain)"
                 )
             if not self.database_versions:
                 raise GOMValidationError(

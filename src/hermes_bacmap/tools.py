@@ -16,16 +16,17 @@ import os
 import re
 import shutil
 import subprocess
-import sys
 import tempfile
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-
-from hermes_bacmap.config import PROJECT_ROOT as _PROJECT_ROOT, RESULTS_DIR as _RESULTS_DIR, DB_PATH as _DEFAULT_DB_PATH  # noqa: E402
-from hermes_bacmap.config import PIXI_BIN, PIXI_PYTHON  # noqa: E402
+from hermes_bacmap.config import (
+    PROJECT_ROOT as _PROJECT_ROOT,
+    RESULTS_DIR as _RESULTS_DIR,
+    DB_PATH as _DEFAULT_DB_PATH,
+)
+from hermes_bacmap.config import PIXI_BIN, PIXI_PYTHON
 
 logger = logging.getLogger(__name__)
 
@@ -1437,9 +1438,6 @@ def vpa_serotype(args: dict, **kwargs) -> str:
         sample_id = contigs.parent.parent.name
 
     try:
-        import sys
-
-        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
         from hermes_bacmap.typing.vpa_serotyper import VpaSerotyper
 
         serotyper = VpaSerotyper()
@@ -1456,9 +1454,6 @@ def query_metadata(args: dict, **kwargs) -> str:
         return json.dumps({"error": "Database not found. Run analysis first."})
 
     try:
-        import sys
-
-        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
         from hermes_bacmap.services.strain_metadata import StrainMetadataService
 
         strain_id = args.get("strain_id")
@@ -1503,9 +1498,6 @@ def add_metadata(args: dict, **kwargs) -> str:
     db_path = _DEFAULT_DB_PATH
 
     try:
-        import sys
-
-        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
         from hermes_bacmap.services.strain_metadata import StrainMetadataService
 
         with StrainMetadataService(db_path) as svc:
@@ -1529,9 +1521,6 @@ def query_lab_results(args: dict, **kwargs) -> str:
         return json.dumps({"error": "Database not found."})
 
     try:
-        import sys
-
-        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
         from hermes_bacmap.services.lab_results import LabResultService
 
         sample_id = args.get("sample_id", "")
@@ -1578,9 +1567,6 @@ def add_lab_result(args: dict, **kwargs) -> str:
     db_path = _DEFAULT_DB_PATH
 
     try:
-        import sys
-
-        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
         from hermes_bacmap.services.lab_results import LabResultService
 
         optional = {}
@@ -1625,7 +1611,9 @@ def snp_tree(args: dict, **kwargs) -> str:
                 cohort_objs = [
                     o
                     for o in gos.list_by_type(ObjectType.ANALYSIS)
-                    if o.strain_id and o.strain_id.startswith("cohort:") and o.strain_id.endswith("-snp")
+                    if o.strain_id
+                    and o.strain_id.startswith("cohort:")
+                    and o.strain_id.endswith("-snp")
                 ]
                 if cohort_objs:
                     latest = max(cohort_objs, key=lambda o: o.version)
@@ -1725,7 +1713,10 @@ def search_samples(args: dict, **kwargs) -> str:
         idx.close()
 
         if not query:
-            return json.dumps({"error": "Provide at least one of: query, serotype, mlst_st, amr_gene, organism"})
+            return json.dumps(
+                {"error": "Provide at least one of: query, serotype,"
+                 " mlst_st, amr_gene, organism"}
+            )
 
         from hermes_bacmap.services.genome_object_service import GenomeObjectService, ObjectType
 
@@ -1801,7 +1792,6 @@ def validate_taxonomy(args: dict, **kwargs) -> str:
         return json.dumps({"error": f"Contigs not found for {sample_id}. Run analysis first."})
 
     try:
-        sys.path.insert(0, str(_PROJECT_ROOT / "src"))
         from hermes_bacmap.analysis.taxonomic_validator import validate_genome
 
         output_dir = _RESULTS_DIR / sample_id / "taxonomy"

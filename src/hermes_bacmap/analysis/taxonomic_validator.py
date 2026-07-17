@@ -171,7 +171,10 @@ def validate_genome(
         result.gtdb_taxonomy = _run_gtdbtk(contigs_path, output_dir)
         result.interpretation = _build_interpretation(result)
     else:
-        result.interpretation = f"Marker gene: {marker_result.species} (confidence: {marker_result.confidence})"
+        result.interpretation = (
+            f"Marker gene: {marker_result.species}"
+            f" (confidence: {marker_result.confidence})"
+        )
 
     (output_dir / "validation.json").write_text(
         json.dumps(result.to_dict(), ensure_ascii=False, indent=2)
@@ -188,7 +191,10 @@ def _build_interpretation(result: TaxonomyResult) -> str:
         elif result.completeness < 50:
             parts.append("Genome quality: WARNING (low completeness)")
         else:
-            parts.append(f"Genome quality: CHECK (completeness={result.completeness:.1f}%, contamination={result.contamination:.1f}%)")
+            parts.append(
+                f"Genome quality: CHECK (completeness={result.completeness:.1f}%,"
+                f" contamination={result.contamination:.1f}%)"
+            )
 
     if result.gtdb_taxonomy:
         parts.append(f"GTDB-Tk classification: {result.gtdb_taxonomy}")
@@ -201,7 +207,8 @@ def _build_interpretation(result: TaxonomyResult) -> str:
                 parts.append("Consistency: marker gene and GTDB-Tk agree")
             else:
                 parts.append(
-                    f"Consistency: DISCREPANCY (marker={result.marker_gene_species}, GTDB={result.gtdb_taxonomy})"
+                    f"Consistency: DISCREPANCY (marker={result.marker_gene_species},"
+                    f" GTDB={result.gtdb_taxonomy})"
                 )
 
     if not parts:

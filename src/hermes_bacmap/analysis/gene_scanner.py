@@ -537,7 +537,8 @@ def main():
         print("GENE\t%IDENTITY\t%COVERAGE\tCONTIG\tSTART\tEND\tACCESSION")
         for g in result.genes:
             print(
-                f"{g.gene}\t{g.identity}\t{g.coverage}\t{g.contig}\t{g.start}\t{g.end}\t{g.accession}"
+                f"{g.gene}\t{g.identity}\t{g.coverage}\t{g.contig}"
+                f"\t{g.start}\t{g.end}\t{g.accession}"
             )
 
 

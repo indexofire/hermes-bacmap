@@ -501,7 +501,11 @@ GENE_SCAN = {
             },
             "database": {
                 "type": "string",
-                "description": "Database name: card, vfdb, ecoh, plasmidfinder, resfinder, ncbi, megares, victors, ecoli_vf. Or comma-separated for multi-db.",
+                "description": (
+                    "Database name: card, vfdb, ecoh, plasmidfinder,"
+                    " resfinder, ncbi, megares, victors, ecoli_vf."
+                    " Or comma-separated for multi-db."
+                ),
             },
             "min_identity": {
                 "type": "number",
@@ -599,7 +603,10 @@ VALIDATE_TAXONOMY = {
             },
             "mode": {
                 "type": "string",
-                "description": "Validation mode: 'simple' (marker genes, default) or 'standard' (CheckM2 + GTDB-Tk).",
+                "description": (
+                    "Validation mode: 'simple' (marker genes, default)"
+                    " or 'standard' (CheckM2 + GTDB-Tk)."
+                ),
                 "default": "simple",
             },
         },
@@ -628,11 +635,17 @@ ANNOTATE = {
             },
             "sample_id": {
                 "type": "string",
-                "description": "Sample identifier for locus_tag prefix (optional, auto-detected from path if omitted).",
+                "description": (
+                    "Sample identifier for locus_tag prefix"
+                    " (optional, auto-detected from path if omitted)."
+                ),
             },
             "output_path": {
                 "type": "string",
-                "description": "Output JSON path (optional, default: {sample}/annotation/annotation.json).",
+                "description": (
+                    "Output JSON path (optional, default:"
+                    " {sample}/annotation/annotation.json)."
+                ),
             },
         },
         "required": ["contigs_path"],
@@ -654,7 +667,10 @@ DIAGNOSE = {
         "properties": {
             "log_path": {
                 "type": "string",
-                "description": "Path to Snakemake log file. If omitted, reads the latest log automatically.",
+                "description": (
+                    "Path to Snakemake log file."
+                    " If omitted, reads the latest log automatically."
+                ),
             },
             "stderr_text": {
                 "type": "string",
@@ -740,7 +756,12 @@ ADD_METADATA = {
             },
             "data": {
                 "type": "object",
-                "description": "Metadata fields to set. Core fields: patient_name, patient_age, patient_gender, isolation_date, province, city, sample_source, outbreak_id. Custom fields stored in extra JSON.",
+                "description": (
+                    "Metadata fields to set. Core fields: patient_name,"
+                    " patient_age, patient_gender, isolation_date, province,"
+                    " city, sample_source, outbreak_id."
+                    " Custom fields stored in extra JSON."
+                ),
             },
         },
         "required": ["strain_id", "data"],
@@ -779,7 +800,10 @@ QUERY_LAB_RESULTS = {
             },
             "interpretation": {
                 "type": "string",
-                "description": "Filter by interpretation: R (resistant), S (susceptible), I (intermediate), positive, negative.",
+                "description": (
+                    "Filter by interpretation: R (resistant), S (susceptible),"
+                    " I (intermediate), positive, negative."
+                ),
             },
         },
     },

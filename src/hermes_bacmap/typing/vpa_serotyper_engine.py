@@ -410,7 +410,8 @@ class SerotyperEngine:
             scores[lid] = (gene_cov, present, avg_ident)
 
             logger.debug(
-                f"  Gene tiebreak: {lid} = {present}/{total_genes} ({gene_cov:.1f}%) ident={avg_ident:.1f}%"
+                f"  Gene tiebreak: {lid} = {present}/{total_genes}"
+                f" ({gene_cov:.1f}%) ident={avg_ident:.1f}%"
             )
 
         if not scores:
@@ -518,7 +519,8 @@ class SerotyperEngine:
             if cand_unique_total > 0 and cand_unique_present >= cand_unique_total * 0.5:
                 logger.debug(
                     f"  Superset override: {best_locus} is subset of {lid}, "
-                    f"{lid} unique genes {cand_unique_present}/{cand_unique_total} present -> switch to {lid}"
+                    f"{lid} unique genes {cand_unique_present}/{cand_unique_total}"
+                    f" present -> switch to {lid}"
                 )
                 return lid
 
@@ -840,13 +842,19 @@ class SerotyperEngine:
             "missing": ";".join(missing_genes) if missing_genes else "None",
             "alerts": ";".join(alerts) if alerts else "None",
             "gene_details": gene_results,
-            "expected_in_locus": f"{len(expected_in_locus)} / {total_genes} ({len(expected_in_locus) / total_genes * 100:.2f}%)"
-            if total_genes
-            else "0 / 0",
+            "expected_in_locus": (
+                f"{len(expected_in_locus)} / {total_genes}"
+                f" ({len(expected_in_locus) / total_genes * 100:.2f}%)"
+                if total_genes
+                else "0 / 0"
+            ),
             "expected_in_locus_detail": ";".join(expected_in_locus),
-            "expected_outside": f"{len(expected_outside)} / {total_genes} ({len(expected_outside) / total_genes * 100:.2f}%)"
-            if total_genes
-            else "0 / 0",
+            "expected_outside": (
+                f"{len(expected_outside)} / {total_genes}"
+                f" ({len(expected_outside) / total_genes * 100:.2f}%)"
+                if total_genes
+                else "0 / 0"
+            ),
             "expected_outside_detail": ";".join(expected_outside),
             "other_in_locus": str(len(other_in_locus)),
             "other_in_locus_detail": ";".join(other_in_locus),

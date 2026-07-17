@@ -1,7 +1,7 @@
 # 尚存问题清单
 
-> **最后更新**: 2026-07-16
-> **测试状态**: 193 passed, 0 failed
+> **最后更新**: 2026-07-17
+> **测试状态**: 206 passed, 0 failed
 > **来源**: 代码审计 Round 1-9（58 bugs 已修复）
 
 ---
@@ -36,14 +36,14 @@
 
 ## 🟡 Low — 装饰性 / 边缘情况
 
-### L1. ensure_index FASTA 候选列表不完整
+### L1. (已完成 — 添加 .fna/.fa 候选扩展名)
 
-- **位置**: `src/hermes_bacmap/engine/backends/blast.py:59-63`
+- **位置**: `src/hermes_bacmap/engine/backends/blast.py:50-56`
 - **问题**: `ensure_index()` 在 BLAST 索引不存在时尝试从 FASTA 重建，候选扩展名为 `.fasta`、`_sequences.fasta`、`_abricate.fasta`，缺少 `.fna`、`.fa`。
 - **当前影响**: 无。现有数据库都使用 `_sequences.fasta` 或 `_abricate.fasta` 后缀。
 - **修复方案**: 在候选列表中添加 `.fna`、`.fa`、`.fna.gz` 等。
 
-### L2. available() 返回静态列表
+### L2. (已完成 — available() 合并动态注册后端)
 
 - **位置**: `src/hermes_bacmap/engine/backends/__init__.py:42-43`
 - **问题**: `available()` 返回 `_BUILTINS.keys()`（硬编码内置后端名），不反映通过 `register()` 动态注册的自定义后端。
@@ -58,7 +58,7 @@
 - **修复方案**: 将 `2>/dev/null` 改为 `2>{log}` 写入日志文件，或完全移除让 Snakemake 捕获。
 - **优先级**: 中。下次修改 snp.smk 时一并处理。
 
-### L4. 19 个 E501 行过长 + 12 个文件格式不规范
+### L4. (已完成 — 所有 E501 长行已修复)
 
 - **位置**: `deterministic_verifier.py`、`ecoh_serotyper.py`、`gene_scanner.py`、`genome_annotator.py`、`genome_object_service.py`、`schemas.py`、`shigella_serotyper.py`、`tools.py`
 - **问题**: 19 处行宽超过 100 字符（ruff E501），12 个文件不符合 ruff format 规范。
@@ -73,7 +73,7 @@
 - **修复方案**: 在 `rule all` 的 input 中添加 `expand(str(WORKDIR) + "/{sample}/annotation/annotation.json", sample=SAMPLES)`。
 - **优先级**: 等确定注释是否为所有样本的必选步骤后再决定。
 
-### L6. tools.py 中 sys.path.insert 运行时路径修改
+### L6. (已完成 — sys.path.insert 已全部移除)
 
 - **位置**: `src/hermes_bacmap/tools.py`（5 处：lines 798, 1203, 1272, 1300, 1358）
 - **问题**: 多个 tool handler 内部使用 `sys.path.insert(0, str(_PROJECT_ROOT / "src"))` 来导入 hermes_bacmap 模块。这是运行时路径修改，不够干净。

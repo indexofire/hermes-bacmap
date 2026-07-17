@@ -63,21 +63,33 @@ _PATTERNS: list[tuple[str, re.Pattern, str, str, list[str]]] = [
     ),
     (
         "oom",
-        re.compile(r"ChildIOException|signal 9|SIGKILL|out of memory|Cannot allocate memory|MemoryError", re.I),
+        re.compile(
+            r"ChildIOException|signal 9|SIGKILL|out of memory"
+            r"|Cannot allocate memory|MemoryError",
+            re.I,
+        ),
         "内存不足（OOM），组装或比对步骤消耗过多 RAM",
         "减少线程数或限制内存使用",
         ["python scripts/run_analysis.py --sample <ID> --cores 2"],
     ),
     (
         "missing_tool",
-        re.compile(r"command not found|No such file or directory.*\.pixi|not installed|executable not found", re.I),
+        re.compile(
+            r"command not found|No such file or directory.*\\.pixi"
+            r"|not installed|executable not found",
+            re.I,
+        ),
         "生信工具未安装或不在 PATH 中",
         "运行 pixi install 安装工具链",
         ["pixi install", "which fastp shovill blastn abricate"],
     ),
     (
         "missing_db",
-        re.compile(r"Database.*error|No volumes were created|database.*not found|\.nhr|\.phr.*not found", re.I),
+        re.compile(
+            r"Database.*error|No volumes were created|database.*not found"
+            r"|\\.nhr|\\.phr.*not found",
+            re.I,
+        ),
         "BLAST 数据库索引缺失或损坏",
         "重建数据库索引",
         ["makeblastdb -in data/reference/<db>.fasta -dbtype nucl -out data/reference/<db>"],
