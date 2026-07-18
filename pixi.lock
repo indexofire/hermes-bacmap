@@ -128,6 +128,7 @@ environments:
       - conda: https://conda.anaconda.org/bioconda/linux-64/k8-0.2.5-hdcf5f25_4.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/linux-64/kalign2-2.04-h7b50bb2_8.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/keyutils-1.6.3-hb9d3cd8_0.conda
+      - conda: https://conda.anaconda.org/bioconda/linux-64/kma-1.4.15-he4a0461_0.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/linux-64/kmc-3.2.4-h6dccd9a_2.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/krb5-1.21.3-h659f571_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/lcms2-2.15-hfd0df8a_0.conda
@@ -200,6 +201,7 @@ environments:
       - conda: https://conda.anaconda.org/bioconda/linux-64/muscle-3.8.1551-h9948957_9.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/linux-64/mustang-3.2.4-h9948957_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/nbformat-5.10.4-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/ncbi-datasets-cli-18.33.1-ha770c72_0.conda
       - conda: https://conda.anaconda.org/bioconda/linux-64/ncbi-vdb-3.4.1-hd63eeec_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.6-hdb14827_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/nettle-3.10.1-h4a9d5aa_0.conda
@@ -2227,6 +2229,17 @@ packages:
   version: 1.5.0
   sha256: bb5136fb5352d3f422df33f0c879a1b0c204004324150cc3b5e3c4f310c9049f
   requires_python: '>=3.10'
+- conda: https://conda.anaconda.org/bioconda/linux-64/kma-1.4.15-he4a0461_0.tar.bz2
+  sha256: 2ff3a566715e49fd642f0199745b53b616b249372a2d54b957b8b345f985435d
+  md5: 03497048c98c969b89aa6e9c9ad5140c
+  depends:
+  - libgcc-ng >=12
+  - libzlib >=1.2.13,<2.0a0
+  license: Apache-2.0
+  license_family: APACHE
+  purls: []
+  size: 261046
+  timestamp: 1721747492129
 - conda: https://conda.anaconda.org/bioconda/linux-64/kmc-3.2.4-h6dccd9a_2.tar.bz2
   sha256: 3f489b27331f87f9bc9b3be82dbea9988218eda6be50797a189a81a4cc4ddae0
   md5: 25d6b0de5d6473d755ef18dfe160bf83
@@ -3143,6 +3156,15 @@ packages:
   - pkg:pypi/nbformat?source=hash-mapping
   size: 100945
   timestamp: 1733402844974
+- conda: https://conda.anaconda.org/conda-forge/linux-64/ncbi-datasets-cli-18.33.1-ha770c72_0.conda
+  sha256: 6ef53fc8e0a4502cd661c222fd52465a2f33ade4d832a2f9b1c9f63bf143aaf6
+  md5: 3f5caecb75410d9719a445b6d183c6e5
+  depends:
+  - ca-certificates
+  license: Public Domain
+  purls: []
+  size: 17082065
+  timestamp: 1783740725457
 - conda: https://conda.anaconda.org/bioconda/linux-64/ncbi-vdb-3.4.1-hd63eeec_0.conda
   sha256: 1c876e74214ef7269de12286e1b9b370e3167c0825d215de3b81bf46f3956072
   md5: 70de9f284c305131b458cf69676f1b2f

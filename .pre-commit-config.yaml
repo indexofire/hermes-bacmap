@@ -42,3 +42,4 @@ repos:
     hooks:
       - id: detect-secrets
         args: [--baseline, .secrets.baseline]
+        exclude: ^(data/|.*\.lock$|pixi\.lock$|uv\.lock$)
