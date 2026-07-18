@@ -1,4 +1,5 @@
 """Tests for StrainGenotypeIndex — denormalized genotype traceability index."""
+
 from __future__ import annotations
 
 import sys
@@ -173,8 +174,12 @@ class TestExtractGenotype:
             "mlst": "FILE\tSCHEME\tST\taroC\ncontigs\tsalmonella_2\t19\t10",
             "amr": {
                 "abricate_card": [
-                    {"GENE": "blaCTX-M-15", "%COVERAGE": "100.00",
-                     "%IDENTITY": "99.50", "PRODUCT": "beta-lactamase"},
+                    {
+                        "GENE": "blaCTX-M-15",
+                        "%COVERAGE": "100.00",
+                        "%IDENTITY": "99.50",
+                        "PRODUCT": "beta-lactamase",
+                    },
                     {"GENE": "tet(A)", "%COVERAGE": "100.00", "%IDENTITY": "98.00"},
                 ],
                 "abricate_vfdb": [],

@@ -1,16 +1,14 @@
 """Tests for utils.py — parse_mlst, parse_abricate_tsv, read_json_file."""
+
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
-
-import pytest
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
-from hermes_bacmap.utils import parse_mlst, parse_abricate_tsv, read_json_file  # noqa: E402
+from hermes_bacmap.utils import parse_abricate_tsv, parse_mlst, read_json_file  # noqa: E402
 
 
 class TestParseMlst:

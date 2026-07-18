@@ -13,6 +13,7 @@ from hermes_bacmap.services.strain_metadata import StrainMetadataService
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def db_path(tmp_path: Path) -> Path:
     return tmp_path / "test_meta.sqlite"
@@ -22,15 +23,19 @@ def db_path(tmp_path: Path) -> Path:
 # StrainMetadataService Tests
 # ===========================================================================
 
+
 class TestStrainMetadataCRUD:
     def test_upsert_new(self, db_path: Path):
         with StrainMetadataService(db_path) as svc:
-            meta = svc.upsert("SAM-001", {
-                "patient_name": "张三",
-                "patient_age": 35,
-                "province": "北京",
-                "isolation_date": "2024-03-10",
-            })
+            meta = svc.upsert(
+                "SAM-001",
+                {
+                    "patient_name": "张三",
+                    "patient_age": 35,
+                    "province": "北京",
+                    "isolation_date": "2024-03-10",
+                },
+            )
             assert meta.strain_id == "SAM-001"
             assert meta.patient_name == "张三"
             assert meta.patient_age == 35
@@ -64,11 +69,14 @@ class TestStrainMetadataCRUD:
 class TestStrainMetadataExtra:
     def test_extra_json_stored(self, db_path: Path):
         with StrainMetadataService(db_path) as svc:
-            svc.upsert("SAM-001", {
-                "patient_name": "张三",
-                "case_type": "暴发",
-                "report_status": "已报",
-            })
+            svc.upsert(
+                "SAM-001",
+                {
+                    "patient_name": "张三",
+                    "case_type": "暴发",
+                    "report_status": "已报",
+                },
+            )
             meta = svc.get("SAM-001")
             assert meta.extra["case_type"] == "暴发"
             assert meta.extra["report_status"] == "已报"
@@ -145,12 +153,17 @@ class TestStrainMetadataImport:
 # LabResultService Tests
 # ===========================================================================
 
+
 class TestLabResultCRUD:
     def test_add_single(self, db_path: Path):
         with LabResultService(db_path) as svc:
             lr = svc.add(
-                "SAM-001", "ast", "氨苄西林",
-                result="16", unit="ug/mL", interpretation="R",
+                "SAM-001",
+                "ast",
+                "氨苄西林",
+                result="16",
+                unit="ug/mL",
+                interpretation="R",
                 method="broth_microdilution",
             )
             assert lr.strain_id == "SAM-001"
@@ -161,11 +174,15 @@ class TestLabResultCRUD:
 
     def test_add_batch(self, db_path: Path):
         with LabResultService(db_path) as svc:
-            results = svc.add_batch("SAM-001", "ast", [
-                {"test_name": "氨苄西林", "result": "16", "interpretation": "R"},
-                {"test_name": "环丙沙星", "result": "0.5", "interpretation": "S"},
-                {"test_name": "头孢曲松", "result": "2", "interpretation": "I"},
-            ])
+            results = svc.add_batch(
+                "SAM-001",
+                "ast",
+                [
+                    {"test_name": "氨苄西林", "result": "16", "interpretation": "R"},
+                    {"test_name": "环丙沙星", "result": "0.5", "interpretation": "S"},
+                    {"test_name": "头孢曲松", "result": "2", "interpretation": "I"},
+                ],
+            )
             assert len(results) == 3
             all_results = svc.get_by_strain("SAM-001")
             assert len(all_results) == 3
@@ -225,8 +242,15 @@ class TestLabResultSearch:
 class TestLabResultExtra:
     def test_extra_stored(self, db_path: Path):
         with LabResultService(db_path) as svc:
-            lr = svc.add("SAM-001", "ast", "氨苄西林", result="16",
-                         interpretation="R", zone_diameter="6", control_strain="ATCC 25922")
+            lr = svc.add(
+                "SAM-001",
+                "ast",
+                "氨苄西林",
+                result="16",
+                interpretation="R",
+                zone_diameter="6",
+                control_strain="ATCC 25922",
+            )
             assert lr.extra["zone_diameter"] == "6"
             assert lr.extra["control_strain"] == "ATCC 25922"
 
@@ -253,19 +277,34 @@ class TestLabResultImport:
 # Integration: metadata + lab_results + GOM
 # ===========================================================================
 
+
 class TestIntegration:
     def test_three_table_join(self, db_path: Path):
-        with StrainMetadataService(db_path) as meta_svc, \
-             LabResultService(db_path) as lab_svc:
-            meta_svc.upsert("SAM-001", {
-                "patient_name": "张三",
-                "province": "北京",
-                "isolation_date": "2024-03-10",
-            })
-            lab_svc.add("SAM-001", "serology", "O抗原", result="O4",
-                        interpretation="O:4", method="antiserum")
-            lab_svc.add("SAM-001", "ast", "氨苄西林", result="16",
-                        interpretation="R", method="broth_microdilution")
+        with StrainMetadataService(db_path) as meta_svc, LabResultService(db_path) as lab_svc:
+            meta_svc.upsert(
+                "SAM-001",
+                {
+                    "patient_name": "张三",
+                    "province": "北京",
+                    "isolation_date": "2024-03-10",
+                },
+            )
+            lab_svc.add(
+                "SAM-001",
+                "serology",
+                "O抗原",
+                result="O4",
+                interpretation="O:4",
+                method="antiserum",
+            )
+            lab_svc.add(
+                "SAM-001",
+                "ast",
+                "氨苄西林",
+                result="16",
+                interpretation="R",
+                method="broth_microdilution",
+            )
 
             meta = meta_svc.get("SAM-001")
             labs = lab_svc.get_by_strain("SAM-001")

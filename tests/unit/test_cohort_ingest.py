@@ -89,8 +89,7 @@ class TestCohortSNPIngest:
         with GenomeObjectService(tmp_db_path) as gos:
             _create_cohort_object(gos, snp_data)
             cohort_objs = [
-                o for o in gos.list_by_type(ObjectType.ANALYSIS)
-                if o.strain_id == COHORT_STRAIN_ID
+                o for o in gos.list_by_type(ObjectType.ANALYSIS) if o.strain_id == COHORT_STRAIN_ID
             ]
             assert len(cohort_objs) == 1
 
@@ -98,10 +97,14 @@ class TestCohortSNPIngest:
         snp_data = _make_snp_summary()
         with GenomeObjectService(tmp_db_path) as gos:
             oid = _create_cohort_object(gos, snp_data)
-            gos.log_event(oid, "snp_finished", {
-                "n_samples": snp_data["n_samples"],
-                "n_snp_sites": snp_data["n_snp_sites"],
-            })
+            gos.log_event(
+                oid,
+                "snp_finished",
+                {
+                    "n_samples": snp_data["n_samples"],
+                    "n_snp_sites": snp_data["n_snp_sites"],
+                },
+            )
             events = gos.list_events(oid)
             snp_events = [e for e in events if e.event_type == "snp_finished"]
             assert len(snp_events) == 1
@@ -115,24 +118,30 @@ class TestCohortSNPIngest:
 
             sample_oid = str(uuid4())
             now = datetime.now(UTC).replace(tzinfo=None)
-            gos.create(GenomeObject(
-                object_id=sample_oid,
-                object_type=ObjectType.ANALYSIS,
-                version=1,
-                schema_version="0.1.0",
-                created_at=now,
-                created_by="salmonella-pipeline",
-                payload={"strain_id": "SAM-001"},
-                pipeline_version="salmonella-workflow-v0.1",
-                database_versions={"card": "2026-Apr-3"},
-                organism="Salmonella enterica",
-                strain_id="SAM-001",
-            ))
+            gos.create(
+                GenomeObject(
+                    object_id=sample_oid,
+                    object_type=ObjectType.ANALYSIS,
+                    version=1,
+                    schema_version="0.1.0",
+                    created_at=now,
+                    created_by="salmonella-pipeline",
+                    payload={"strain_id": "SAM-001"},
+                    pipeline_version="salmonella-workflow-v0.1",
+                    database_versions={"card": "2026-Apr-3"},
+                    organism="Salmonella enterica",
+                    strain_id="SAM-001",
+                )
+            )
 
-            gos.log_event(sample_oid, "snp_finished", {
-                "cohort_object_id": cohort_oid,
-                "strain_id": "SAM-001",
-            })
+            gos.log_event(
+                sample_oid,
+                "snp_finished",
+                {
+                    "cohort_object_id": cohort_oid,
+                    "strain_id": "SAM-001",
+                },
+            )
 
             events = gos.list_events(sample_oid)
             snp_evts = [e for e in events if e.event_type == "snp_finished"]

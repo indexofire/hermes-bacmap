@@ -1,10 +1,9 @@
 """Tests for KMA backend + gene_scanner FASTQ routing."""
+
 from __future__ import annotations
 
 import sys
 from pathlib import Path
-
-import pytest
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
@@ -64,7 +63,6 @@ class TestKmaBackendParsing:
 
 class TestGeneScannerInputRouting:
     def test_fastq_detected_by_extension(self):
-        from pathlib import Path
         for name in ["reads.fastq", "reads.fq", "reads.fastq.gz", "reads.fq.gz"]:
             assert name.endswith((".fastq", ".fq", ".fastq.gz", ".fq.gz"))
 

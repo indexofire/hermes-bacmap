@@ -1,4 +1,5 @@
 """Tests for taxonomic_validator — dual-mode species identification."""
+
 from __future__ import annotations
 
 import sys
@@ -76,16 +77,20 @@ class TestInterpretationBuilder:
 class TestConfigIntegration:
     def test_checkm2_db_env_var(self, monkeypatch):
         import importlib
+
         monkeypatch.setenv("CHECKM2DB", "/fake/checkm2/db")
         import hermes_bacmap.config
+
         importlib.reload(hermes_bacmap.config)
         assert hermes_bacmap.config.CHECKM2_DB is not None
         importlib.reload(hermes_bacmap.config)
 
     def test_gtdb_db_env_var(self, monkeypatch):
         import importlib
+
         monkeypatch.setenv("GTDBDB", "/fake/gtdb/db")
         import hermes_bacmap.config
+
         importlib.reload(hermes_bacmap.config)
         assert hermes_bacmap.config.GTDB_DB is not None
         importlib.reload(hermes_bacmap.config)
@@ -96,6 +101,7 @@ class TestConfigIntegration:
         import importlib
 
         import hermes_bacmap.config
+
         importlib.reload(hermes_bacmap.config)
         assert hermes_bacmap.config.CHECKM2_DB is None
         assert hermes_bacmap.config.GTDB_DB is None

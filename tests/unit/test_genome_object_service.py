@@ -86,7 +86,6 @@ class TestGenomeObjectSchema:
             sample_sample_object.version = 2  # type: ignore[misc]
 
 
-
 class TestCompositeTripletSchema:
     def test_create_amr_triplet(self):
         triplet = CompositeTriplet(
@@ -113,7 +112,9 @@ class TestCompositeTripletSchema:
             CompositeTriplet(subject="blaCTX-M-15", relation="confers_resistance_to")  # type: ignore[call-arg]
 
     def test_triplet_attributes_optional(self):
-        triplet = CompositeTriplet(subject="blaTEM-1", relation="confers_resistance_to", object="Ampicillin")
+        triplet = CompositeTriplet(
+            subject="blaTEM-1", relation="confers_resistance_to", object="Ampicillin"
+        )
         assert triplet.subject_attributes == {}
         assert triplet.relation_conditions == {}
 
@@ -125,7 +126,6 @@ class TestCompositeTripletSchema:
             assert isinstance(finding.get("gene_attributes", {}), dict)
             assert isinstance(finding.get("relation_conditions", {}), dict)
             assert isinstance(finding.get("drug_attributes", {}), dict)
-
 
 
 class TestEvidenceChain:
@@ -182,7 +182,6 @@ class TestEvidenceChain:
         assert sample_genome_object.tool_versions["spades"] == "3.15.4"
 
 
-
 class TestGenomeObjectServiceCRUD:
     def test_init_creates_database_file(self, tmp_db_path):
         GenomeObjectService(tmp_db_path)
@@ -190,12 +189,16 @@ class TestGenomeObjectServiceCRUD:
 
     def test_init_creates_required_tables(self, tmp_db_path):
         import sqlite3
+
         svc = GenomeObjectService(tmp_db_path)
         svc.close()
         with sqlite3.connect(tmp_db_path) as conn:
-            tables = {row[0] for row in conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table'"
-            ).fetchall()}
+            tables = {
+                row[0]
+                for row in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                ).fetchall()
+            }
         assert "genome_objects" in tables
         assert "genome_objects_fts" in tables
         assert "events" in tables
@@ -203,6 +206,7 @@ class TestGenomeObjectServiceCRUD:
 
     def test_init_sets_wal_mode(self, tmp_db_path):
         import sqlite3
+
         svc = GenomeObjectService(tmp_db_path)
         svc.close()
         with sqlite3.connect(tmp_db_path) as conn:
@@ -268,7 +272,6 @@ class TestGenomeObjectServiceCRUD:
             page2 = svc.list_by_type(ObjectType.SAMPLE, limit=5, offset=5)
             assert len(page1) == 5
             assert len(page2) == 5
-
 
 
 class TestVersioning:
@@ -344,12 +347,12 @@ class TestVersioning:
             assert v2.strain_id == sample_sample_object.strain_id
 
 
-
 class TestFileArtifacts:
     def test_register_file_artifact(self, tmp_db_path, sample_sample_object, tmp_path):
         fastq = tmp_path / "sample_R1.fastq.gz"
         fastq.write_bytes(b"@SEQ\nACGT\n+\n!!!!")
         import hashlib
+
         sha = hashlib.sha256(fastq.read_bytes()).hexdigest()
 
         with GenomeObjectService(tmp_db_path) as svc:
@@ -403,17 +406,14 @@ class TestFileArtifacts:
         f1.write_bytes(b"r1")
         f2.write_bytes(b"r2")
         import hashlib
+
         sha1 = hashlib.sha256(f1.read_bytes()).hexdigest()
         sha2 = hashlib.sha256(f2.read_bytes()).hexdigest()
 
         with GenomeObjectService(tmp_db_path) as svc:
             svc.create(sample_sample_object)
-            svc.register_file_artifact(
-                sample_sample_object.object_id, 1, "fastq_r1", f1, sha1, 2
-            )
-            svc.register_file_artifact(
-                sample_sample_object.object_id, 1, "fastq_r2", f2, sha2, 2
-            )
+            svc.register_file_artifact(sample_sample_object.object_id, 1, "fastq_r1", f1, sha1, 2)
+            svc.register_file_artifact(sample_sample_object.object_id, 1, "fastq_r2", f2, sha2, 2)
             artifacts = svc.list_file_artifacts(sample_sample_object.object_id)
             assert len(artifacts) == 2
 
@@ -423,11 +423,11 @@ class TestFileArtifacts:
         f = tmp_path / "x.txt"
         f.write_bytes(b"x")
         import hashlib
+
         sha = hashlib.sha256(f.read_bytes()).hexdigest()
         with GenomeObjectService(tmp_db_path) as svc:
             with pytest.raises(GOMNotFoundError):
                 svc.register_file_artifact(fixed_object_id, 1, "text", f, sha, 1)
-
 
 
 class TestEventsLog:
@@ -473,23 +473,28 @@ class TestEventsLog:
                     {},
                 )
 
-    def test_event_records_standard_pipeline_lifecycle(
-        self, tmp_db_path, sample_sample_object
-    ):
+    def test_event_records_standard_pipeline_lifecycle(self, tmp_db_path, sample_sample_object):
         with GenomeObjectService(tmp_db_path) as svc:
             svc.create(sample_sample_object)
             for evt in [
-                "uploaded", "qc_finished", "assembly_finished",
-                "annotation_finished", "amr_finished", "report_generated",
+                "uploaded",
+                "qc_finished",
+                "assembly_finished",
+                "annotation_finished",
+                "amr_finished",
+                "report_generated",
             ]:
                 svc.log_event(sample_sample_object.object_id, evt, {})  # type: ignore[arg-type]
             events = svc.list_events(sample_sample_object.object_id)
             assert len(events) == 6
             assert [e.event_type for e in events] == [
-                "uploaded", "qc_finished", "assembly_finished",
-                "annotation_finished", "amr_finished", "report_generated",
+                "uploaded",
+                "qc_finished",
+                "assembly_finished",
+                "annotation_finished",
+                "amr_finished",
+                "report_generated",
             ]
-
 
 
 class TestFactoryFunctions:

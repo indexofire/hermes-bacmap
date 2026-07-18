@@ -33,22 +33,43 @@ class TestSpeciesVerification:
 class TestMLSTVerification:
     def test_valid_st_passes(self):
         v = DeterministicVerifier()
-        alleles = {"aroC": "10", "dnaN": "7", "hemD": "12",
-                   "hisD": "9", "purE": "5", "sucA": "9", "thrA": "2"}
+        alleles = {
+            "aroC": "10",
+            "dnaN": "7",
+            "hemD": "12",
+            "hisD": "9",
+            "purE": "5",
+            "sucA": "9",
+            "thrA": "2",
+        }
         result = v.verify_mlst("19", alleles)
         assert result.passed is True
 
     def test_missing_st_fails(self):
         v = DeterministicVerifier()
-        alleles = {"aroC": "10", "dnaN": "7", "hemD": "12",
-                   "hisD": "9", "purE": "5", "sucA": "9", "thrA": "2"}
+        alleles = {
+            "aroC": "10",
+            "dnaN": "7",
+            "hemD": "12",
+            "hisD": "9",
+            "purE": "5",
+            "sucA": "9",
+            "thrA": "2",
+        }
         result = v.verify_mlst("-", alleles)
         assert result.passed is False
 
     def test_missing_allele_fails(self):
         v = DeterministicVerifier()
-        alleles = {"aroC": "-", "dnaN": "7", "hemD": "12",
-                   "hisD": "9", "purE": "5", "sucA": "9", "thrA": "2"}
+        alleles = {
+            "aroC": "-",
+            "dnaN": "7",
+            "hemD": "12",
+            "hisD": "9",
+            "purE": "5",
+            "sucA": "9",
+            "thrA": "2",
+        }
         result = v.verify_mlst("19", alleles)
         assert result.passed is False
 
@@ -60,8 +81,15 @@ class TestMLSTVerification:
 
     def test_non_numeric_st_fails(self):
         v = DeterministicVerifier()
-        alleles = {"aroC": "10", "dnaN": "7", "hemD": "12",
-                   "hisD": "9", "purE": "5", "sucA": "9", "thrA": "2"}
+        alleles = {
+            "aroC": "10",
+            "dnaN": "7",
+            "hemD": "12",
+            "hisD": "9",
+            "purE": "5",
+            "sucA": "9",
+            "thrA": "2",
+        }
         result = v.verify_mlst("N/A", alleles)
         assert result.passed is False
 
@@ -123,7 +151,7 @@ class TestVerifyAll:
             "steps": {
                 "species": {"verdict": "Salmonella"},
                 "mlst": "FILE\tSCHEME\tST\taroC\tdnaN\themD\thisD\tpurE\tsucA\tthrA\n"
-                        "sample\tsalmonella_2\t19\t10\t7\t12\t9\t5\t9\t2",
+                "sample\tsalmonella_2\t19\t10\t7\t12\t9\t5\t9\t2",
                 "serotype": {"sistr": "Typhimurium", "serogroup": "B"},
                 "amr": {"abricate_card": [{"GENE": "blaTEM-1"}, {"GENE": "tet(A)"}]},
             }
@@ -152,7 +180,7 @@ class TestVerifyAll:
             "steps": {
                 "species": {"verdict": "Salmonella"},
                 "mlst": "FILE\tSCHEME\tST\taroC\tdnaN\themD\thisD\tpurE\tsucA\tthrA\n"
-                        "sample\tsalmonella_2\t19\t10\t7\t12\t9\t5\t9\t2",
+                "sample\tsalmonella_2\t19\t10\t7\t12\t9\t5\t9\t2",
                 "serotype": {"sistr": "Typhimurium", "serogroup": "B"},
                 "amr": {"abricate_card": [{"GENE": "mcr-1"}, {"GENE": "blaNDM-1"}]},
             }

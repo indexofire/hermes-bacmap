@@ -184,13 +184,7 @@ def sample_sample_object(
 
 @pytest.fixture(scope="session")
 def gold_standard_csv_path() -> Path:
-    return (
-        Path(__file__).parent
-        / "fixtures"
-        / "gold_standard"
-        / "salmonella"
-        / "gold_standard.csv"
-    )
+    return Path(__file__).parent / "fixtures" / "gold_standard" / "salmonella" / "gold_standard.csv"
 
 
 @pytest.fixture(scope="session")
