@@ -6,11 +6,13 @@ Usage:
     print(result.summary)
     print(result.suggested_fix)
 """
+
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from hermes_bacmap.config import PROJECT_ROOT as _PROJECT_ROOT
 
@@ -33,7 +35,7 @@ class Diagnosis:
             parts.append(self.details[:120])
         return " | ".join(parts)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "error_type": self.error_type,
             "rule_name": self.rule_name,
@@ -45,7 +47,7 @@ class Diagnosis:
         }
 
 
-_PATTERNS: list[tuple[str, re.Pattern, str, str, list[str]]] = [
+_PATTERNS: list[tuple[str, re.Pattern[str], str, str, list[str]]] = [
     (
         "lock",
         re.compile(r"Directory cannot be locked|Error locking directory|lock.*exist", re.I),
@@ -58,8 +60,7 @@ _PATTERNS: list[tuple[str, re.Pattern, str, str, list[str]]] = [
         re.compile(r"MissingInputException|Missing input files", re.I),
         "缺少输入文件，可能 FASTQ 路径错误或文件未下载",
         "检查 samples.tsv 中的路径，确保 FASTQ 文件存在",
-        ["cat workflows/bacmap/config/samples.tsv",
-         "python scripts/download_gold_standard.py"],
+        ["cat workflows/bacmap/config/samples.tsv", "python scripts/download_gold_standard.py"],
     ),
     (
         "oom",
@@ -75,7 +76,7 @@ _PATTERNS: list[tuple[str, re.Pattern, str, str, list[str]]] = [
     (
         "missing_tool",
         re.compile(
-            r"command not found|No such file or directory.*\\.pixi"
+            r"command not found|No such file or directory.*\.pixi"
             r"|not installed|executable not found",
             re.I,
         ),
@@ -87,7 +88,7 @@ _PATTERNS: list[tuple[str, re.Pattern, str, str, list[str]]] = [
         "missing_db",
         re.compile(
             r"Database.*error|No volumes were created|database.*not found"
-            r"|\\.nhr|\\.phr.*not found",
+            r"|\.nhr|\.phr.*not found",
             re.I,
         ),
         "BLAST 数据库索引缺失或损坏",
@@ -99,8 +100,10 @@ _PATTERNS: list[tuple[str, re.Pattern, str, str, list[str]]] = [
         re.compile(r"TimeoutExpired|timed out", re.I),
         "管线执行超时（可能卡在 I/O 或死锁）",
         "检查是否有僵尸进程，或增加超时时间",
-        ["ps aux | grep -E 'bwa|samtools|blast' | grep -v grep",
-         "cd workflows/bacmap && snakemake --unlock"],
+        [
+            "ps aux | grep -E 'bwa|samtools|blast' | grep -v grep",
+            "cd workflows/bacmap && snakemake --unlock",
+        ],
     ),
     (
         "disk_full",
@@ -169,14 +172,14 @@ def diagnose(stderr: str) -> Diagnosis:
         result.severity = "high"
     elif result.error_type == "unknown":
         last_lines = stderr.strip().split("\n")[-3:]
-        result.details = "; ".join(ln.strip() for ln in last_lines if ln.strip())[:300]
+        tail = "; ".join(ln.strip() for ln in last_lines if ln.strip())[:300]
+        result.details = f"{result.details}; {tail}" if result.details else tail
 
     return result
 
 
 def diagnose_from_log(log_path: str) -> Diagnosis:
     """Read the latest Snakemake log file and diagnose."""
-    from pathlib import Path
 
     p = Path(log_path)
     if not p.exists():
@@ -194,9 +197,11 @@ def diagnose_from_log(log_path: str) -> Diagnosis:
         )
 
     text = p.read_text(errors="replace")
-    error_lines = [ln for ln in text.split("\n") if any(
-        kw in ln.lower() for kw in ("error", "exception", "failed", "traceback")
-    )]
+    error_lines = [
+        ln
+        for ln in text.split("\n")
+        if any(kw in ln.lower() for kw in ("error", "exception", "failed", "traceback"))
+    ]
 
     if not error_lines:
         return Diagnosis(

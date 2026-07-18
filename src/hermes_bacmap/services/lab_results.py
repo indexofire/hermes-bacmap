@@ -124,7 +124,9 @@ class LabResultService:
             f"INSERT INTO lab_results ({cols}) VALUES ({placeholders})",
             list(core_fields.values()),
         )
-        return self.get_by_id(result_id)
+        added = self.get_by_id(result_id)
+        assert added is not None
+        return added
 
     def add_batch(
         self, strain_id: str, category: str, results: list[dict[str, Any]]

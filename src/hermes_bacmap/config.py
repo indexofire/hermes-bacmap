@@ -2,12 +2,21 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import overload
 
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _DEV_ROOT = _PACKAGE_DIR.parents[1]
 
 
-def _env_path(var: str, default: Path) -> Path:
+@overload
+def _env_path(var: str, default: Path) -> Path: ...
+
+
+@overload
+def _env_path(var: str, default: None) -> Path | None: ...
+
+
+def _env_path(var: str, default: Path | None) -> Path | None:
     val = os.environ.get(var)
     if val:
         return Path(val).resolve()
@@ -37,4 +46,5 @@ def pixi_path() -> str:
 
 def which(tool: str) -> str | None:
     import shutil
+
     return shutil.which(tool, path=pixi_path())

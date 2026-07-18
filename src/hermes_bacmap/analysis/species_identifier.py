@@ -33,8 +33,8 @@ _SPECIES_PRIORITY = ["inva", "ipah", "toxr", "tlh", "uida"]
 class SpeciesIdResult:
     species: str = "Unknown"
     confidence: str = "low"
-    detected_markers: list[dict] = field(default_factory=list)
-    all_hits: list[dict] = field(default_factory=list)
+    detected_markers: list[dict[str, Any]] = field(default_factory=list)
+    all_hits: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -54,6 +54,7 @@ class SpeciesIdResult:
 def identify(contigs_fasta: str | Path, mode: str = "simple") -> SpeciesIdResult | Any:
     if mode == "standard":
         from hermes_bacmap.analysis.taxonomic_validator import validate_genome
+
         return validate_genome(contigs_fasta, mode="standard")
 
     scan_result = scan(
@@ -65,7 +66,7 @@ def identify(contigs_fasta: str | Path, mode: str = "simple") -> SpeciesIdResult
 
     result = SpeciesIdResult()
 
-    gene_hits: dict[str, dict] = {}
+    gene_hits: dict[str, dict[str, Any]] = {}
     for hit in scan_result.genes:
         gene_lower = hit.gene.lower()
         if gene_lower in _GENE_TO_SPECIES:
@@ -89,23 +90,15 @@ def identify(contigs_fasta: str | Path, mode: str = "simple") -> SpeciesIdResult
     if not gene_hits:
         return result
 
-    if "invA" in gene_hits:
-        result.species = "Salmonella"
-        result.confidence = "high"
-    elif "ipaH" in gene_hits:
-        result.species = "Shigella/EIEC"
-        result.confidence = "high"
-    elif "toxR" in gene_hits or "tlh" in gene_hits:
-        result.species = "V_parahaemolyticus"
-        result.confidence = "high"
-    elif "uidA" in gene_hits:
-        result.species = "DEC"
-        result.confidence = "high"
+    for gene in _SPECIES_PRIORITY:
+        if gene in gene_hits:
+            result.species, result.confidence = _GENE_TO_SPECIES[gene]
+            break
 
     return result
 
 
-def main():
+def main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(description="Species identifier")

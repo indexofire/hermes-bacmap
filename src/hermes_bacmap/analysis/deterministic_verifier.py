@@ -10,6 +10,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from hermes_bacmap.utils import parse_mlst
+
 _KNOWN_SEROGROUPS = frozenset(
     {
         "A",
@@ -199,29 +201,16 @@ class DeterministicVerifier:
 
     @staticmethod
     def _parse_mlst(mlst_text: str) -> tuple[str, dict[str, str]]:
-        if not mlst_text or not mlst_text.strip():
-            return "", {}
+        parsed = parse_mlst(mlst_text)
+        raw_alleles = parsed.get("alleles", {})
 
-        lines = mlst_text.strip().split("\n")
-        if len(lines) < 2:
-            return "", {}
+        st = parsed.get("st", "")
+        if st == "N/A":
+            st = ""
 
-        header = lines[0].split("\t")
-        data = lines[-1].split("\t")
-
-        loci_map = {locus.lower(): locus for locus in _MLST_LOCI}
-
-        st = ""
         alleles: dict[str, str] = {}
-
-        for i, col_name in enumerate(header):
-            if i >= len(data):
-                break
-            col_lower = col_name.strip().lower()
-            val = data[i].strip()
-            if col_lower == "st":
-                st = val
-            elif col_lower in loci_map:
-                alleles[loci_map[col_lower]] = val
+        for locus in _MLST_LOCI:
+            if locus.lower() in raw_alleles:
+                alleles[locus] = raw_alleles[locus.lower()]
 
         return st, alleles

@@ -34,8 +34,8 @@ class SerotypeResult:
     o_type: str = "-"
     h_type: str = "-"
     serotype: str = "-:-"
-    o_hits: list[dict] = field(default_factory=list)
-    h_hits: list[dict] = field(default_factory=list)
+    o_hits: list[dict[str, Any]] = field(default_factory=list)
+    h_hits: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -71,11 +71,13 @@ def _parse_antigen(gene_name: str) -> tuple[str, str, str] | None:
     return None
 
 
-def serotype(contigs_fasta: str | Path, **kwargs) -> SerotypeResult:
+def serotype(contigs_fasta: str | Path, **kwargs: Any) -> SerotypeResult:
     scan_result = scan(contigs_fasta, db_name="ecoh", **kwargs)
 
-    o_hits, h_hits = [], []
-    o_scores, h_scores = {}, {}
+    o_hits: list[dict[str, Any]] = []
+    h_hits: list[dict[str, Any]] = []
+    o_scores: dict[str, float] = {}
+    h_scores: dict[str, float] = {}
 
     for hit in scan_result.genes:
         parsed = _parse_antigen(hit.gene)
@@ -99,8 +101,8 @@ def serotype(contigs_fasta: str | Path, **kwargs) -> SerotypeResult:
             if antigen_group not in h_scores or score > h_scores[antigen_group]:
                 h_scores[antigen_group] = score
 
-    o_type = max(o_scores, key=o_scores.get) if o_scores else "-"
-    h_type = max(h_scores, key=h_scores.get) if h_scores else "-"
+    o_type = max(o_scores, key=o_scores.__getitem__) if o_scores else "-"
+    h_type = max(h_scores, key=h_scores.__getitem__) if h_scores else "-"
 
     return SerotypeResult(
         o_type=o_type,
@@ -111,7 +113,7 @@ def serotype(contigs_fasta: str | Path, **kwargs) -> SerotypeResult:
     )
 
 
-def main():
+def main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(description="E. coli O:H serotyper")

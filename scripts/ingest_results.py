@@ -90,16 +90,15 @@ def ingest_sample(gos: GenomeObjectService, sample_id: str) -> str | None:
     with summary_path.open() as f:
         summary = json.load(f)
 
-    existing = [
-        o for o in gos.list_by_type(ObjectType.ANALYSIS)
-        if o.strain_id == sample_id
-    ]
+    existing = [o for o in gos.list_by_type(ObjectType.ANALYSIS) if o.strain_id == sample_id]
 
     if existing:
         latest = max(existing, key=lambda o: o.version)
 
         if latest.pipeline_version == PIPELINE_VERSION:
-            print(f"  ⏭️  {sample_id}: 已存在 v{latest.version} (pipeline={PIPELINE_VERSION}), skipped")
+            print(
+                f"  ⏭️  {sample_id}: 已存在 v{latest.version} (pipeline={PIPELINE_VERSION}), skipped"
+            )
             return latest.object_id
 
         return _create_new_version(gos, latest.object_id, sample_id, summary, summary_path)
@@ -215,7 +214,9 @@ def _create_new(gos: GenomeObjectService, sample_id: str, summary: dict, summary
     return object_id
 
 
-def _create_new_version(gos: GenomeObjectService, existing_id: str, sample_id: str, summary: dict, summary_path: Path) -> str:
+def _create_new_version(
+    gos: GenomeObjectService, existing_id: str, sample_id: str, summary: dict, summary_path: Path
+) -> str:
     payload, organism = _build_payload(summary, sample_id)
     new_obj = gos.create_new_version(
         existing_id,
@@ -226,10 +227,14 @@ def _create_new_version(gos: GenomeObjectService, existing_id: str, sample_id: s
     )
     _register_files(gos, new_obj.object_id, new_obj.version, sample_id)
 
-    gos.log_event(new_obj.object_id, "version_created", {
-        "from_version": new_obj.version - 1,
-        "pipeline_version": PIPELINE_VERSION,
-    })
+    gos.log_event(
+        new_obj.object_id,
+        "version_created",
+        {
+            "from_version": new_obj.version - 1,
+            "pipeline_version": PIPELINE_VERSION,
+        },
+    )
     gos.log_event(new_obj.object_id, "report_generated", {"summary_file": str(summary_path)})
 
     idx = StrainGenotypeIndex(DB_PATH)
@@ -247,8 +252,7 @@ def ingest_cohort_snp(gos: GenomeObjectService) -> list[str]:
         return []
 
     group_dirs = sorted(
-        d for d in snp_dir.iterdir()
-        if d.is_dir() and (d / "snp_summary.json").exists()
+        d for d in snp_dir.iterdir() if d.is_dir() and (d / "snp_summary.json").exists()
     )
     if not group_dirs:
         print("  ✗ No per-group SNP summaries found in results/snp/")
@@ -274,10 +278,7 @@ def _ingest_group_snp(gos: GenomeObjectService, group: str) -> str | None:
         snp_data = json.load(f)
 
     cohort_strain_id = f"cohort:{group}-snp"
-    existing = [
-        o for o in gos.list_by_type(ObjectType.ANALYSIS)
-        if o.strain_id == cohort_strain_id
-    ]
+    existing = [o for o in gos.list_by_type(ObjectType.ANALYSIS) if o.strain_id == cohort_strain_id]
 
     if existing:
         latest = max(existing, key=lambda o: o.version)
@@ -304,9 +305,7 @@ def _build_cohort_payload(snp_data: dict, group: str) -> tuple[dict, str]:
     return payload, organism
 
 
-def _register_cohort_files(
-    gos: GenomeObjectService, object_id: str, version: int, group: str
-):
+def _register_cohort_files(gos: GenomeObjectService, object_id: str, version: int, group: str):
     group_dir = RESULTS_DIR / "snp" / group
     prefix = f"core_{group}"
     files_to_register = [
@@ -330,25 +329,24 @@ def _register_cohort_files(
 
 def _link_samples_to_cohort(gos: GenomeObjectService, cohort_object_id: str, samples: list[str]):
     for sid in samples:
-        sample_objs = [
-            o for o in gos.list_by_type(ObjectType.ANALYSIS)
-            if o.strain_id == sid
-        ]
+        sample_objs = [o for o in gos.list_by_type(ObjectType.ANALYSIS) if o.strain_id == sid]
         if not sample_objs:
             continue
         latest = max(sample_objs, key=lambda o: o.version)
         try:
-            gos.log_event(latest.object_id, "snp_finished", {
-                "cohort_object_id": cohort_object_id,
-                "strain_id": sid,
-            })
+            gos.log_event(
+                latest.object_id,
+                "snp_finished",
+                {
+                    "cohort_object_id": cohort_object_id,
+                    "strain_id": sid,
+                },
+            )
         except Exception:
             pass
 
 
-def _create_cohort_new(
-    gos: GenomeObjectService, snp_data: dict, group: str
-) -> str:
+def _create_cohort_new(gos: GenomeObjectService, snp_data: dict, group: str) -> str:
     payload, organism = _build_cohort_payload(snp_data, group)
     cohort_strain_id = f"cohort:{group}-snp"
     object_id = str(uuid4())
@@ -372,11 +370,15 @@ def _create_cohort_new(
     _register_cohort_files(gos, object_id, 1, group)
     _link_samples_to_cohort(gos, object_id, payload["samples"])
 
-    gos.log_event(object_id, "snp_finished", {
-        "group": group,
-        "n_samples": payload["n_samples"],
-        "n_snp_sites": payload["n_snp_sites"],
-    })
+    gos.log_event(
+        object_id,
+        "snp_finished",
+        {
+            "group": group,
+            "n_samples": payload["n_samples"],
+            "n_snp_sites": payload["n_snp_sites"],
+        },
+    )
 
     print(
         f"  ✅ SNP cohort [{group}]: 新建 v1 "
@@ -399,11 +401,15 @@ def _create_cohort_version(
     _register_cohort_files(gos, new_obj.object_id, new_obj.version, group)
     _link_samples_to_cohort(gos, new_obj.object_id, payload["samples"])
 
-    gos.log_event(new_obj.object_id, "snp_finished", {
-        "group": group,
-        "n_samples": payload["n_samples"],
-        "n_snp_sites": payload["n_snp_sites"],
-    })
+    gos.log_event(
+        new_obj.object_id,
+        "snp_finished",
+        {
+            "group": group,
+            "n_samples": payload["n_samples"],
+            "n_snp_sites": payload["n_snp_sites"],
+        },
+    )
 
     print(f"  🔄 SNP cohort [{group}]: 新版本 v{new_obj.version}")
     return new_obj.object_id
@@ -449,6 +455,7 @@ def main() -> int:
 
     if args.all:
         import csv
+
         samples_tsv = ROOT / "workflows/bacmap/config/samples.tsv"
         with samples_tsv.open() as f:
             samples = [r["sample"] for r in csv.DictReader(f, delimiter="\t")]

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
+from typing import Any
 
 from .._env import which
 from ..hits import Hit
@@ -10,7 +11,7 @@ from ..hits import Hit
 class MinimapBackend:
     """minimap2 backend for assembly-to-reference alignment (PAF output)."""
 
-    def __init__(self, preset: str = "asm5", threads: int = 4):
+    def __init__(self, preset: str = "asm5", threads: int = 4) -> None:
         self.preset = preset
         self.threads = threads
         self._bin = self._find_binary()
@@ -32,7 +33,7 @@ class MinimapBackend:
         min_identity: float = 0.0,
         min_coverage: float = 0.0,
         preset: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> list[Hit]:
         use_preset = preset or self.preset
         cmd = [

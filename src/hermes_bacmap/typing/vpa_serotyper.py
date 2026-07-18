@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from hermes_bacmap.engine._env import _PROJECT_ROOT
+from hermes_bacmap.config import PROJECT_ROOT as _PROJECT_ROOT
 
 from .vpa_serotyper_engine import SerotyperEngine
 
@@ -106,7 +106,10 @@ class VpaSerotyper:
                 k_alerts=f"Error: {e}",
             )
 
-    def analyze_to_json(self, contigs_path: str | Path, sample_id: str = "") -> dict:
+    def analyze_to_json(self, contigs_path: str | Path, sample_id: str = "") -> dict[str, Any]:
         import json
 
-        return json.loads(json.dumps(self.analyze(contigs_path, sample_id).to_dict()))
+        result: dict[str, Any] = json.loads(
+            json.dumps(self.analyze(contigs_path, sample_id).to_dict())
+        )
+        return result

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
+from typing import Any
 
 from .._env import which
 from ..hits import Hit
@@ -14,7 +15,7 @@ class KmaBackend:
     enabling gene detection without assembly.
     """
 
-    def __init__(self, threads: int = 4):
+    def __init__(self, threads: int = 4) -> None:
         self.threads = threads
         self._bin = self._find_binary()
 
@@ -26,9 +27,12 @@ class KmaBackend:
 
     def make_index(self, templates_fasta: Path, index_prefix: Path) -> Path:
         cmd = [
-            self._bin, "index",
-            "-i", str(templates_fasta),
-            "-o", str(index_prefix),
+            self._bin,
+            "index",
+            "-i",
+            str(templates_fasta),
+            "-o",
+            str(index_prefix),
         ]
         subprocess.run(cmd, check=True, capture_output=True, timeout=300)
         return index_prefix
@@ -41,10 +45,11 @@ class KmaBackend:
         min_coverage: float = 0.0,
         min_identity: float = 0.0,
         output_dir: Path | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> list[Hit]:
         if output_dir is None:
             import tempfile
+
             output_dir = Path(tempfile.mkdtemp())
         else:
             output_dir = Path(output_dir)
@@ -54,13 +59,17 @@ class KmaBackend:
 
         cmd = [
             self._bin,
-            "-t", str(self.threads),
-            "-t_db", str(index_prefix),
+            "-t",
+            str(self.threads),
+            "-t_db",
+            str(index_prefix),
             "-res",
             "-1t1",
             "-cge",
-            "-apm", "p",
-            "-o", str(out_prefix),
+            "-apm",
+            "p",
+            "-o",
+            str(out_prefix),
         ]
         if reads_r2:
             cmd.extend(["-ipe", str(reads_r1), str(reads_r2)])
@@ -69,15 +78,11 @@ class KmaBackend:
 
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
         if proc.returncode != 0:
-            raise RuntimeError(
-                f"KMA failed (exit {proc.returncode}): {proc.stderr.strip()[:500]}"
-            )
+            raise RuntimeError(f"KMA failed (exit {proc.returncode}): {proc.stderr.strip()[:500]}")
 
         return self._parse_res(out_prefix, min_coverage, min_identity)
 
-    def _parse_res(
-        self, out_prefix: Path, min_coverage: float, min_identity: float
-    ) -> list[Hit]:
+    def _parse_res(self, out_prefix: Path, min_coverage: float, min_identity: float) -> list[Hit]:
         res_file = Path(f"{out_prefix}.res")
         if not res_file.exists():
             return []
@@ -118,16 +123,18 @@ class KmaBackend:
 
             gene, _, product = self._parse_template(template)
 
-            hits.append(Hit(
-                query_id="reads",
-                subject_id=template,
-                identity=identity,
-                query_coverage=coverage,
-                subject_coverage=coverage,
-                evalue=0.0,
-                bit_score=depth,
-                backend="kma",
-            ))
+            hits.append(
+                Hit(
+                    query_id="reads",
+                    subject_id=template,
+                    identity=identity,
+                    query_coverage=coverage,
+                    subject_coverage=coverage,
+                    evalue=0.0,
+                    bit_score=depth,
+                    backend="kma",
+                )
+            )
 
         return hits
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from .._env import which
 
@@ -30,7 +31,7 @@ class MashBackend:
         results = backend.distance(Path('query.msh'), Path('ref.msh'))
     """
 
-    def __init__(self, kmer_size: int = 21, sketch_size: int = 1000, threads: int = 4):
+    def __init__(self, kmer_size: int = 21, sketch_size: int = 1000, threads: int = 4) -> None:
         self.kmer_size = kmer_size
         self.sketch_size = sketch_size
         self.threads = threads
@@ -66,7 +67,7 @@ class MashBackend:
         query: Path,
         reference: Path,
         max_distance: float = 0.1,
-        **kwargs,
+        **kwargs: Any,
     ) -> list[KmerDistance]:
         """Calculate Mash distances between two sketches.
 
@@ -136,7 +137,7 @@ class MashBackend:
         query: Path,
         reference_db: Path,
         max_distance: float = 0.1,
-        **kwargs,
+        **kwargs: Any,
     ) -> list[KmerDistance]:
         """Screen a query against a pre-built reference sketch database."""
         return self.distance(query, reference_db, max_distance, **kwargs)
@@ -149,7 +150,7 @@ class SourmashBackend:
     Advantage: Python-native, no external binary needed for some operations.
     """
 
-    def __init__(self, kmer_size: int = 31, scaled: int = 1000):
+    def __init__(self, kmer_size: int = 31, scaled: int = 1000) -> None:
         self.kmer_size = kmer_size
         self.scaled = scaled
         self._bin = self._find_binary()
@@ -235,28 +236,6 @@ class SourmashBackend:
                         pvalue=0.0,
                         shared_hashes=int(containment * self.scaled),
                         total_hashes=self.scaled,
-                        backend="sourmash",
-                    )
-                )
-            except (ValueError, IndexError):
-                continue
-
-        return results
-        for line in lines:
-            if line.startswith("#") or not line.strip():
-                continue
-            parts = line.split(",")
-            if len(parts) < 4:
-                continue
-            try:
-                results.append(
-                    KmerDistance(
-                        query_id=parts[0].strip(),
-                        reference_id=parts[1].strip(),
-                        distance=1.0 - float(parts[2]),
-                        pvalue=0.0,
-                        shared_hashes=int(float(parts[2]) * 1000),
-                        total_hashes=1000,
                         backend="sourmash",
                     )
                 )

@@ -643,8 +643,7 @@ ANNOTATE = {
             "output_path": {
                 "type": "string",
                 "description": (
-                    "Output JSON path (optional, default:"
-                    " {sample}/annotation/annotation.json)."
+                    "Output JSON path (optional, default: {sample}/annotation/annotation.json)."
                 ),
             },
         },
@@ -668,8 +667,7 @@ DIAGNOSE = {
             "log_path": {
                 "type": "string",
                 "description": (
-                    "Path to Snakemake log file."
-                    " If omitted, reads the latest log automatically."
+                    "Path to Snakemake log file. If omitted, reads the latest log automatically."
                 ),
             },
             "stderr_text": {

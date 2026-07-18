@@ -85,7 +85,7 @@ class GenomeObject:
     """Genome Object 标准实体（project.md §5.1）。frozen=True 强制 Immutable（§4.6）。"""
 
     object_id: str
-    object_type: ObjectType
+    object_type: ObjectType | str
     version: int
     schema_version: str
     created_at: datetime
@@ -262,7 +262,7 @@ class GenomeObjectService:
         full_payload["__gom_tool_versions"] = obj.tool_versions
         return {
             "object_id": obj.object_id,
-            "object_type": obj.object_type.value,
+            "object_type": str(obj.object_type),
             "version": obj.version,
             "schema_version": obj.schema_version,
             "created_at": obj.created_at.isoformat(),
@@ -462,10 +462,10 @@ class GenomeObjectService:
         with file_path.open("rb") as f:
             for chunk in iter(lambda: f.read(8192 * 1024), b""):
                 actual_sha.update(chunk)
-        actual_sha = actual_sha.hexdigest()
-        if actual_sha != sha256:
+        actual_hex = actual_sha.hexdigest()
+        if actual_hex != sha256:
             raise GOMValidationError(
-                f"SHA256 mismatch for {file_path}: expected {sha256}, got {actual_sha}"
+                f"SHA256 mismatch for {file_path}: expected {sha256}, got {actual_hex}"
             )
         actual_size = file_path.stat().st_size
         if actual_size != size_bytes:
@@ -614,9 +614,7 @@ class GenomeObjectService:
             return []
 
         fts_query = " OR ".join(
-            f'"{term.replace("\"", "\"\"")}"'
-            for term in query.split()
-            if term.strip()
+            f'"{term.replace('"', '""')}"' for term in query.split() if term.strip()
         )
 
         sql = """

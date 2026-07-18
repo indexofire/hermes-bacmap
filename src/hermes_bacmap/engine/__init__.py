@@ -67,21 +67,23 @@ class SequenceMatcher:
             backend = get_backend(mode)
 
         if mode == "minimap2":
-            return backend.find(
+            hits: list[Hit] = backend.find(
                 query=Path(query),
                 target=Path(target),
                 min_identity=min_identity,
                 min_coverage=min_coverage,
                 **kwargs,
             )
+            return hits
 
-        return backend.find(
+        hits = backend.find(
             query=Path(query),
             db_path=target,
             min_identity=min_identity,
             min_coverage=min_coverage,
             **kwargs,
         )
+        return hits
 
     @staticmethod
     def _select_backend(query: str | Path, query_type: str) -> str:

@@ -17,7 +17,7 @@ class TaxonomyResult:
     mode: str = "simple"
     marker_gene_species: str = ""
     marker_gene_confidence: str = ""
-    marker_gene_markers: list[dict] = field(default_factory=list)
+    marker_gene_markers: list[dict[str, Any]] = field(default_factory=list)
     completeness: float | None = None
     contamination: float | None = None
     gtdb_taxonomy: str = ""
@@ -62,14 +62,23 @@ def _run_checkm2(contigs_path: str, output_dir: Path) -> tuple[float | None, flo
 
     output_dir.mkdir(parents=True, exist_ok=True)
     cmd = [
-        checkm2, "predict",
-        "--input", contigs_path,
-        "--output", str(output_dir / "checkm2_results.tsv"),
-        "--database_path", str(CHECKM2_DB),
+        checkm2,
+        "predict",
+        "--input",
+        contigs_path,
+        "--output",
+        str(output_dir / "checkm2_results.tsv"),
+        "--database_path",
+        str(CHECKM2_DB),
     ]
     try:
-        subprocess.run(cmd, capture_output=True, text=True, timeout=600,
-                       env={**__import__("os").environ, "PATH": pixi_path()})
+        subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=600,
+            env={**__import__("os").environ, "PATH": pixi_path()},
+        )
     except (subprocess.TimeoutExpired, FileNotFoundError) as e:
         logger.warning("CheckM2 failed: %s", e)
         return None, None
@@ -111,15 +120,25 @@ def _run_gtdbtk(contigs_path: str, output_dir: Path) -> str:
     genome_file.write_text(Path(contigs_path).read_text())
 
     cmd = [
-        gtdbtk, "classify_wf",
-        "--genome_dir", str(genome_dir),
-        "--out_dir", str(output_dir / "gtdb_output"),
-        "--database", str(GTDB_DB),
-        "--cpus", "4",
+        gtdbtk,
+        "classify_wf",
+        "--genome_dir",
+        str(genome_dir),
+        "--out_dir",
+        str(output_dir / "gtdb_output"),
+        "--database",
+        str(GTDB_DB),
+        "--cpus",
+        "4",
     ]
     try:
-        subprocess.run(cmd, capture_output=True, text=True, timeout=3600,
-                       env={**__import__("os").environ, "PATH": pixi_path()})
+        subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=3600,
+            env={**__import__("os").environ, "PATH": pixi_path()},
+        )
     except (subprocess.TimeoutExpired, FileNotFoundError) as e:
         logger.warning("GTDB-Tk failed: %s", e)
         return ""
@@ -141,6 +160,7 @@ def _run_gtdbtk(contigs_path: str, output_dir: Path) -> str:
 
 def _find_tool(name: str) -> str | None:
     import shutil
+
     return shutil.which(name, path=pixi_path())
 
 
@@ -172,8 +192,7 @@ def validate_genome(
         result.interpretation = _build_interpretation(result)
     else:
         result.interpretation = (
-            f"Marker gene: {marker_result.species}"
-            f" (confidence: {marker_result.confidence})"
+            f"Marker gene: {marker_result.species} (confidence: {marker_result.confidence})"
         )
 
     (output_dir / "validation.json").write_text(
@@ -201,9 +220,7 @@ def _build_interpretation(result: TaxonomyResult) -> str:
         if result.marker_gene_species:
             marker_lower = result.marker_gene_species.lower()
             gtdb_lower = result.gtdb_taxonomy.lower()
-            if marker_lower in gtdb_lower or any(
-                m in gtdb_lower for m in marker_lower.split("/")
-            ):
+            if marker_lower in gtdb_lower or any(m in gtdb_lower for m in marker_lower.split("/")):
                 parts.append("Consistency: marker gene and GTDB-Tk agree")
             else:
                 parts.append(

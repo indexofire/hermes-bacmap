@@ -32,8 +32,8 @@ def _gene_table(genes: list[dict], title: str) -> str:
     if not genes:
         return f"<h3>{title}</h3><p>未检出</p>"
     rows = "".join(
-        f"<tr><td>{g.get('GENE','?')}</td><td>{g.get('%IDENTITY','?')}</td>"
-        f"<td>{g.get('%COVERAGE','?')}</td><td>{g.get('RESISTANCE','')}</td></tr>"
+        f"<tr><td>{g.get('GENE', '?')}</td><td>{g.get('%IDENTITY', '?')}</td>"
+        f"<td>{g.get('%COVERAGE', '?')}</td><td>{g.get('RESISTANCE', '')}</td></tr>"
         for g in genes[:20]
     )
     extra = f"<p><em>显示前 20 个，共 {len(genes)} 个</em></p>" if len(genes) > 20 else ""
@@ -79,7 +79,7 @@ def generate_html(sample_id: str, summary: dict, verification, output_path: Path
 
     check_rows = "".join(
         f'<tr><td>{c.name}</td><td class="{"ok" if c.passed else "fail"}">'
-        f'{"✅" if c.passed else "❌"} {c.message}</td></tr>'
+        f"{'✅' if c.passed else '❌'} {c.message}</td></tr>"
         for c in verification.checks
     )
 
@@ -224,7 +224,7 @@ td.label {{ font-weight: bold; background: #f8f9fa; }}
 <div class="stats-box">
 <div class="stat-card"><div class="value">{n_samples}</div><div class="label">样本数</div></div>
 <div class="stat-card"><div class="value">{n_sites:,}</div><div class="label">SNP 位点数</div></div>
-<div class="stat-card"><div class="value">{missing*100:.1f}%</div><div class="label">缺失率</div></div>
+<div class="stat-card"><div class="value">{missing * 100:.1f}%</div><div class="label">缺失率</div></div>
 <div class="stat-card"><div class="value">{len(distances)}</div><div class="label">比较对数</div></div>
 </div>
 
@@ -278,6 +278,7 @@ def main() -> int:
 
     if args.all:
         import csv
+
         with (ROOT / "workflows/bacmap/config/samples.tsv").open() as f:
             samples = [r["sample"] for r in csv.DictReader(f, delimiter="\t")]
     else:
@@ -294,7 +295,9 @@ def main() -> int:
         output = RESULTS_DIR / sid / "report" / f"{sid}_report.html"
         generate_html(sid, summary, verification, output)
         icon = "✅" if verification.passed else "⚠️"
-        print(f"  {icon} {sid}: {output.name} ({'passed' if verification.passed else 'NEEDS REVIEW'})")
+        print(
+            f"  {icon} {sid}: {output.name} ({'passed' if verification.passed else 'NEEDS REVIEW'})"
+        )
 
     return 0
 

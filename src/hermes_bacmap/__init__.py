@@ -1,13 +1,14 @@
 """hermes_bacmap plugin — registration."""
 
 import logging
+from typing import Any
 
 from . import schemas, tools
 
 logger = logging.getLogger(__name__)
 
 
-def register(ctx):
+def register(ctx: Any) -> None:
     """Wire schemas to handlers and register with the Hermes tool registry."""
     ctx.register_tool(
         name="bio_seq_stats",

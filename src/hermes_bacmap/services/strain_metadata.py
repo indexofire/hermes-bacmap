@@ -127,7 +127,7 @@ class StrainMetadataService:
         for ddl in _SCHEMA_SQL:
             self._conn.execute(ddl)
 
-    def _split_core_extra(self, data: dict[str, Any]) -> tuple[dict, dict]:
+    def _split_core_extra(self, data: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
         core: dict[str, Any] = {}
         extra: dict[str, Any] = {}
         for k, v in data.items():
@@ -211,7 +211,9 @@ class StrainMetadataService:
             self._conn.execute("ROLLBACK")
             raise
 
-        return self.get(strain_id)
+        result = self.get(strain_id)
+        assert result is not None
+        return result
 
     def get(self, strain_id: str) -> StrainMeta | None:
         row = self._conn.execute(

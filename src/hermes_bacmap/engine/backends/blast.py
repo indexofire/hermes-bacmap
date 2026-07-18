@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
+from typing import Any
 
 from .._env import which
 from ..hits import Hit
@@ -68,7 +69,7 @@ class BlastBackend:
         min_coverage: float = 0.0,
         evalue: float = 1e-5,
         max_targets: int = 500,
-        **kwargs,
+        **kwargs: Any,
     ) -> list[Hit]:
         cmd = [
             self._bin,

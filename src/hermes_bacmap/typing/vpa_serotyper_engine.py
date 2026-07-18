@@ -33,7 +33,7 @@ def _locus_to_antigen(locus: str, prefix: str) -> str:
     return f"{prefix}UT"
 
 
-def _format_gene_details(genes: list[dict]) -> str:
+def _format_gene_details(genes: list[dict[str, Any]]) -> str:
     parts = []
     for g in genes:
         name = g.get("gene", "?")
@@ -151,7 +151,7 @@ class SerotyperEngine:
             locus_contigs, "K", sample_aligner, enable_detail, min_containment
         )
 
-        result = {
+        result: dict[str, Any] = {
             "Sample": sample_name,
             "_gene_details": {"O": [], "K": []},
             "_locus_pieces": {},
@@ -244,7 +244,7 @@ class SerotyperEngine:
         self,
         locus_contigs: dict[str, list[tuple[str, str, int, int]]],
         ltype: str,
-        sample_aligner,
+        sample_aligner: Any,
         enable_detail: bool = False,
         min_containment: float = MIN_CONTAINMENT,
     ) -> dict[str, Any] | None:
@@ -328,7 +328,7 @@ class SerotyperEngine:
 
     def _identify_locus_by_kmer(
         self,
-        type_contigs: dict[str, list],
+        type_contigs: dict[str, list[tuple[str, str, int, int]]],
         ltype: str,
     ) -> tuple[str | None, float]:
         ranked = self._rank_loci_by_kmer(type_contigs, ltype)
@@ -338,7 +338,7 @@ class SerotyperEngine:
 
     def _rank_loci_by_kmer(
         self,
-        type_contigs: dict[str, list],
+        type_contigs: dict[str, list[tuple[str, str, int, int]]],
         ltype: str,
     ) -> list[tuple[str, float]]:
         from sourmash import MinHash
@@ -365,11 +365,11 @@ class SerotyperEngine:
     def _select_by_gene_coverage(
         self,
         candidates: list[str],
-        type_contigs: dict[str, list],
-        sample_aligner,
+        type_contigs: dict[str, list[tuple[str, str, int, int]]],
+        sample_aligner: Any,
     ) -> str:
         comp = str.maketrans("ATGCatgc", "TACGtacg")
-        scores: dict[str, tuple[float, float]] = {}
+        scores: dict[str, tuple[float, int, float]] = {}
 
         for lid in candidates:
             meta = self.metadata.get(lid)
@@ -424,7 +424,7 @@ class SerotyperEngine:
         best_locus: str,
         ltype: str,
         valid_ids: set[str],
-        sample_aligner,
+        sample_aligner: Any,
     ) -> str | None:
         best_genes = self.metadata.get(best_locus, {}).get("genes", [])
         if not best_genes:
@@ -457,8 +457,8 @@ class SerotyperEngine:
 
         best_aligner = self._mp.Aligner(seq=best_seq, preset="splice")
 
-        def present_genes_in_sample(ref_seq):
-            present = set()
+        def present_genes_in_sample(ref_seq: str) -> set[int]:
+            present: set[int] = set()
             for i, g in enumerate(self.metadata.get(best_locus, {}).get("genes", [])):
                 gseq = ref_seq[g["start"] : g["end"]]
                 if g.get("strand", 1) == -1:
@@ -471,7 +471,7 @@ class SerotyperEngine:
 
         present_indices = present_genes_in_sample(best_seq)
 
-        def present_genes_are_subset(aligner_b):
+        def present_genes_are_subset(aligner_b: Any) -> bool:
             for i in present_indices:
                 g = self.metadata[best_locus]["genes"][i]
                 gseq = best_seq[g["start"] : g["end"]]
@@ -526,7 +526,15 @@ class SerotyperEngine:
 
         return None
 
-    def _generate_detail(self, ltype, best_locus, ranked, close, sample_aligner, result) -> str:
+    def _generate_detail(
+        self,
+        ltype: str,
+        best_locus: str,
+        ranked: list[tuple[str, float]],
+        close: list[tuple[str, float]],
+        sample_aligner: Any,
+        result: dict[str, Any],
+    ) -> str:
         comp = str.maketrans("ATGCatgc", "TACGtacg")
         confidence = result.get("confidence", "Unknown")
 
@@ -591,7 +599,14 @@ class SerotyperEngine:
 
         return " ".join(parts) if parts else ""
 
-    def _count_unique_genes(self, lid_a, lid_b, seq_cache, sample_aligner, comp):
+    def _count_unique_genes(
+        self,
+        lid_a: str,
+        lid_b: str,
+        seq_cache: dict[str, str],
+        sample_aligner: Any,
+        comp: dict[int, int],
+    ) -> tuple[int, int]:
         genes_a = self.metadata.get(lid_a, {}).get("genes", [])
         seq_a = seq_cache.get(lid_a, "")
         seq_b = seq_cache.get(lid_b, "")
@@ -599,7 +614,7 @@ class SerotyperEngine:
             return 0, 0
 
         aln_b = self._mp.Aligner(seq=seq_b, preset="splice")
-        unique = []
+        unique: list[str] = []
         for g in genes_a:
             gseq = seq_a[g["start"] : g["end"]]
             if g.get("strand", 1) == -1:
@@ -625,8 +640,8 @@ class SerotyperEngine:
         self,
         best_locus: str,
         ltype: str,
-        type_contigs: dict[str, list[tuple[str, str]]],
-        sample_aligner,
+        type_contigs: dict[str, list[tuple[str, str, int, int]]],
+        sample_aligner: Any,
         valid_ids: set[str] | None = None,
     ) -> str | None:
         """Resolve OLnVn locus by checking presence of locus-unique genes only."""
@@ -658,13 +673,13 @@ class SerotyperEngine:
             lid: self._mp.Aligner(seq=seq, preset="splice") for lid, seq in locus_seqs.items()
         }
 
-        def extract_gene_seq(lid, gene):
+        def extract_gene_seq(lid: str, gene: dict[str, Any]) -> str:
             gseq = locus_seqs[lid][gene["start"] : gene["end"]]
             if gene.get("strand", 1) == -1:
                 gseq = gseq[::-1].translate(comp)
             return gseq
 
-        def sample_identity(g_seq):
+        def sample_identity(g_seq: str) -> float:
             best = 0.0
             for h in sample_aligner.map(g_seq):
                 cov = 100.0 * h.blen / len(g_seq) if g_seq else 0
@@ -674,7 +689,7 @@ class SerotyperEngine:
                         best = ident
             return best
 
-        def is_unique(g_seq, other_lids):
+        def is_unique(g_seq: str, other_lids: list[str]) -> bool:
             for olid in other_lids:
                 for h in locus_aligners[olid].map(g_seq):
                     cov = 100.0 * h.blen / len(g_seq) if g_seq else 0
@@ -704,7 +719,7 @@ class SerotyperEngine:
         for lid in candidates:
             logger.debug(f"  {lid}: {votes[lid]} votes")
 
-        best_lid = max(votes, key=votes.get)
+        best_lid = max(votes, key=votes.__getitem__)
         tied = [lid for lid in candidates if lid != best_lid and votes[lid] == votes[best_lid]]
         if tied:
             logger.debug("  -> TIE, keeping k-mer result")
@@ -719,9 +734,9 @@ class SerotyperEngine:
     def _gene_level_analysis(
         self,
         best_locus: str,
-        type_contigs: dict[str, list[tuple[str, str]]],
+        type_contigs: dict[str, list[tuple[str, str, int, int]]],
         containment: float,
-        sample_aligner,
+        sample_aligner: Any,
     ) -> dict[str, Any]:
         meta = self.metadata[best_locus]
         comp = str.maketrans("ATGCatgc", "TACGtacg")
@@ -862,7 +877,7 @@ class SerotyperEngine:
             "length_discrepancy": f"{len_disc} bp",
         }
 
-    def _build_locus_region_aligner(self, entries: list[tuple[str, str]]):
+    def _build_locus_region_aligner(self, entries: list[tuple[str, str, int, int]]) -> Any:
         if not entries:
             return None
         import os
@@ -880,9 +895,9 @@ class SerotyperEngine:
         self,
         best_locus: str,
         ltype: str,
-        locus_region_aligner,
+        locus_region_aligner: Any,
         occupied_regions: list[tuple[str, int, int]],
-        sample_aligner,
+        sample_aligner: Any,
     ) -> list[str]:
         if not locus_region_aligner:
             return []
@@ -912,7 +927,7 @@ class SerotyperEngine:
         if best_seq:
             best_aligner = self._mp.Aligner(seq=best_seq, preset="splice")
 
-        def has_match_in_best_locus(g_seq):
+        def has_match_in_best_locus(g_seq: str) -> bool:
             if not best_aligner:
                 return False
             for h in best_aligner.map(g_seq):
@@ -921,7 +936,7 @@ class SerotyperEngine:
                     return True
             return False
 
-        results = []
+        results: list[str] = []
         seen_genes: set[str] = set()
         for lid in other_loci:
             lseq = all_seqs_cache.get(lid)
@@ -976,7 +991,7 @@ class SerotyperEngine:
         return True, "Low"
 
     def _empty_result(self, sample_name: str, error: str = "") -> dict[str, Any]:
-        result = {"Sample": sample_name, "_gene_details": {"O": [], "K": []}}
+        result: dict[str, Any] = {"Sample": sample_name, "_gene_details": {"O": [], "K": []}}
         for lt in ("O", "K"):
             result[f"{lt}_Locus"] = "None"
             result[f"{lt}_Confidence"] = "Unknown"
@@ -996,7 +1011,7 @@ class SerotyperEngine:
         result["Predicted_Serotype"] = "OUT:KUT"
         return result
 
-    def get_reference_genes(self, locus_id: str) -> list[dict]:
+    def get_reference_genes(self, locus_id: str) -> list[dict[str, Any]]:
         if locus_id not in self.metadata:
             return []
         return [

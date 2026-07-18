@@ -27,6 +27,7 @@ RESULTS_DIR = ROOT / "results"
 
 def validate_sample(sample: str) -> None:
     import csv
+
     samples_tsv = WORKFLOW_DIR / "config/samples.tsv"
     if not samples_tsv.exists():
         print(f"❌ samples.tsv not found: {samples_tsv}")
@@ -41,25 +42,31 @@ def validate_sample(sample: str) -> None:
 
 def run_snakemake(targets: list[str], cores: int = 8, timeout: int = 7200) -> bool:
     import os
+
     env = dict(os.environ)
     env["PATH"] = f"{PIXI_BIN}:{env['PATH']}"
 
     cmd = [
         str(PIXI_BIN / "snakemake"),
-        "-s", str(WORKFLOW_DIR / "Snakefile"),
-        "--cores", str(cores),
+        "-s",
+        str(WORKFLOW_DIR / "Snakefile"),
+        "--cores",
+        str(cores),
         "--rerun-incomplete",
         "--printshellcmds",
     ] + targets
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"启动 Snakemake 自动编排 ({len(targets)} target(s))")
     print(f"Cores: {cores}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     try:
         result = subprocess.run(
-            cmd, cwd=str(WORKFLOW_DIR), env=env, timeout=timeout,
+            cmd,
+            cwd=str(WORKFLOW_DIR),
+            env=env,
+            timeout=timeout,
         )
         return result.returncode == 0
     except subprocess.TimeoutExpired:
@@ -70,6 +77,7 @@ def run_snakemake(targets: list[str], cores: int = 8, timeout: int = 7200) -> bo
 
 def check_status(sample: str | None = None) -> dict:
     import csv
+
     samples_tsv = WORKFLOW_DIR / "config/samples.tsv"
     with samples_tsv.open() as f:
         all_samples = [r["sample"] for r in csv.DictReader(f, delimiter="\t")]
@@ -129,9 +137,9 @@ def interpret_summary(sample: str) -> None:
     with summary_path.open() as f:
         summary = json.load(f)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  {sample} 分析结果")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     species = summary.get("steps", {}).get("species", {})
     verdict = species.get("species", "N/A") if isinstance(species, dict) else str(species)
@@ -140,9 +148,11 @@ def interpret_summary(sample: str) -> None:
 
     mlst_raw = summary.get("steps", {}).get("mlst", "")
     if mlst_raw and mlst_raw != "N/A":
-        parts = mlst_raw.strip().split("\t")
-        if len(parts) >= 2:
-            print(f"  🧬 MLST: {parts[-1]}")
+        from hermes_bacmap.utils import parse_mlst
+
+        st = parse_mlst(mlst_raw)["st"]
+        if st != "N/A":
+            print(f"  🧬 MLST: ST{st}")
 
     serotype = summary.get("steps", {}).get("serotype", {})
     if isinstance(serotype, dict):
@@ -174,9 +184,9 @@ def main() -> int:
     if args.status:
         status = check_status(None)
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("  分析状态")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         if status["done"]:
             print(f"\n  ✅ 完成 ({len(status['done'])} 株):")
@@ -196,8 +206,10 @@ def main() -> int:
 
         snp = status.get("snp_cohort", {})
         snp_icon = "✅" if snp.get("summary") else ("🔄" if snp.get("tree") else "⬜")
-        print(f"\n  {snp_icon} SNP Cohort: tree={'yes' if snp.get('tree') else 'no'}, "
-              f"summary={'yes' if snp.get('summary') else 'no'}")
+        print(
+            f"\n  {snp_icon} SNP Cohort: tree={'yes' if snp.get('tree') else 'no'}, "
+            f"summary={'yes' if snp.get('summary') else 'no'}"
+        )
 
         print()
         return 0
@@ -227,6 +239,7 @@ def main() -> int:
             interpret_summary(args.sample)
         else:
             import csv
+
             failed = []
             with (WORKFLOW_DIR / "config/samples.tsv").open() as f:
                 for r in csv.DictReader(f, delimiter="\t"):
@@ -245,6 +258,7 @@ def main() -> int:
         return 0
     else:
         import sys as _sys
+
         _sys.path.insert(0, str(ROOT / "src"))
         from hermes_bacmap.analysis.failure_diagnostics import diagnose_from_log
 

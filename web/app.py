@@ -2,6 +2,7 @@
 
 Run: uvicorn web.app:app --reload --port 8080
 """
+
 from __future__ import annotations
 
 import csv
@@ -19,6 +20,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
 from hermes_bacmap.config import RESULTS_DIR as _RESULTS_DIR, DB_PATH as _DB_PATH
+from hermes_bacmap.utils import parse_mlst
 
 _WORKFLOW_DIR = _PROJECT_ROOT / "workflows" / "bacmap"
 _SAMPLES_TSV = _WORKFLOW_DIR / "config" / "samples.tsv"
@@ -74,23 +76,21 @@ def list_samples() -> dict:
         species_name = species.get("species", "N/A") if isinstance(species, dict) else str(species)
 
         mlst_raw = steps_data.get("mlst", "")
-        st = "N/A"
-        if mlst_raw and isinstance(mlst_raw, str):
-            parts = mlst_raw.strip().split("\t")
-            if len(parts) >= 2:
-                st = parts[-1]
+        st = parse_mlst(mlst_raw)["st"] if mlst_raw and isinstance(mlst_raw, str) else "N/A"
 
         sero = steps_data.get("serotype", {})
         serotype = sero.get("sistr", "N/A") if isinstance(sero, dict) else "N/A"
 
-        samples.append({
-            "sample_id": sid,
-            "species_configured": row.get("species", ""),
-            "species_detected": species_name,
-            "mlst_st": st,
-            "serotype": serotype,
-            "status": status,
-        })
+        samples.append(
+            {
+                "sample_id": sid,
+                "species_configured": row.get("species", ""),
+                "species_detected": species_name,
+                "mlst_st": st,
+                "serotype": serotype,
+                "status": status,
+            }
+        )
 
     snp_tree = _RESULTS_DIR / "snp" / "snp_summary.json"
     snp_status = snp_tree.exists()
@@ -125,6 +125,7 @@ def get_snp_tree() -> dict:
 @app.get("/api/search")
 def search_samples(q: str = Query(..., description="Search query")) -> dict:
     from hermes_bacmap.tools import search_samples as _do_search
+
     result = _do_search({"query": q})
     return json.loads(result)
 
@@ -139,12 +140,16 @@ def pipeline_status() -> dict:
         "total_samples": total,
         "completed": done,
         "in_progress": sum(
-            1 for r in samples
+            1
+            for r in samples
             if (_RESULTS_DIR / r.get("sample", "") / "assembly" / "contigs.fasta").exists()
             and not _get_summary(r.get("sample", ""))
         ),
-        "not_started": total - done - sum(
-            1 for r in samples
+        "not_started": total
+        - done
+        - sum(
+            1
+            for r in samples
             if (_RESULTS_DIR / r.get("sample", "") / "assembly" / "contigs.fasta").exists()
             and not _get_summary(r.get("sample", ""))
         ),

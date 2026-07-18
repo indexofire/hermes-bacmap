@@ -130,12 +130,7 @@ def _predict_cds(contigs: list[tuple[str, str]]) -> list[tuple[str, int, int, in
         genes = orf_finder.find_genes(seq.encode())
         for gene in genes:
             na_seq = gene.sequence()
-            if isinstance(na_seq, bytes):
-                na_seq = na_seq.decode()
-            prot_seq = gene.translate(translation_table=11)
-            if isinstance(prot_seq, bytes):
-                prot_seq = prot_seq.decode()
-            prot_seq = prot_seq.rstrip("*")
+            prot_seq = gene.translate(translation_table=11).rstrip("*")
             predictions.append(
                 (
                     contig_name,
@@ -205,6 +200,7 @@ def _parse_prokka_header(sseqid: str) -> tuple[str, str]:
 
 def _make_locus_tag(sample_id: str, index: int) -> str:
     import hashlib
+
     base = sample_id.upper().replace("-", "").replace("_", "") or "SAMPLE"
     suffix = hashlib.md5(sample_id.encode()).hexdigest()[:4].upper()
     return f"{base[:8]}_{suffix}_{index:05d}"

@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -40,8 +39,6 @@ _DEFAULT_MIN_IDENTITY = 80.0
 _DEFAULT_MIN_COVERAGE = 80.0
 _EVALUE = 1e-10
 _WORD_SIZE = 28
-
-
 
 
 def normalize_synonyms(raw: dict[str, Any]) -> dict[str, list[str]]:
@@ -267,7 +264,7 @@ def _scan_assembly(
 
 def _scan_reads(
     reads_r1: Path,
-    reads_r2: Path | None,
+    reads_r2: str | Path | None,
     db_name: str,
     min_identity: float,
     min_coverage: float,
@@ -285,13 +282,18 @@ def _scan_reads(
     backend = KmaBackend(threads=threads)
     hits = backend.find(
         reads_r1=reads_r1,
-        reads_r2=reads_r2,
+        reads_r2=Path(reads_r2) if reads_r2 else None,
         index_prefix=kma_index,
         min_coverage=min_coverage,
         min_identity=min_identity,
     )
 
-    result = ScanResult(query=str(reads_r1), database=db_name)
+    result = ScanResult(
+        database=db_name,
+        input_file=str(reads_r1),
+        min_identity=min_identity,
+        min_coverage=min_coverage,
+    )
     gene_map: dict[str, int] = {}
 
     for hit in hits:
@@ -299,15 +301,18 @@ def _scan_reads(
         if not gene:
             continue
 
+        # KMA maps raw reads — no contig coordinates available.
         gene_hit = GeneHit(
             gene=gene,
-            identity=hit.identity,
-            coverage=hit.subject_coverage,
-            evalue=hit.evalue,
-            depth=hit.bit_score,
-            contig="",
+            identity=round(hit.identity, 2),
+            coverage=round(hit.subject_coverage, 1),
+            contig=hit.query_id,
+            start=0,
+            end=0,
+            strand="+",
             accession=accession,
             product=product[:200] if product else "",
+            database=db_name,
         )
 
         if gene in gene_map:
@@ -317,14 +322,6 @@ def _scan_reads(
         else:
             gene_map[gene] = len(result.genes)
             result.genes.append(gene_hit)
-
-        result.all_hits.append({
-            "gene": gene_hit.gene,
-            "identity": gene_hit.identity,
-            "coverage": gene_hit.coverage,
-            "depth": gene_hit.depth,
-            "backend": "kma",
-        })
 
     result.genes.sort(key=lambda h: (-h.identity, h.gene))
     result.total_hits = len(result.genes)
@@ -390,6 +387,7 @@ def setup_db(
 
     if fasta_source is None:
         from hermes_bacmap.db import DB_NAME_TO_SOURCE
+
         src = DB_NAME_TO_SOURCE.get(db_name)
         if src and src.exists():
             fasta_source = src
@@ -428,6 +426,7 @@ def setup_kma_index(
 
     if fasta_source is None:
         from hermes_bacmap.db import DB_NAME_TO_SOURCE
+
         src = DB_NAME_TO_SOURCE.get(db_name)
         if src and src.exists():
             fasta_source = src
@@ -438,6 +437,7 @@ def setup_kma_index(
 
     try:
         from hermes_bacmap.engine.backends.kma import KmaBackend
+
         backend = KmaBackend()
         backend.make_index(Path(fasta_source), kma_index_dir)
         print(f"✓ KMA index '{db_name}' created at {kma_index_dir}")
@@ -473,7 +473,7 @@ def setup_all_databases(output_dir: Path | None = None) -> list[str]:
     return created
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Gene scanner — abricate-like gene detection with JSON output"
     )

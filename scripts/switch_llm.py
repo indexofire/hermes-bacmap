@@ -7,6 +7,7 @@ Usage:
     python scripts/switch_llm.py vllm      # Local (vLLM, needs GPU + vllm server)
     python scripts/switch_llm.py status    # Show current provider
 """
+
 from __future__ import annotations
 
 import argparse
@@ -139,6 +140,7 @@ def check_service(provider_name: str) -> bool:
         return True
 
     import urllib.request
+
     try:
         base = cfg["base_url"].rstrip("/v1")
         urllib.request.urlopen(f"{base}/api/version", timeout=2)

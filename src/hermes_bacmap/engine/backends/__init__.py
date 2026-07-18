@@ -20,7 +20,7 @@ _BUILTINS = {
 }
 
 
-def register(name: str, backend_class: Callable) -> None:
+def register(name: str, backend_class: Callable[..., Any]) -> None:
     _REG.register(name, backend_class)
 
 
@@ -35,7 +35,7 @@ def _ensure(name: str) -> None:
         register(key, cls)
 
 
-def get_backend(name: str, **kwargs: Any):
+def get_backend(name: str, **kwargs: Any) -> Any:
     _ensure(name)
     cls = _REG.get(name)
     if name in ("blastp", "blastx", "tblastn") and "tool" not in kwargs:

@@ -72,12 +72,20 @@ def _determine_flexneri_type(detected: set[str]) -> tuple[str, str]:
     if has_sf6:
         return "Shigella flexneri serotype 6", "high"
 
+    # Exact matches before near-matches: a more specific rule must win over
+    # a subset rule regardless of declaration order.
     for serotype, required in _FLEXNERI_RULES:
-        if not required:
-            continue
-        req_set = set(required)
-        if req_set == gtr_genes:
+        if required and set(required) == gtr_genes:
             return serotype, "high"
+
+    for serotype, alternatives in _FLEXNERI_OAC_VARIANTS.items():
+        for alt in alternatives:
+            if set(alt) == gtr_genes:
+                return serotype, "medium"
+
+    near = sorted((r for r in _FLEXNERI_RULES if r[1]), key=lambda r: -len(r[1]))
+    for serotype, required in near:
+        req_set = set(required)
         if req_set <= gtr_genes and len(req_set) >= len(gtr_genes) - 1:
             return serotype, "medium"
 
@@ -124,7 +132,7 @@ def _determine_boydii_type(detected: set[str]) -> tuple[int | None, str]:
 def serotype(
     query: str | Path,
     reads_r2: str | Path | None = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> ShigellaSerotypeResult:
     scan_result = scan(query, db_name="shigella_ref", reads_r2=reads_r2, **kwargs)
     detected = set(scan_result.unique_genes)
@@ -198,7 +206,7 @@ def serotype(
     return result
 
 
-def main():
+def main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(description="Shigella serotyper")

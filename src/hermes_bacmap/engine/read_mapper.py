@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import subprocess
 from pathlib import Path
+from typing import Any
 
 from ._env import which
 
@@ -34,7 +35,13 @@ def _sort_and_index(sam_stdout: str, out_bam: str, threads: int) -> None:
 
 
 class BwaReadMapper:
-    def map(self, reads: list[str], reference: str, out_bam: str, **kwargs) -> dict:
+    def map(
+        self,
+        reads: list[str],
+        reference: str,
+        out_bam: str,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
         threads = kwargs.get("threads", os.cpu_count() or 4)
         extra = kwargs.get("extra_args", "")
 
@@ -66,7 +73,13 @@ class BwaReadMapper:
 
 
 class Minimap2ReadMapper:
-    def map(self, reads: list[str], reference: str, out_bam: str, **kwargs) -> dict:
+    def map(
+        self,
+        reads: list[str],
+        reference: str,
+        out_bam: str,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
         threads = kwargs.get("threads", os.cpu_count() or 4)
         preset = kwargs.get("preset", "map-ont")
         extra = kwargs.get("extra_args", "")
@@ -96,7 +109,7 @@ class Minimap2ReadMapper:
         }
 
 
-def _get_mapper(name: str):
+def _get_mapper(name: str) -> BwaReadMapper | Minimap2ReadMapper:
     key = name.strip().lower()
     if key in ("bwa", "bwa-mem"):
         return BwaReadMapper()
@@ -115,8 +128,8 @@ class ReadMapper:
         reference: str,
         out_bam: str,
         mode: str = "auto",
-        **kwargs,
-    ) -> dict:
+        **kwargs: Any,
+    ) -> dict[str, Any]:
         if mode == "auto":
             mode = cls._select(reads)
         mapper = _get_mapper(mode)

@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from hermes_bacmap.utils import parse_mlst
+
 
 @dataclass
 class GenotypeMatch:
@@ -57,8 +59,8 @@ _DDL = [
 
 
 class StrainGenotypeIndex:
-    def __init__(self, db_path: str | Path):
-        self._conn = sqlite3.connect(str(db_path))
+    def __init__(self, db_path: str | Path) -> None:
+        self._conn: sqlite3.Connection = sqlite3.connect(str(db_path))
         self._conn.row_factory = sqlite3.Row
         self._conn.execute("PRAGMA journal_mode=WAL")
         for ddl in _DDL:
@@ -101,10 +103,18 @@ class StrainGenotypeIndex:
                  pipeline_version=excluded.pipeline_version,
                  updated_at=excluded.updated_at""",
             (
-                strain_id, organism, species, serotype, serotype_method,
-                mlst_scheme, mlst_st,
+                strain_id,
+                organism,
+                species,
+                serotype,
+                serotype_method,
+                mlst_scheme,
+                mlst_st,
                 json.dumps(plasmid_types or []),
-                object_id, analysis_date, pipeline_version, now,
+                object_id,
+                analysis_date,
+                pipeline_version,
+                now,
             ),
         )
 
@@ -162,9 +172,7 @@ class StrainGenotypeIndex:
             conditions.append("g.species = ?")
             params.append(species)
         if amr_gene:
-            amr_join = (
-                " INNER JOIN strain_amr_genes ag ON ag.strain_id = g.strain_id"
-            )
+            amr_join = " INNER JOIN strain_amr_genes ag ON ag.strain_id = g.strain_id"
             conditions.append("ag.gene_name = ?")
             params.append(amr_gene)
 
@@ -231,7 +239,8 @@ class StrainGenotypeIndex:
 
         sql = (
             "SELECT DISTINCT g.* FROM strain_genotype_index g"
-            + " WHERE " + " AND ".join(conditions)
+            + " WHERE "
+            + " AND ".join(conditions)
             + " ORDER BY g.analysis_date DESC LIMIT ?"
         )
         params.append(limit)
@@ -289,8 +298,12 @@ class StrainGenotypeIndex:
         if not row:
             return None
         genes = [
-            {"gene": r["gene_name"], "database": r["database"],
-             "coverage": r["coverage"], "identity": r["identity"]}
+            {
+                "gene": r["gene_name"],
+                "database": r["database"],
+                "coverage": r["coverage"],
+                "identity": r["identity"],
+            }
             for r in self._conn.execute(
                 "SELECT * FROM strain_amr_genes WHERE strain_id = ? ORDER BY gene_name",
                 (strain_id,),
@@ -312,9 +325,8 @@ class StrainGenotypeIndex:
         }
 
     def count(self) -> int:
-        return self._conn.execute(
-            "SELECT COUNT(*) FROM strain_genotype_index"
-        ).fetchone()[0]
+        row = self._conn.execute("SELECT COUNT(*) FROM strain_genotype_index").fetchone()
+        return int(row[0]) if row else 0
 
     def rebuild_from_gom(self, gom_conn: sqlite3.Connection) -> int:
         rows = gom_conn.execute(
@@ -353,9 +365,9 @@ class StrainGenotypeIndex:
         return count
 
     def close(self) -> None:
-        if hasattr(self, "_conn") and self._conn is not None:
-            self._conn.close()
-            self._conn = None
+        conn = getattr(self, "_conn", None)
+        if conn is not None:
+            conn.close()
 
 
 def _extract_genotype(payload: dict[str, Any]) -> dict[str, Any]:
@@ -385,17 +397,11 @@ def _extract_genotype(payload: dict[str, Any]) -> dict[str, Any]:
     mlst_st = ""
     mlst_raw = payload.get("mlst", "")
     if mlst_raw and isinstance(mlst_raw, str):
-        lines = mlst_raw.strip().split("\n")
-        if len(lines) >= 2:
-            headers = lines[0].split("\t")
-            fields = lines[1].split("\t")
-            row = dict(zip(headers, fields))
-            mlst_scheme = row.get("SCHEME", "")
-            mlst_st = row.get("ST", "")
-            if mlst_st and mlst_st not in ("N/A", "-", ""):
-                mlst_st = f"ST{mlst_st}" if not mlst_st.upper().startswith("ST") else mlst_st
-            else:
-                mlst_st = ""
+        parsed = parse_mlst(mlst_raw)
+        mlst_scheme = parsed["alleles"].get("scheme", "")
+        raw_st = parsed["st"]
+        if raw_st and raw_st not in ("N/A", "-", ""):
+            mlst_st = f"ST{raw_st}" if not raw_st.upper().startswith("ST") else raw_st
 
     amr_genes: list[dict[str, Any]] = []
     amr_data = payload.get("amr", {})
@@ -408,13 +414,15 @@ def _extract_genotype(payload: dict[str, Any]) -> dict[str, Any]:
                     if isinstance(hit, dict):
                         gene = hit.get("GENE", "").strip()
                         if gene:
-                            amr_genes.append({
-                                "gene": gene,
-                                "database": db_label,
-                                "coverage": float(hit.get("%COVERAGE", 0) or 0),
-                                "identity": float(hit.get("%IDENTITY", 0) or 0),
-                                "product": hit.get("PRODUCT", ""),
-                            })
+                            amr_genes.append(
+                                {
+                                    "gene": gene,
+                                    "database": db_label,
+                                    "coverage": float(hit.get("%COVERAGE", 0) or 0),
+                                    "identity": float(hit.get("%IDENTITY", 0) or 0),
+                                    "product": hit.get("PRODUCT", ""),
+                                }
+                            )
 
     plasmid_types: list[str] = []
     plasmid_data = payload.get("plasmid", {})

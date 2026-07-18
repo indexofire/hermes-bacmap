@@ -62,12 +62,13 @@ def parse_abricate_tsv(tsv_text: str) -> list[dict[str, str]]:
     return rows
 
 
-def read_json_file(path: str | Path) -> dict | None:
+def read_json_file(path: str | Path) -> dict[str, Any] | None:
     """Read and parse a JSON file, return None if missing or invalid."""
     p = Path(path)
     if not p.exists() or p.stat().st_size == 0:
         return None
     try:
-        return json.loads(p.read_text())
+        data: dict[str, Any] = json.loads(p.read_text())
+        return data
     except (json.JSONDecodeError, UnicodeDecodeError, OSError):
         return None

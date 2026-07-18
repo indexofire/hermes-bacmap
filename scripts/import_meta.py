@@ -14,6 +14,7 @@ Usage:
     # Add single record interactively
     python scripts/import_meta.py --add SAM-TYP-001 patient_name=张三 province=北京
 """
+
 from __future__ import annotations
 
 import argparse
@@ -66,8 +67,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Import strain metadata / lab results")
     parser.add_argument("--metadata", help="TSV file with strain metadata")
     parser.add_argument("--lab-results", help="TSV file with lab results")
-    parser.add_argument("--add", nargs="+", metavar="STRAIN_ID key=val key=val...",
-                        help="Add single metadata record")
+    parser.add_argument(
+        "--add",
+        nargs="+",
+        metavar="STRAIN_ID key=val key=val...",
+        help="Add single metadata record",
+    )
     args = parser.parse_args()
 
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)

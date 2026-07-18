@@ -51,8 +51,19 @@ def md5sum(path: Path) -> str:
 def download(url: str, dest: Path) -> bool:
     try:
         subprocess.run(
-            ["aria2c", "-x", "16", "-s", "16", "--console-log-level=error",
-             "-d", str(dest.parent), "-o", dest.name, url],
+            [
+                "aria2c",
+                "-x",
+                "16",
+                "-s",
+                "16",
+                "--console-log-level=error",
+                "-d",
+                str(dest.parent),
+                "-o",
+                dest.name,
+                url,
+            ],
             check=True,
             capture_output=True,
         )
@@ -110,9 +121,9 @@ def process_strain(row: dict, dry_run: bool = False) -> dict | None:
         if len(ftp_paths) == 1 and layout == "SINGLE":
             dest_name = f"{strain_id}_R1.fastq.gz"
         elif len(ftp_paths) == 2:
-            dest_name = f"{strain_id}_R{i+1}.fastq.gz"
+            dest_name = f"{strain_id}_R{i + 1}.fastq.gz"
         else:
-            dest_name = f"{strain_id}_file{i+1}.fastq.gz"
+            dest_name = f"{strain_id}_file{i + 1}.fastq.gz"
 
         dest = strain_dir / dest_name
         size_mb = int(size_str) / 1e6
