@@ -118,9 +118,9 @@ coverage (branch, fail_under=80) ✅ 90.26%
 
 按建议优先级排序:
 
-1. **提交保护成果**:阶段 0–2 全部变更按"配置 / bug 修复 / 测试 / 5 组 bug"拆成原子提交。
+1. ~~**提交保护成果**~~ ✅(2026-07-18 完成):拆为 4 个原子提交 —— `12cd7e9` 配置门禁、`d5a4525` bug 修复 + 收敛、`a828d7e` 测试扩充、`be2c59b` 评估文档。
 2. **小重复收敛**:`kma._parse_template` 与 `gene_scanner._parse_db_header` 的 `~~~` header 解析合并为一处。
-3. **文档对账**:工具数(17/19/23/24 四处矛盾)、测试数(193/202 → 994)、README 模块行数表、4 处死链(`docs/hermes-chat-guide.md` 等)。
+3. ~~**文档对账**~~ ✅(2026-07-18 完成):工具数统一为 24(7 处 17/19/23 矛盾)、测试数 193 → 994、README/overview/features 模块行数表按实测更新、rules 数统一为 24(10 个 .smk 共 23 rules + Snakefile `rule all`)、修复 7 处死链、`tools.md`/`features.md` 补齐漏列的 5–7 个工具。
 4. **sourmash 弃用 API 迁移**:`load_signatures`/`save_signatures` 将在 sourmash 5.0 移除(当前 45 条 deprecation warning)。
 5. **结构重构**:`tools.py` 拆分为 `tools/` 包 + 表驱动注册;`vpa_serotyper_engine.py` 按 kmer 排名 / 基因验证 / 报告生成拆分;样本状态逻辑抽取为 `services/sample_summary.py` 供 scripts 与 web 共用;子包补 `__all__`;`schemas.py` 外置。
 6. **集成测试**:`vpa_serotyper_engine` 剩余 ~51% 需 gold_standard 真实数据端到端测试;`web/app.py` 补 FastAPI TestClient 冒烟测试。

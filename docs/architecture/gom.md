@@ -1,6 +1,6 @@
 # GOM 数据模型
 
-Genome Object Model（GOM）是平台的**统一数据标准**，定义所有业务对象的结构、生命周期、版本管理与事件模型。基于 SQLite + WAL + FTS5，单文件零运维。本页是速查参考，完整设计文档见 [docs/gom-architecture.md](../gom-architecture.md)。
+Genome Object Model（GOM）是平台的**统一数据标准**，定义所有业务对象的结构、生命周期、版本管理与事件模型。基于 SQLite + WAL + FTS5，单文件零运维。
 
 ## 设计原则
 
@@ -208,5 +208,3 @@ python scripts/ingest_results.py --snp     # 再入库 cohort
 ## 迁移路径
 
 V1.0+ 触发条件：并发用户 ≥5、元数据 >1 亿行、复杂 KG 推理。SQLite → PostgreSQL（`payload_json TEXT` → `jsonb`，FTS5 → `pg_trgm + tsvector`），用 `pgloader` 一键迁移。
-
-完整设计文档（含 CompositeTriplet schema、GA4GH 映射、实际数据统计）见 [docs/gom-architecture.md](../gom-architecture.md)。

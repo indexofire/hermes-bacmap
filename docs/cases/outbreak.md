@@ -209,6 +209,6 @@ GenomeObject(
 ## 相关
 
 - [单株分析案例](single-sample.md) — 暴发调查的前置步骤
-- [Snakemake 管线](../architecture/pipeline.md) — 22 条规则与 SNP 5 步流程
+- [Snakemake 管线](../architecture/pipeline.md) — 24 条规则与 SNP 5 步流程
 - [Skills 技能系统](../architecture/skills.md) — interpret-results 的 SNP 阈值知识库
 - [工具列表](../reference/tools.md) — `bio_snp_tree` 工具详情

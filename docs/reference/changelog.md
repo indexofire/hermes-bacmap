@@ -10,7 +10,7 @@
 | **V0.2** | DEC + Shigella 扩展 | `uidA` / `ipaH` 双靶基因、`ecoh_serotyper`、ShigATyper 移植 58 种血清型、pathotype 判定 |
 | **V0.3** | SNP + 系统发育 | Salmonella LT2 参考基因组、`bwa` + `bcftools` + `IQ-TREE` 全基因组 SNP 树、暴发阈值 |
 | **V0.4** | 物种统一与架构精简 | `species_identifier.py` 合并 4 rule 为 1 次 BLAST、`gene_scanner` 通用引擎、血清型分流逻辑 |
-| **V0.5** | 引擎 + 注释 + Web UI + LLM | 原生基因组注释 (`pyrodigal` + Prokka DBs)、HTML 报告、Hermes 17 tools、LLM 自动解读 |
+| **V0.5** | 引擎 + 注释 + Web UI + LLM | 原生基因组注释 (`pyrodigal` + Prokka DBs)、HTML 报告、Hermes 24 tools、LLM 自动解读 |
 
 ## 各版本要点
 
@@ -42,7 +42,7 @@
 
 - `genome_annotator.py` 原生注释，预期 ~4500 CDS、75% 注释率
 - HTML 报告整合 verifier 证据链
-- 17 个 Hermes tools 支持自然语言交互
+- 24 个 Hermes tools 支持自然语言交互
 
 ## 当前状态
 

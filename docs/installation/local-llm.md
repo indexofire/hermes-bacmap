@@ -1,6 +1,6 @@
 # 本地 LLM 配置
 
-默认使用云端 Z.AI（GLM-5.2）推理。当需要**离线**、**数据不出境**或**多并发**时，可切换到本地 LLM。本页是速查参考，完整安装步骤见 [docs/local-llm-setup.md](../local-llm-setup.md)。
+默认使用云端 Z.AI（GLM-5.2）推理。当需要**离线**、**数据不出境**或**多并发**时，可切换到本地 LLM。
 
 ## Provider 对比
 
@@ -146,5 +146,3 @@ hermes chat
 | `CUDA out of memory` | 换更小模型；llama.cpp 减 `--n-gpu-layers`；vLLM 减 `--gpu-memory-utilization` |
 | Tool calling 不工作 | 确保模型是 Qwen3 系列（tool calling 支持稳定） |
 | 响应慢 | `nvidia-smi` 确认 GPU 在用；CPU 推理必然慢 |
-
-完整安装步骤（含无 sudo 安装、CPU 编译等）见 [docs/local-llm-setup.md](../local-llm-setup.md)。

@@ -195,4 +195,4 @@ cat workflows/bacmap/.snakemake/logs/*.snakemake.log | tail -50
 
 - [暴发调查案例](outbreak.md) — 7 株 Salmonella 的 SNP 聚类分析
 - [CLI 工具](../usage/cli.md) — 各脚本完整参数
-- [Snakemake 管线](../architecture/pipeline.md) — 22 条规则的完整 DAG
+- [Snakemake 管线](../architecture/pipeline.md) — 24 条规则的完整 DAG

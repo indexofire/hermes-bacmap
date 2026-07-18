@@ -257,4 +257,4 @@ resolve_gene_name("stx1a", syn)  # → "stx1"
 
 - [GOM 数据模型](gom.md) — Hit 结果最终序列化进 `payload_json`
 - [Snakemake 管线](pipeline.md) — 管线规则通过 `bio_gene_scan` Hermes tool 间接使用 engine
-- [工具列表](../reference/tools.md) — 23 个 tool 中 `bio_blast` / `bio_align` / `bio_gene_scan` 均基于 engine
+- [工具列表](../reference/tools.md) — 24 个 tool 中 `bio_blast` / `bio_align` / `bio_gene_scan` 均基于 engine

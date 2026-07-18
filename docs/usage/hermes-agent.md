@@ -187,7 +187,7 @@ Agent 会遵循**三层防御**机制：
 ```
 LLM 生成结果
     ↓
-Layer 1: JSON Schema 校验（schemas.py 定义 23 个 tool 的输入输出）
+Layer 1: JSON Schema 校验（schemas.py 定义 24 个 tool 的输入输出）
     ↓
 Layer 2: Deterministic Verifier（确定性规则校验）
          · species_verdict 必须包含 "Salmonella" 等

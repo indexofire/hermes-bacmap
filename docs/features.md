@@ -10,7 +10,7 @@
 1. [系统架构](#1-系统架构)
 2. [核心 Python 模块](#2-核心-python-模块)
 3. [Hermes Tools（16 个）](#3-hermes-tools16-个)
-4. [Snakemake Pipeline（21 条规则）](#4-snakemake-pipeline21-条规则)
+4. [Snakemake Pipeline（24 条规则）](#4-snakemake-pipeline24-条规则)
 5. [Genome Object Model (GOM)](#5-genome-object-model-gom)
 6. [物种鉴定系统](#6-物种鉴定系统)
 7. [血清型分析](#7-血清型分析)
@@ -44,7 +44,7 @@
 ┌────────▼───────┐ ┌───────▼────────┐ ┌──────▼─────────┐
 │  L1 固定管线    │ │  L2 确定性校验   │ │  L3 AI 解读     │
 │  Snakemake DAG │ │  Verifier       │ │  Skills + 搜索  │
-│  21 rules      │ │  21 tests       │ │  FTS5 + 知识库  │
+│  24 rules      │ │  21 tests       │ │  FTS5 + 知识库  │
 └────────┬───────┘ └───────┬────────┘ └──────┬─────────┘
          │                 │                  │
          └─────────────────┼──────────────────┘
@@ -75,21 +75,21 @@
 
 | 模块 | 行数 | 职责 |
 |---|---|---|
-| `tools.py` | 1572 | 17 个 Hermes tool handler 实现 |
-| `genome_object_service.py` | 644 | GOM：SQLite CRUD + 版本管理 + 事件 + 文件产物 + FTS5 搜索 |
-| `schemas.py` | 575 | 17 个 tool 的 JSON Schema 定义 |
-| `genome_annotator.py` | 288 | Python 版基因组注释（pyrodigal + Prokka DBs，替代 Prokka CLI） |
-| `engine/` | 800 | 算法抽象层：SequenceMatcher + ReadMapper + Hit + Registry |
-| `gene_scanner.py` | 420 | 通用基因扫描引擎（委托 engine.SequenceMatcher） |
-| `shigella_serotyper.py` | 207 | Shigella 血清型预测（移植 ShigATyper，58 种血清型） |
-| `deterministic_verifier.py` | 186 | 确定性规则校验（species/MLST/serotype/AMR 四层检查） |
-| `__init__.py` | 123 | 插件注册（17 tools + 4 skills 自动发现） |
-| `species_identifier.py` | 121 | 统一物种鉴定（invA/uidA/ipaH/toxR/tlh 五基因合并为 1 次 BLAST） |
-| `ecoh_serotyper.py` | 121 | E. coli O:H 血清型（委托 gene_scanner） |
+| `tools.py` | 1887 | 24 个 Hermes tool handler 实现 |
+| `genome_object_service.py` | 667 | GOM：SQLite CRUD + 版本管理 + 事件 + 文件产物 + FTS5 搜索 |
+| `schemas.py` | 844 | 24 个 tool 的 JSON Schema 定义 |
+| `genome_annotator.py` | 280 | Python 版基因组注释（pyrodigal + Prokka DBs，替代 Prokka CLI） |
+| `engine/` | 1121 | 算法抽象层：SequenceMatcher + ReadMapper + Hit + Registry |
+| `gene_scanner.py` | 546 | 通用基因扫描引擎（委托 engine.SequenceMatcher） |
+| `shigella_serotyper.py` | 231 | Shigella 血清型预测（移植 ShigATyper，58 种血清型） |
+| `deterministic_verifier.py` | 216 | 确定性规则校验（species/MLST/serotype/AMR 四层检查） |
+| `__init__.py` | 172 | 插件注册（24 tools + 4 skills 自动发现） |
+| `species_identifier.py` | 122 | 统一物种鉴定（invA/uidA/ipaH/toxR/tlh 五基因合并为 1 次 BLAST） |
+| `ecoh_serotyper.py` | 134 | E. coli O:H 血清型（委托 gene_scanner） |
 
 ---
 
-## 3. Hermes Tools（17 个）
+## 3. Hermes Tools（24 个）
 
 ### 3.1 底层生信工具（8 个）
 
@@ -104,7 +104,7 @@
 | `bio_samtools` | SAM/BAM 操作（9 个子命令：index/sort/flagstat/view/depth/faidx/mpileup/consensus/fixmate） | samtools |
 | `bio_variant` | 变异检测（mpileup_call/filter/query/annotate/consensus） | bcftools |
 
-### 3.2 高层分析工具（9 个）
+### 3.2 高层分析工具（16 个）
 
 | Tool | 功能 | 输入 | 输出 |
 |---|---|---|---|
@@ -117,6 +117,13 @@
 | `bio_snp_tree` | 获取 cohort-level 系统发育树 + 距离矩阵 | 无 | Newick + pairwise distances |
 | `bio_search_samples` | 自然语言样本检索（FTS5 + 字段加权） | 搜索词 | 匹配样本列表（含匹配字段 + 相关度分数） |
 | `bio_annotate` | 基因组注释（pyrodigal CDS + Prokka DBs blastp） | contigs 路径 | annotation JSON |
+| `bio_validate_taxonomy` | 物种鉴定（双模式：marker genes / GTDB-Tk） | sample_id, mode | completeness / contamination / gtdb_taxonomy |
+| `bio_diagnose` | 诊断管线失败（解析 Snakemake 日志） | log_path 或 stderr_text | 错误类型 / 根因 / 修复命令 |
+| `bio_vpa_serotype` | V. parahaemolyticus O/K 血清型预测 | contigs 路径 | 血清型 + 置信度 + coverage |
+| `bio_add_metadata` | 录入/更新菌株背景元数据 | sample_id + 字段 | 元数据记录 |
+| `bio_query_metadata` | 查询菌株背景元数据（流行病学信息） | 过滤条件 | 匹配记录 |
+| `bio_add_lab_result` | 录入湿实验结果（AST/血清学/生化/PCR） | sample_id + 结果 | 实验记录 |
+| `bio_query_lab_results` | 查询湿实验结果 | 过滤条件 | 匹配记录 |
 
 ### bio_search_samples 加权策略
 
@@ -133,7 +140,7 @@
 
 ---
 
-## 4. Snakemake Pipeline（21 条规则）
+## 4. Snakemake Pipeline（24 条规则）
 
 ### 4.1 DAG 概览
 
