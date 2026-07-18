@@ -50,6 +50,7 @@ nav:
     - GBrain 知识层: architecture/gbrain.md
     - Snakemake 管线: architecture/pipeline.md
     - Skills 技能系统: architecture/skills.md
+    - 代码质量评估: architecture/code-quality.md
   - 病原分析:
     - Salmonella: pathogens/salmonella.md
     - DEC / E.coli: pathogens/dec.md
