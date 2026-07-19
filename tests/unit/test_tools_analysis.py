@@ -5,8 +5,9 @@ list_samples, gene_scan, vpa_serotype, snp_tree, search_samples,
 validate_taxonomy, annotate_genome, diagnose_failure.
 
 We patch lazily-imported functions on their source module attributes and
-monkeypatch tools._RESULTS_DIR / _PROJECT_ROOT / _run_project_script
-to point to tmp paths or canned outputs.
+monkeypatch tools.pipeline._RESULTS_DIR / _PROJECT_ROOT / _run_project_script
+and tools.services._DEFAULT_DB_PATH / _RESULTS_DIR to point to tmp paths or
+canned outputs.
 """
 
 from __future__ import annotations
@@ -29,6 +30,8 @@ from hermes_bacmap.services.genome_object_service import (  # noqa: E402
     ObjectType,
 )
 from hermes_bacmap.services.strain_index import StrainGenotypeIndex  # noqa: E402
+from hermes_bacmap.tools import pipeline as tools_pipeline  # noqa: E402
+from hermes_bacmap.tools import services as tools_services  # noqa: E402
 
 
 def _parse(result: str) -> dict:
@@ -42,17 +45,18 @@ def _parse(result: str) -> dict:
 
 @pytest.fixture
 def tmp_results(tmp_path: Path, monkeypatch) -> Path:
-    """Redirect tools._RESULTS_DIR to a tmp directory."""
+    """Redirect tools.pipeline/tools.services _RESULTS_DIR to a tmp directory."""
     results = tmp_path / "results"
     results.mkdir()
-    monkeypatch.setattr(tools, "_RESULTS_DIR", results)
+    monkeypatch.setattr(tools_pipeline, "_RESULTS_DIR", results)
+    monkeypatch.setattr(tools_services, "_RESULTS_DIR", results)
     return results
 
 
 @pytest.fixture
 def tmp_project_root(tmp_path: Path, monkeypatch) -> Path:
-    """Redirect tools._PROJECT_ROOT to a tmp directory."""
-    monkeypatch.setattr(tools, "_PROJECT_ROOT", tmp_path)
+    """Redirect tools.pipeline._PROJECT_ROOT to a tmp directory."""
+    monkeypatch.setattr(tools_pipeline, "_PROJECT_ROOT", tmp_path)
     return tmp_path
 
 
@@ -99,7 +103,7 @@ class TestAnalyzePathogen:
             captured.update(script=script, args=args)
             return "ok"
 
-        monkeypatch.setattr(tools, "_run_project_script", fake_script)
+        monkeypatch.setattr(tools_pipeline, "_run_project_script", fake_script)
 
         r = _parse(tools.analyze_pathogen({"sample_id": "SAM-001", "cores": 4}))
         assert "Salmonella" in r["steps"]["species"]["verdict"]
@@ -109,7 +113,7 @@ class TestAnalyzePathogen:
         assert "4" in captured["args"]
 
     def test_summary_missing_after_run(self, tmp_results, monkeypatch):
-        monkeypatch.setattr(tools, "_run_project_script", lambda *a, **k: "ok")
+        monkeypatch.setattr(tools_pipeline, "_run_project_script", lambda *a, **k: "ok")
         r = _parse(tools.analyze_pathogen({"sample_id": "NO-SUCH"}))
         assert "error" in r
         assert "summary not found" in r["error"]
@@ -237,13 +241,13 @@ class TestGenerateReport:
         report_dir.mkdir(parents=True)
         html_path = report_dir / f"{sample}_report.html"
         html_path.write_text("<html>ok</html>")
-        monkeypatch.setattr(tools, "_run_project_script", lambda *a, **k: "ok")
+        monkeypatch.setattr(tools_pipeline, "_run_project_script", lambda *a, **k: "ok")
         r = _parse(tools.generate_report({"sample_id": sample}))
         assert r["sample_id"] == sample
         assert r["report_path"] == str(html_path)
 
     def test_report_generation_failed(self, tmp_results, monkeypatch):
-        monkeypatch.setattr(tools, "_run_project_script", lambda *a, **k: "ok")
+        monkeypatch.setattr(tools_pipeline, "_run_project_script", lambda *a, **k: "ok")
         r = _parse(tools.generate_report({"sample_id": "NOPE"}))
         assert "error" in r
         assert "Report generation failed" in r["error"]
@@ -429,13 +433,13 @@ class TestVpaSerotype:
 
 class TestSnpTree:
     def test_no_db_no_disk_summary(self, tmp_results, monkeypatch):
-        monkeypatch.setattr(tools, "_DEFAULT_DB_PATH", tmp_results / "no.sqlite")
+        monkeypatch.setattr(tools_services, "_DEFAULT_DB_PATH", tmp_results / "no.sqlite")
         r = _parse(tools.snp_tree({}))
         assert "error" in r
         assert "SNP tree not available" in r["error"]
 
     def test_disk_summary_happy(self, tmp_results, monkeypatch):
-        monkeypatch.setattr(tools, "_DEFAULT_DB_PATH", tmp_results / "no.sqlite")
+        monkeypatch.setattr(tools_services, "_DEFAULT_DB_PATH", tmp_results / "no.sqlite")
         snp_dir = tmp_results / "snp"
         snp_dir.mkdir()
         summary_path = snp_dir / "snp_summary.json"
@@ -455,7 +459,7 @@ class TestSnpTree:
         assert r["tree_newick"] == "(A,B);"
 
     def test_disk_summary_corrupt(self, tmp_results, monkeypatch):
-        monkeypatch.setattr(tools, "_DEFAULT_DB_PATH", tmp_results / "no.sqlite")
+        monkeypatch.setattr(tools_services, "_DEFAULT_DB_PATH", tmp_results / "no.sqlite")
         snp_dir = tmp_results / "snp"
         snp_dir.mkdir()
         (snp_dir / "snp_summary.json").write_text("{not json")
@@ -492,7 +496,7 @@ class TestSnpTree:
             )
             gos.create(obj)
 
-        monkeypatch.setattr(tools, "_DEFAULT_DB_PATH", db_path)
+        monkeypatch.setattr(tools_services, "_DEFAULT_DB_PATH", db_path)
         r = _parse(tools.snp_tree({}))
         assert r["source"] == "gom"
         assert r["n_samples"] == 2
@@ -508,14 +512,14 @@ class TestSnpTree:
 
 class TestSearchSamples:
     def test_db_missing(self, tmp_results, monkeypatch):
-        monkeypatch.setattr(tools, "_DEFAULT_DB_PATH", tmp_results / "no.sqlite")
+        monkeypatch.setattr(tools_services, "_DEFAULT_DB_PATH", tmp_results / "no.sqlite")
         r = _parse(tools.search_samples({}))
         assert "GOM database not found" in r["error"]
 
     def test_no_query_no_filters(self, tmp_path, monkeypatch):
         db_path = tmp_path / "gom.sqlite"
         GenomeObjectService(db_path).close()  # create empty DB
-        monkeypatch.setattr(tools, "_DEFAULT_DB_PATH", db_path)
+        monkeypatch.setattr(tools_services, "_DEFAULT_DB_PATH", db_path)
         r = _parse(tools.search_samples({}))
         assert "error" in r
         assert "Provide at least one" in r["error"]
@@ -546,7 +550,7 @@ class TestSearchSamples:
             object_id="obj-002",
         )
         idx.close()
-        monkeypatch.setattr(tools, "_DEFAULT_DB_PATH", db_path)
+        monkeypatch.setattr(tools_services, "_DEFAULT_DB_PATH", db_path)
 
         r = _parse(tools.search_samples({"serotype": "Typhimurium"}))
         assert r["count"] == 1
@@ -574,7 +578,7 @@ class TestSearchSamples:
             object_id="obj-002",
         )
         idx.close()
-        monkeypatch.setattr(tools, "_DEFAULT_DB_PATH", db_path)
+        monkeypatch.setattr(tools_services, "_DEFAULT_DB_PATH", db_path)
 
         r = _parse(tools.search_samples({"amr_gene": "blaCTX-M-15"}))
         assert r["count"] == 1
@@ -609,7 +613,7 @@ class TestSearchSamples:
                 tool_versions={"abricate": "1.0.0"},
             )
             gos.create(obj)
-        monkeypatch.setattr(tools, "_DEFAULT_DB_PATH", db_path)
+        monkeypatch.setattr(tools_services, "_DEFAULT_DB_PATH", db_path)
 
         # "ST 19" form — handler parses ST-number query and matches mlst ST=19.
         r = _parse(tools.search_samples({"query": "ST 19"}))
@@ -643,7 +647,7 @@ class TestSearchSamples:
                 tool_versions={"abricate": "1.0.0"},
             )
             gos.create(obj)
-        monkeypatch.setattr(tools, "_DEFAULT_DB_PATH", db_path)
+        monkeypatch.setattr(tools_services, "_DEFAULT_DB_PATH", db_path)
 
         r = _parse(tools.search_samples({"query": "tet(A)"}))
         assert r["count"] >= 1
@@ -672,7 +676,7 @@ class TestSearchSamples:
                 tool_versions={"sistr": "1.1.0"},
             )
             gos.create(obj)
-        monkeypatch.setattr(tools, "_DEFAULT_DB_PATH", db_path)
+        monkeypatch.setattr(tools_services, "_DEFAULT_DB_PATH", db_path)
 
         r = _parse(tools.search_samples({"query": "typhimurium"}))
         assert r["count"] >= 1
@@ -847,7 +851,7 @@ class TestDiagnoseFailure:
 
     def test_log_path_no_log(self, tmp_path, monkeypatch):
         # No log file at given path and no .snakemake/log either.
-        monkeypatch.setattr(tools, "_PROJECT_ROOT", tmp_path)
+        monkeypatch.setattr(tools_pipeline, "_PROJECT_ROOT", tmp_path)
         r = _parse(tools.diagnose_failure({"log_path": str(tmp_path / "missing.log")}))
         assert r["error_type"] == "no_log"
 
@@ -856,14 +860,14 @@ class TestDiagnoseFailure:
         log_path.write_text(
             "Running rule shovill\nError locking directory workflows/bacmap\nTraceback shown.\n"
         )
-        monkeypatch.setattr(tools, "_PROJECT_ROOT", tmp_path)
+        monkeypatch.setattr(tools_pipeline, "_PROJECT_ROOT", tmp_path)
         r = _parse(tools.diagnose_failure({"log_path": str(log_path)}))
         assert r["error_type"] == "lock"
 
     def test_log_path_no_errors(self, tmp_path, monkeypatch):
         log_path = tmp_path / "snakemake.log"
         log_path.write_text("all good today\n")
-        monkeypatch.setattr(tools, "_PROJECT_ROOT", tmp_path)
+        monkeypatch.setattr(tools_pipeline, "_PROJECT_ROOT", tmp_path)
         r = _parse(tools.diagnose_failure({"log_path": str(log_path)}))
         assert r["error_type"] == "no_error"
 
@@ -871,6 +875,6 @@ class TestDiagnoseFailure:
         # When neither stderr_text nor log_path given, handler uses
         # workflows/bacmap/.snakemake/log. We point _PROJECT_ROOT to tmp
         # so the lookup happens in an empty dir → no_log.
-        monkeypatch.setattr(tools, "_PROJECT_ROOT", tmp_path)
+        monkeypatch.setattr(tools_pipeline, "_PROJECT_ROOT", tmp_path)
         r = _parse(tools.diagnose_failure({}))
         assert r["error_type"] == "no_log"

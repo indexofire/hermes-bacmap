@@ -3,7 +3,7 @@
 Covers: query_metadata, add_metadata, query_lab_results, add_lab_result.
 
 Each test builds a real tmp SQLite DB via StrainMetadataService /
-LabResultService and monkeypatches tools._DEFAULT_DB_PATH to it.
+LabResultService and monkeypatches tools.services._DEFAULT_DB_PATH to it.
 """
 
 from __future__ import annotations
@@ -20,6 +20,7 @@ sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 from hermes_bacmap import tools  # noqa: E402
 from hermes_bacmap.services.lab_results import LabResultService  # noqa: E402
 from hermes_bacmap.services.strain_metadata import StrainMetadataService  # noqa: E402
+from hermes_bacmap.tools import services as tools_services  # noqa: E402
 
 
 def _parse(result: str) -> dict:
@@ -33,7 +34,7 @@ def _parse(result: str) -> dict:
 
 @pytest.fixture
 def populated_db(tmp_path: Path, monkeypatch) -> Path:
-    """A real tmp SQLite DB with metadata + lab results, wired as tools._DEFAULT_DB_PATH."""
+    """A real tmp SQLite DB with metadata + lab results, set as tools.services._DEFAULT_DB_PATH."""
     db_path = tmp_path / "test.sqlite"
 
     with StrainMetadataService(db_path) as svc:
@@ -84,7 +85,7 @@ def populated_db(tmp_path: Path, monkeypatch) -> Path:
             method="broth_microdilution",
         )
 
-    monkeypatch.setattr(tools, "_DEFAULT_DB_PATH", db_path)
+    monkeypatch.setattr(tools_services, "_DEFAULT_DB_PATH", db_path)
     return db_path
 
 
@@ -95,7 +96,7 @@ def populated_db(tmp_path: Path, monkeypatch) -> Path:
 
 class TestQueryMetadata:
     def test_db_missing(self, tmp_path: Path, monkeypatch):
-        monkeypatch.setattr(tools, "_DEFAULT_DB_PATH", tmp_path / "no.sqlite")
+        monkeypatch.setattr(tools_services, "_DEFAULT_DB_PATH", tmp_path / "no.sqlite")
         r = _parse(tools.query_metadata({}))
         assert "Database not found" in r["error"]
 
@@ -151,7 +152,7 @@ class TestAddMetadata:
         # add_metadata does NOT pre-check DB existence (unlike query_metadata).
         # It opens StrainMetadataService which creates the DB on demand.
         fresh_db = tmp_path / "fresh.sqlite"
-        monkeypatch.setattr(tools, "_DEFAULT_DB_PATH", fresh_db)
+        monkeypatch.setattr(tools_services, "_DEFAULT_DB_PATH", fresh_db)
         r = _parse(
             tools.add_metadata(
                 {
@@ -201,7 +202,7 @@ class TestAddMetadata:
 
 class TestQueryLabResults:
     def test_db_missing(self, tmp_path: Path, monkeypatch):
-        monkeypatch.setattr(tools, "_DEFAULT_DB_PATH", tmp_path / "no.sqlite")
+        monkeypatch.setattr(tools_services, "_DEFAULT_DB_PATH", tmp_path / "no.sqlite")
         r = _parse(tools.query_lab_results({}))
         assert "Database not found" in r["error"]
 
@@ -246,7 +247,7 @@ class TestAddLabResult:
         db = tmp_path / "lab.sqlite"
         with LabResultService(db):
             pass  # create schema
-        monkeypatch.setattr(tools, "_DEFAULT_DB_PATH", db)
+        monkeypatch.setattr(tools_services, "_DEFAULT_DB_PATH", db)
 
         r = _parse(
             tools.add_lab_result(

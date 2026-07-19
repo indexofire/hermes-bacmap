@@ -2,8 +2,8 @@
 
 Covers: blast, align, samtools_op, variant.
 
-No real binaries are invoked. We monkeypatch tools._which_or_error,
-tools._run_cmd, and (for variant's Popen-based helpers) tools.subprocess.*
+No real binaries are invoked. We monkeypatch tools.cli._which_or_error,
+tools.cli._run_cmd, and (for variant's Popen-based helpers) tools.cli.subprocess.*
 to feed canned stdout / returncodes.
 """
 
@@ -18,6 +18,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
 from hermes_bacmap import tools  # noqa: E402
+from hermes_bacmap.tools import cli as tools_cli  # noqa: E402
 
 
 def _parse(result: str) -> dict:
@@ -111,7 +112,7 @@ class TestBlast:
         assert "Local BLAST needs 'database'" in r["error"]
 
     def test_local_blastn_binary_missing(self, monkeypatch):
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: None)
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: None)
         r = _parse(tools.blast({"query": "ACGT", "mode": "local", "database": "subj.fa"}))
         assert "not found" in r["error"]
 
@@ -119,7 +120,7 @@ class TestBlast:
         def which(cmd):
             return "/usr/bin/blastn" if cmd == "blastn" else None
 
-        monkeypatch.setattr(tools, "_which_or_error", which)
+        monkeypatch.setattr(tools_cli, "_which_or_error", which)
         r = _parse(tools.blast({"query": "ACGT", "mode": "local", "database": "subj.fa"}))
         assert "makeblastdb not found" in r["error"]
 
@@ -141,8 +142,8 @@ class TestBlast:
                 return {"returncode": 0, "stdout": "", "stderr": ""}
             return {"returncode": 0, "stdout": canned_outfmt6, "stderr": ""}
 
-        monkeypatch.setattr(tools, "_which_or_error", which)
-        monkeypatch.setattr(tools, "_run_cmd", fake_run_cmd)
+        monkeypatch.setattr(tools_cli, "_which_or_error", which)
+        monkeypatch.setattr(tools_cli, "_run_cmd", fake_run_cmd)
 
         r = _parse(
             tools.blast(
@@ -161,9 +162,9 @@ class TestBlast:
 
     def test_local_makeblastdb_failure(self, monkeypatch, tmp_path):
         subj = _write(tmp_path, "subj.fa", ">subj\nGGGG\n")
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
         monkeypatch.setattr(
-            tools,
+            tools_cli,
             "_run_cmd",
             lambda cmd, timeout=3600: {
                 "returncode": 1,
@@ -176,21 +177,21 @@ class TestBlast:
 
     def test_local_blast_failure(self, monkeypatch, tmp_path):
         subj = _write(tmp_path, "subj.fa", ">subj\nGGGG\n")
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
 
         def fake(cmd, timeout=3600):
             if "makeblastdb" in cmd:
                 return {"returncode": 0, "stdout": "", "stderr": ""}
             return {"returncode": 1, "stdout": "", "stderr": "blastn error"}
 
-        monkeypatch.setattr(tools, "_run_cmd", fake)
+        monkeypatch.setattr(tools_cli, "_run_cmd", fake)
         r = _parse(tools.blast({"query": "ACGT", "mode": "local", "database": subj}))
         assert "blastn failed" in r["error"]
 
     def test_local_writes_output_file(self, monkeypatch, tmp_path):
         subj = _write(tmp_path, "subj.fa", ">subj\nGGGG\n")
         out = tmp_path / "out.tsv"
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
         outfmt = "query\tsubj1\t100.0\t50\t0\t0\t1\t50\t1\t50\t1e-50\t100.0\n"
 
         def fake(cmd, timeout=3600):
@@ -198,7 +199,7 @@ class TestBlast:
                 return {"returncode": 0, "stdout": "", "stderr": ""}
             return {"returncode": 0, "stdout": outfmt, "stderr": ""}
 
-        monkeypatch.setattr(tools, "_run_cmd", fake)
+        monkeypatch.setattr(tools_cli, "_run_cmd", fake)
         r = _parse(
             tools.blast(
                 {
@@ -398,29 +399,29 @@ class TestSamtoolsOp:
         assert "error" in r
 
     def test_samtools_binary_missing(self, monkeypatch):
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: None)
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: None)
         r = _parse(tools.samtools_op({"operation": "index", "input": "x.bam"}))
         assert "samtools not found" in r["error"]
 
     def test_input_not_found(self, monkeypatch):
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: "/usr/bin/samtools")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: "/usr/bin/samtools")
         r = _parse(tools.samtools_op({"operation": "index", "input": "/no/such.bam"}))
         assert "Input not found" in r["error"]
 
     def test_unknown_operation(self, monkeypatch, tmp_path):
         bam = _write(tmp_path, "x.bam", "")
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: "/usr/bin/samtools")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: "/usr/bin/samtools")
         r = _parse(tools.samtools_op({"operation": "bogus", "input": bam}))
         assert "Unknown operation" in r["error"]
 
     def _setup(self, monkeypatch, stdout="", stderr="", rc=0):
         """Wire _which + _run_cmd to canned outputs."""
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: "/usr/bin/samtools")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: "/usr/bin/samtools")
 
         def fake_run(cmd, timeout=3600):
             return {"returncode": rc, "stdout": stdout, "stderr": stderr}
 
-        monkeypatch.setattr(tools, "_run_cmd", fake_run)
+        monkeypatch.setattr(tools_cli, "_run_cmd", fake_run)
 
     def test_sort_no_output_arg(self, monkeypatch, tmp_path):
         bam = _write(tmp_path, "x.bam", "")
@@ -603,7 +604,7 @@ class TestVariant:
 
     # ---- mpileup_call ----
     def test_mpileup_call_bcftools_missing(self, monkeypatch):
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: None)
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: None)
         r = _parse(tools.variant({"operation": "mpileup_call"}))
         assert "bcftools not found" in r["error"]
 
@@ -611,17 +612,17 @@ class TestVariant:
         def which(cmd):
             return "/usr/bin/bcftools" if cmd == "bcftools" else None
 
-        monkeypatch.setattr(tools, "_which_or_error", which)
+        monkeypatch.setattr(tools_cli, "_which_or_error", which)
         r = _parse(tools.variant({"operation": "mpileup_call"}))
         assert "samtools not found" in r["error"]
 
     def test_mpileup_call_missing_reference(self, monkeypatch):
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
         r = _parse(tools.variant({"operation": "mpileup_call", "input": "x.bam"}))
         assert "reference" in r["error"]
 
     def test_mpileup_call_missing_output(self, monkeypatch):
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
         r = _parse(
             tools.variant(
                 {
@@ -638,7 +639,7 @@ class TestVariant:
         ref = _write(tmp_path, "ref.fa", ">r\nACGT\n")
         out = str(tmp_path / "out.vcf")
 
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
 
         # Need to stub subprocess.Popen + subprocess.run for indexing and
         # subprocess.run for the bcftools call stage.
@@ -661,8 +662,8 @@ class TestVariant:
             # else: samtools faidx / samtools index — no-op
             return _FakeCompletedProc(returncode=0)
 
-        monkeypatch.setattr(tools.subprocess, "Popen", FakePopen)
-        monkeypatch.setattr(tools.subprocess, "run", fake_run)
+        monkeypatch.setattr(tools_cli.subprocess, "Popen", FakePopen)
+        monkeypatch.setattr(tools_cli.subprocess, "run", fake_run)
 
         r = _parse(
             tools.variant(
@@ -685,7 +686,7 @@ class TestVariant:
         ref = _write(tmp_path, "ref.fa", ">r\nACGT\n")
         out = str(tmp_path / "out.vcf")
 
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
 
         class FakePopen(_FakePopen):
             def __init__(self, cmd, **kwargs):
@@ -697,8 +698,8 @@ class TestVariant:
         def fake_run(cmd, **kwargs):
             return _FakeCompletedProc(returncode=1, stderr=b"call boom")
 
-        monkeypatch.setattr(tools.subprocess, "Popen", FakePopen)
-        monkeypatch.setattr(tools.subprocess, "run", fake_run)
+        monkeypatch.setattr(tools_cli.subprocess, "Popen", FakePopen)
+        monkeypatch.setattr(tools_cli.subprocess, "run", fake_run)
 
         r = _parse(
             tools.variant(
@@ -714,25 +715,25 @@ class TestVariant:
 
     # ---- filter ----
     def test_filter_bcftools_missing(self, monkeypatch):
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: None)
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: None)
         r = _parse(tools.variant({"operation": "filter", "input": "x.vcf"}))
         assert "bcftools not found" in r["error"]
 
     def test_filter_input_missing(self, monkeypatch):
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
         r = _parse(tools.variant({"operation": "filter", "input": "/no/such.vcf"}))
         assert "VCF not found" in r["error"]
 
     def test_filter_no_filter_expr(self, monkeypatch, tmp_path):
         vcf = _write(tmp_path, "x.vcf", "#CHROM\n")
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
         r = _parse(tools.variant({"operation": "filter", "input": vcf}))
         assert "filter_expr" in r["error"]
 
     def test_filter_happy(self, monkeypatch, tmp_path):
         vcf = _write(tmp_path, "x.vcf", "#CHROM\nchr1\t1\nchr1\t2\n")
         out = str(tmp_path / "filt.vcf")
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
 
         # _run_cmd writes the filtered VCF out so _count_vcf_records works.
         def fake_run(cmd, timeout=3600):
@@ -742,7 +743,7 @@ class TestVariant:
                 Path(cmd[idx + 1]).write_text("#CHROM\nchr1\t1\n")
             return {"returncode": 0, "stdout": "", "stderr": ""}
 
-        monkeypatch.setattr(tools, "_run_cmd", fake_run)
+        monkeypatch.setattr(tools_cli, "_run_cmd", fake_run)
         r = _parse(
             tools.variant(
                 {
@@ -759,9 +760,9 @@ class TestVariant:
 
     def test_filter_failure(self, monkeypatch, tmp_path):
         vcf = _write(tmp_path, "x.vcf", "#CHROM\nchr1\t1\n")
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
         monkeypatch.setattr(
-            tools,
+            tools_cli,
             "_run_cmd",
             lambda cmd, timeout=3600: {"returncode": 1, "stdout": "", "stderr": "bad"},
         )
@@ -778,20 +779,20 @@ class TestVariant:
 
     # ---- query ----
     def test_query_bcftools_missing(self, monkeypatch):
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: None)
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: None)
         r = _parse(tools.variant({"operation": "query", "input": "x.vcf"}))
         assert "bcftools not found" in r["error"]
 
     def test_query_input_missing(self, monkeypatch):
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
         r = _parse(tools.variant({"operation": "query", "input": "/no/such.vcf"}))
         assert "VCF not found" in r["error"]
 
     def test_query_happy(self, monkeypatch, tmp_path):
         vcf = _write(tmp_path, "x.vcf", "#CHROM\n")
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
         monkeypatch.setattr(
-            tools,
+            tools_cli,
             "_run_cmd",
             lambda cmd, timeout=3600: {
                 "returncode": 0,
@@ -806,9 +807,9 @@ class TestVariant:
 
     def test_query_failure(self, monkeypatch, tmp_path):
         vcf = _write(tmp_path, "x.vcf", "#CHROM\n")
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
         monkeypatch.setattr(
-            tools,
+            tools_cli,
             "_run_cmd",
             lambda cmd, timeout=3600: {"returncode": 1, "stdout": "", "stderr": "bad"},
         )
@@ -817,21 +818,21 @@ class TestVariant:
 
     # ---- annotate ----
     def test_annotate_bcftools_missing(self, monkeypatch):
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: None)
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: None)
         r = _parse(tools.variant({"operation": "annotate", "input": "x.vcf"}))
         assert "bcftools not found" in r["error"]
 
     def test_annotate_input_missing(self, monkeypatch):
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
         r = _parse(tools.variant({"operation": "annotate", "input": "/no/such.vcf"}))
         assert "VCF not found" in r["error"]
 
     def test_annotate_happy(self, monkeypatch, tmp_path):
         vcf = _write(tmp_path, "x.vcf", "#CHROM\nchr1\t1\n")
         out = str(tmp_path / "annot.vcf")
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
         monkeypatch.setattr(
-            tools,
+            tools_cli,
             "_run_cmd",
             lambda cmd, timeout=3600: {"returncode": 0, "stdout": "", "stderr": ""},
         )
@@ -841,9 +842,9 @@ class TestVariant:
 
     def test_annotate_failure(self, monkeypatch, tmp_path):
         vcf = _write(tmp_path, "x.vcf", "#CHROM\nchr1\t1\n")
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
         monkeypatch.setattr(
-            tools,
+            tools_cli,
             "_run_cmd",
             lambda cmd, timeout=3600: {"returncode": 1, "stdout": "", "stderr": "bad"},
         )
@@ -852,18 +853,18 @@ class TestVariant:
 
     # ---- consensus ----
     def test_consensus_bcftools_missing(self, monkeypatch):
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: None)
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: None)
         r = _parse(tools.variant({"operation": "consensus", "input": "x.vcf"}))
         assert "bcftools not found" in r["error"]
 
     def test_consensus_missing_reference(self, monkeypatch):
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
         r = _parse(tools.variant({"operation": "consensus", "input": "x.vcf"}))
         assert "reference" in r["error"]
 
     def test_consensus_missing_output(self, monkeypatch, tmp_path):
         ref = _write(tmp_path, "ref.fa", ">r\nACGT\n")
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
         r = _parse(
             tools.variant(
                 {
@@ -879,7 +880,7 @@ class TestVariant:
         ref = _write(tmp_path, "ref.fa", ">r\nACGT\n")
         vcf = _write(tmp_path, "x.vcf", "#CHROM\nchr1\t1\n")
         out = str(tmp_path / "cons.fa")
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
 
         def fake_run(cmd, **kwargs):
             # If stdout is an open file, write FASTA to it.
@@ -888,7 +889,7 @@ class TestVariant:
                 f.write(">consensus\nACGT\n")
             return _FakeCompletedProc(returncode=0)
 
-        monkeypatch.setattr(tools.subprocess, "run", fake_run)
+        monkeypatch.setattr(tools_cli.subprocess, "run", fake_run)
         r = _parse(
             tools.variant(
                 {
@@ -907,9 +908,9 @@ class TestVariant:
         ref = _write(tmp_path, "ref.fa", ">r\nACGT\n")
         vcf = _write(tmp_path, "x.vcf", "#CHROM\n")
         out = str(tmp_path / "cons.fa")
-        monkeypatch.setattr(tools, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
+        monkeypatch.setattr(tools_cli, "_which_or_error", lambda cmd: f"/usr/bin/{cmd}")
         monkeypatch.setattr(
-            tools.subprocess,
+            tools_cli.subprocess,
             "run",
             lambda cmd, **kwargs: _FakeCompletedProc(returncode=1, stderr="boom"),
         )
@@ -928,5 +929,5 @@ class TestVariant:
     def test_count_vcf_records_helper(self, tmp_path):
         p = tmp_path / "x.vcf"
         p.write_text("##header\n#CHROM\nchr1\t1\nchr1\t2\n\n")
-        assert tools._count_vcf_records(str(p)) == 2
-        assert tools._count_vcf_records(str(tmp_path / "nope.vcf")) == 0
+        assert tools_cli._count_vcf_records(str(p)) == 2
+        assert tools_cli._count_vcf_records(str(tmp_path / "nope.vcf")) == 0

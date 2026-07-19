@@ -18,6 +18,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
 from hermes_bacmap import tools  # noqa: E402
+from hermes_bacmap.tools import seq as tools_seq  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -133,28 +134,28 @@ class TestSeqStats:
 
     def test_biopython_unavailable_path(self, tmp_path, monkeypatch):
         path = _write(tmp_path, "demo.fa", FASTA_TWO)
-        monkeypatch.setattr(tools, "_ensure_biopython", lambda: False)
+        monkeypatch.setattr(tools_seq, "_ensure_biopython", lambda: False)
         r = _parse(tools.seq_stats({"file": path}))
         assert "Biopython" in r["error"]
 
     def test_n50_calc_helper(self):
         # 3 contigs summing to 12; half = 6; sorted desc [5,4,3]; cumsum 5 (<6),
         # 9 (>=6) → N50 = 4.
-        assert tools._calc_n50([3, 4, 5]) == 4
+        assert tools_seq._calc_n50([3, 4, 5]) == 4
 
     def test_median_helper(self):
-        assert tools._median([1, 3, 5]) == 3
-        assert tools._median([1, 2, 3, 4]) == 2.5
-        assert tools._median([]) == 0
-        assert tools._median([7]) == 7
+        assert tools_seq._median([1, 3, 5]) == 3
+        assert tools_seq._median([1, 2, 3, 4]) == 2.5
+        assert tools_seq._median([]) == 0
+        assert tools_seq._median([7]) == 7
 
     def test_histogram_helper(self):
-        h = tools._histogram([10, 20, 30], bins=2)
+        h = tools_seq._histogram([10, 20, 30], bins=2)
         assert len(h) == 2
         assert sum(b["count"] for b in h) == 3
         # All-same-values returns single bucket.
-        assert tools._histogram([5, 5, 5]) == [{"bin": "5", "count": 3}]
-        assert tools._histogram([]) == []
+        assert tools_seq._histogram([5, 5, 5]) == [{"bin": "5", "count": 3}]
+        assert tools_seq._histogram([]) == []
 
 
 # ===========================================================================
@@ -374,7 +375,7 @@ class TestFastqQc:
 
     def test_biopython_unavailable(self, tmp_path, monkeypatch):
         path = _write(tmp_path, "r.fastq", FASTQ_TWO)
-        monkeypatch.setattr(tools, "_ensure_biopython", lambda: False)
+        monkeypatch.setattr(tools_seq, "_ensure_biopython", lambda: False)
         r = _parse(tools.fastq_qc({"files": [path]}))
         assert "Biopython" in r["error"]
 
@@ -453,7 +454,7 @@ class TestSeqConvert:
 
     def test_biopython_unavailable(self, tmp_path, monkeypatch):
         in_path = _write(tmp_path, "in.fa", FASTA_TWO)
-        monkeypatch.setattr(tools, "_ensure_biopython", lambda: False)
+        monkeypatch.setattr(tools_seq, "_ensure_biopython", lambda: False)
         r = _parse(
             tools.seq_convert({"input_file": in_path, "output_file": str(tmp_path / "out.fa")})
         )
@@ -461,10 +462,10 @@ class TestSeqConvert:
 
     def test_format_detection_alias(self):
         # Extension aliases should map to canonical names.
-        assert tools._detect_format("/x/y.fna") == "fasta"
-        assert tools._detect_format("/x/y.fq") == "fastq"
-        assert tools._detect_format("/x/y.gb") == "genbank"
+        assert tools_seq._detect_format("/x/y.fna") == "fasta"
+        assert tools_seq._detect_format("/x/y.fq") == "fastq"
+        assert tools_seq._detect_format("/x/y.gb") == "genbank"
         # Hint wins over extension.
-        assert tools._detect_format("/x/y.fa", hint="genbank") == "genbank"
+        assert tools_seq._detect_format("/x/y.fa", hint="genbank") == "genbank"
         # No suffix → fasta default.
-        assert tools._detect_format("/x/y_noext") == "fasta"
+        assert tools_seq._detect_format("/x/y_noext") == "fasta"
