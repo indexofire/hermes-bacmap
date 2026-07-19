@@ -1,20 +1,18 @@
 # 尚存问题清单
 
 > **最后更新**: 2026-07-18
-> **测试状态**: 1014 passed, 0 failed
+> **测试状态**: 1042 passed, 0 failed
 > **来源**: 代码审计 Round 1-9（58 bugs 已修复）
 
 ---
 
 ## 🟠 Medium — 防御性改进
 
-### M1. MinimapBackend kwargs 盲传
+### M1. (已完成 — MinimapBackend kwargs 参数映射 + bool 处理)
 
-- **位置**: `src/hermes_bacmap/engine/backends/blast.py:158-160`
+- **位置**: `src/hermes_bacmap/engine/backends/minimap2.py`
 - **问题**: `MinimapBackend.find()` 的 kwargs 循环直接将每个 key-value 拼成 `-key value`，无参数映射表（`_PARAM_MAP`）、无 bool 处理、无 skip None。如果调用方传 `c=True`，会生成 `-c True`（错误——应为 `-c`）。
-- **当前影响**: 无。当前无调用方向 MinimapBackend 传 bool kwargs。
-- **修复方案**: 参考 `BlastBackend.find()` 的 kwargs 处理逻辑，加 `_PARAM_MAP` + bool 分支 + skip 已在 cmd 中的参数。
-- **优先级**: 等需要扩展 minimap2 参数时再修。
+- **修复**(2026-07-18): 参照 `BlastBackend.find()` 的模式——加 `_PARAM_MAP`(pythonic 名 → minimap2 短选项)、bool True 生成裸 flag、bool False/None 跳过、`threads` kwarg 替换已有 `-t` 值而非追加。新增 4 个单测覆盖。
 
 ### M2. ReadMapper 长读段路由错误
 
@@ -105,10 +103,10 @@
 - **状态**: pixi solver 与现有依赖冲突；系统 R 4.6 cpp11 不兼容
 - **替代方案**: conda create -n r-viz -c bioconda -c conda-forge r-base=4.4 r-ggplot2 bioconductor-ggtree
 
-### A4. 端到端集成测试（CI）
+### A4. (部分完成 — DAG dry-run + web 冒烟已入 CI)
 
-- **状态**: CI 只跑 1014 个 unit tests，无 Snakemake DAG 端到端测试
-- **优先级**: 中
+- **状态**: ✅ 2026-07-18 已加 `snakemake-dag` CI job(pip 装 snakemake 7.32 + dummy reads,`snakemake -n` 构建 179-job DAG)与 13 个 FastAPI TestClient 冒烟测试;`_vpa_genes` 有 RIMD O3:K6 端到端测试(5 个)
+- **剩余**: 无真实数据的全流程 Snakemake 执行测试(需 gold_standard FASTQ,体量大,暂不入 CI)
 
 ### A5. Tool 重命名（可选）
 

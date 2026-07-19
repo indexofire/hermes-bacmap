@@ -161,7 +161,7 @@ hermes-bacmap/
 │   └── scripts/                 collect_summary / SNP matrix
 ├── scripts/                     编排脚本（run_analysis / ingest / report）
 ├── skills/                      4 个 Hermes Skills
-├── tests/                       1014 tests
+├── tests/                       1042 tests
 ├── data/reference/              13 个参考数据库
 ├── web/                         FastAPI Web UI
 ├── pixi.toml                    生信工具依赖

@@ -6,6 +6,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — 阶段 3 结构重构 + 质量改进（2026-07-18）
+
+- **tools.py 拆包**：1887 行上帝模块 → `tools/` 包（seq / cli / pipeline / services + `_common` 共享基座），`registry.py` 表驱动注册；新增 `@tool_handler` 装饰器统一错误兜底，补齐 5 个无保护 handler
+- **vpa_serotyper_engine 拆分**：1027 行 → `_vpa_kmer` / `_vpa_genes` / `_vpa_report` + 430 行编排 facade；6 个嵌套闭包收敛为纯函数，6 处全库扫描收敛为 `_RefFasta` 缓存
+- **样本状态逻辑收敛**：新增 `services/sample_summary.py`，`run_analysis.py` 与 `web/app.py` 共用
+- **循环依赖破环**：`species_identifier` 删除 `mode="standard"` 透传分支，依赖单向化
+- **子包导出**：`analysis/` `services/` `typing/` 补 `__init__.py` 导出 + `__all__`
+- **sourmash API 迁移**：`load_signatures` → `load_file_as_signatures`，`save_signatures` → `SaveSignaturesToLocation`，45 条 deprecation warning 清零
+- **`~~~` header 解析收敛**：`kma._parse_template` 与 `gene_scanner._parse_db_header` 合并为 `utils.parse_db_header`
+- **MinimapBackend kwargs 修复**：加 `_PARAM_MAP` + bool 裸 flag + None 跳过 + threads 替换（原会生成 `-c True` 这类错误命令行）
+- **CI**：新增 `snakemake-dag` job（179-job DAG dry-run 验证）；unit-tests job 安装 web extra 运行 FastAPI 冒烟测试
+
+### Added — 测试扩充（994 → 1042）
+
+- `test_web_app.py`：13 个 FastAPI TestClient 冒烟测试（samples/status/snp/search/metadata/lab-results 路由）
+- `test_vpa_e2e.py`：5 个端到端测试（RIMD 2210633 真实基因组 → O3:K6 Perfect；Salmonella/E. coli 阴性对照）
+- `test_sample_summary.py`：20 个样本状态共用层测试
+- MinimapBackend kwargs（4）+ `parse_db_header`（6）测试
+
 ### Changed — V0.4 架构精简
 
 - **物种鉴定统一**：species_identifier.py 合并 4 个独立 rule（invA/ipaH/vpara/uidA）→ 1 个 BLAST 调用（species_markers.fasta，5 条序列）
