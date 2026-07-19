@@ -34,6 +34,7 @@ from pathlib import Path
 from typing import Any
 
 from hermes_bacmap.config import REF_DIR as _REF_DIR
+from hermes_bacmap.utils import parse_db_header
 
 _DEFAULT_MIN_IDENTITY = 80.0
 _DEFAULT_MIN_COVERAGE = 80.0
@@ -170,14 +171,7 @@ def _find_db(db_name: str) -> Path:
 
 
 def _parse_db_header(sseqid: str) -> tuple[str, str, str, str]:
-    fields = sseqid.split("~~~")
-    if len(fields) >= 4:
-        return fields[1].strip(), fields[2].strip(), fields[3].strip(), ""
-    if len(fields) >= 3:
-        return fields[1].strip(), fields[2].strip(), "", ""
-    if len(fields) >= 2:
-        return fields[1].strip(), "", "", ""
-    return sseqid.strip(), "", "", ""
+    return parse_db_header(sseqid)
 
 
 def scan(

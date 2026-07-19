@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from ...utils import parse_db_header
 from .._env import which
 from ..hits import Hit
 
@@ -140,11 +141,5 @@ class KmaBackend:
 
     @staticmethod
     def _parse_template(template: str) -> tuple[str, str, str]:
-        fields = template.split("~~~")
-        if len(fields) >= 4:
-            return fields[1].strip(), fields[2].strip(), fields[3].strip()
-        if len(fields) == 3:
-            return fields[1].strip(), fields[2].strip(), ""
-        if len(fields) == 2:
-            return fields[1].strip(), "", ""
-        return template.strip(), "", ""
+        gene, accession, product, _ = parse_db_header(template)
+        return gene, accession, product

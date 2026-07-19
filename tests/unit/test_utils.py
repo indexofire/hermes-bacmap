@@ -1,4 +1,4 @@
-"""Tests for utils.py — parse_mlst, parse_abricate_tsv, read_json_file."""
+"""Tests for utils.py — parse_mlst, parse_db_header, parse_abricate_tsv, read_json_file."""
 
 from __future__ import annotations
 
@@ -8,7 +8,37 @@ from pathlib import Path
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
-from hermes_bacmap.utils import parse_abricate_tsv, parse_mlst, read_json_file  # noqa: E402
+from hermes_bacmap.utils import (  # noqa: E402
+    parse_abricate_tsv,
+    parse_db_header,
+    parse_mlst,
+    read_json_file,
+)
+
+
+class TestParseDbHeader:
+    def test_four_fields(self):
+        assert parse_db_header("card~~~blaTEM~~~A123~~~beta-lactamase") == (
+            "blaTEM",
+            "A123",
+            "beta-lactamase",
+            "",
+        )
+
+    def test_extra_fields_ignored(self):
+        assert parse_db_header("db~~~gene~~~acc~~~prod~~~extra") == ("gene", "acc", "prod", "")
+
+    def test_three_fields(self):
+        assert parse_db_header("db~~~gene~~~acc") == ("gene", "acc", "", "")
+
+    def test_two_fields(self):
+        assert parse_db_header("db~~~gene") == ("gene", "", "", "")
+
+    def test_plain_name(self):
+        assert parse_db_header("justaname") == ("justaname", "", "", "")
+
+    def test_whitespace_stripped(self):
+        assert parse_db_header("  db ~~~  gene  ~~~ acc ~~~ prod") == ("gene", "acc", "prod", "")
 
 
 class TestParseMlst:

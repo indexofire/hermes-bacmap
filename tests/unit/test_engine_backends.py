@@ -626,6 +626,47 @@ class TestMinimapFind:
         assert "-extra_opt" in cmd and "value" in cmd
         assert "-p" not in cmd  # None value skipped
 
+    def _capture_kwargs_cmd(self, tmp_path, **kwargs):
+        query = tmp_path / "q.fasta"
+        target = tmp_path / "t.fasta"
+        query.write_text(">q\nACGT\n")
+        target.write_text(">t\nACGT\n")
+        captured: dict = {}
+
+        def fake_run(cmd, *a, **k):
+            captured["cmd"] = cmd
+            return _proc()
+
+        with (
+            patch("hermes_bacmap.engine.backends.minimap2.which", return_value="/fake/minimap2"),
+            patch(
+                "hermes_bacmap.engine.backends.minimap2.subprocess.run",
+                side_effect=fake_run,
+            ),
+        ):
+            m = MinimapBackend(threads=4)
+            m.find(query=query, target=target, **kwargs)
+        return captured["cmd"]
+
+    def test_bool_kwarg_emits_bare_flag(self, tmp_path):
+        cmd = self._capture_kwargs_cmd(tmp_path, P=True)
+        assert cmd.count("-P") == 1
+        assert "True" not in cmd  # bare flag, no "-P True"
+
+    def test_bool_false_kwarg_skipped(self, tmp_path):
+        cmd = self._capture_kwargs_cmd(tmp_path, P=False)
+        assert "-P" not in cmd
+
+    def test_param_map_translates_pythonic_names(self, tmp_path):
+        cmd = self._capture_kwargs_cmd(tmp_path, kmer=19, max_gap=100)
+        assert cmd[cmd.index("-k") + 1] == "19"
+        assert cmd[cmd.index("-G") + 1] == "100"
+
+    def test_threads_kwarg_replaces_existing_flag(self, tmp_path):
+        cmd = self._capture_kwargs_cmd(tmp_path, threads=16)
+        assert cmd[cmd.index("-t") + 1] == "16"
+        assert cmd.count("-t") == 1
+
 
 # ===========================================================================
 # KmaBackend

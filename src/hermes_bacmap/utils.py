@@ -45,6 +45,22 @@ def parse_mlst(mlst_tsv: str) -> dict[str, Any]:
     return result
 
 
+def parse_db_header(sseqid: str) -> tuple[str, str, str, str]:
+    """Parse a 'db~~~gene~~~accession~~~product' FASTA/BLAST header.
+
+    Returns (gene, accession, product, reserved); missing fields are "".
+    Single implementation shared by gene_scanner and the KMA backend.
+    """
+    fields = sseqid.split("~~~")
+    if len(fields) >= 4:
+        return fields[1].strip(), fields[2].strip(), fields[3].strip(), ""
+    if len(fields) >= 3:
+        return fields[1].strip(), fields[2].strip(), "", ""
+    if len(fields) >= 2:
+        return fields[1].strip(), "", "", ""
+    return sseqid.strip(), "", "", ""
+
+
 def parse_abricate_tsv(tsv_text: str) -> list[dict[str, str]]:
     """Parse abricate-format TSV into list of dicts."""
     if not tsv_text:

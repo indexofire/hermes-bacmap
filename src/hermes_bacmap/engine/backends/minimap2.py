@@ -7,6 +7,15 @@ from typing import Any
 from .._env import which
 from ..hits import Hit
 
+_PARAM_MAP = {
+    "kmer": "k",
+    "window": "w",
+    "min_chain_score": "m",
+    "bandwidth": "r",
+    "max_gap": "G",
+    "max_chain_skip": "n",
+}
+
 
 class MinimapBackend:
     """minimap2 backend for assembly-to-reference alignment (PAF output)."""
@@ -49,8 +58,17 @@ class MinimapBackend:
         ]
 
         for key, value in kwargs.items():
-            if value is not None:
-                cmd.extend([f"-{key}", str(value)])
+            if value is None:
+                continue
+            if key == "threads":
+                cmd[cmd.index("-t") + 1] = str(value)
+                continue
+            mapped = _PARAM_MAP.get(key, key)
+            if isinstance(value, bool):
+                if value:
+                    cmd.append(f"-{mapped}")
+            else:
+                cmd.extend([f"-{mapped}", str(value)])
 
         proc = subprocess.run(
             cmd,
