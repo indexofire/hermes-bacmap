@@ -42,8 +42,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install "pytest>=8.0" "pytest-cov>=4.0" "pydantic>=2.0" biopython
-      - run: pip install -e .
+      - run: pip install "pytest>=8.0" "pytest-cov>=4.0" "pydantic>=2.0" biopython httpx
+      - run: pip install -e ".[web]"
       - name: Run unit tests with coverage
         run: |
           pytest tests/unit/ tests/test_env.py \
@@ -57,6 +57,29 @@ jobs:
         with:
           files: ./coverage.xml
           fail_ci_if_error: false
+
+  snakemake-dag:
+    name: Snakemake DAG dry-run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "snakemake==7.32.*" "pulp<2.8" pandas
+      - name: Create dummy input reads (dry-run does not read contents)
+        run: |
+          # samples.tsv has mixed CRLF/LF endings — strip \r from paths
+          while IFS=$'\t' read -r sample species r1 r2; do
+            [ "$sample" = "sample" ] && continue
+            r1="${r1%$'\r'}"; r2="${r2%$'\r'}"
+            mkdir -p "$(dirname "$r1")"
+            : | gzip > "$r1"
+            : | gzip > "$r2"
+          done < workflows/bacmap/config/samples.tsv
+      - name: Build DAG (dry-run)
+        working-directory: workflows/bacmap
+        run: snakemake -n --quiet --cores 1
 
   pre-commit:
     name: Pre-commit hooks
