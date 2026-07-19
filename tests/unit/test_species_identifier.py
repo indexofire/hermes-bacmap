@@ -5,6 +5,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
@@ -87,20 +89,9 @@ class TestSpeciesIdResult:
 
 
 class TestIdentifyModeRouting:
-    def test_standard_mode_delegates_to_taxonomic_validator(self, tmp_path, monkeypatch):
-        called = {}
-
-        def fake_validate(path, mode="simple"):
-            called["path"] = str(path)
-            called["mode"] = mode
-            return "fake-taxonomy-result"
-
-        monkeypatch.setattr(
-            "hermes_bacmap.analysis.taxonomic_validator.validate_genome", fake_validate
-        )
-        out = species_identifier.identify("/some/contigs.fasta", mode="standard")
-        assert out == "fake-taxonomy-result"
-        assert called["mode"] == "standard"
+    def test_standard_mode_rejected(self):
+        with pytest.raises(ValueError, match="validate_genome"):
+            species_identifier.identify("/some/contigs.fasta", mode="standard")
 
     def test_simple_mode_returns_species_id_result(self, tmp_path, monkeypatch):
         monkeypatch.setattr(
@@ -113,14 +104,7 @@ class TestIdentifyModeRouting:
 
 
 class TestIdentifyDetection:
-    """Mock the gene_scanner.scan boundary.
-
-    Note: the production code has a bug — `identify()` keys `gene_hits` by the
-    lowercase gene name but then probes it with mixed-case keys ("invA",
-    "ipaH", "toxR", "uidA"). Only the lowercase "tlh" check works.  As a
-    result, species will only ever be set for V_parahaemolyticus (via tlh).
-    Tests marked xfail document the intended behavior.
-    """
+    """Mock the gene_scanner.scan boundary."""
 
     def test_no_markers_returns_unknown(self, monkeypatch):
         monkeypatch.setattr(

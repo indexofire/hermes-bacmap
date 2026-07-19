@@ -51,11 +51,12 @@ class SpeciesIdResult:
         return f"Identified as {self.species} based on: {', '.join(markers)}"
 
 
-def identify(contigs_fasta: str | Path, mode: str = "simple") -> SpeciesIdResult | Any:
-    if mode == "standard":
-        from hermes_bacmap.analysis.taxonomic_validator import validate_genome
-
-        return validate_genome(contigs_fasta, mode="standard")
+def identify(contigs_fasta: str | Path, mode: str = "simple") -> SpeciesIdResult:
+    if mode != "simple":
+        raise ValueError(
+            f"identify() only supports mode='simple', got {mode!r}. "
+            "Use analysis.taxonomic_validator.validate_genome for full taxonomy validation."
+        )
 
     scan_result = scan(
         contigs_fasta,
