@@ -75,7 +75,7 @@
 
 | 模块 | 行数 | 职责 |
 |---|---|---|
-| `tools.py` | 1887 | 24 个 Hermes tool handler 实现 |
+| `tools/` | 2115 | 24 个 Hermes tool handler(7 文件包:seq / cli / pipeline / services + registry) |
 | `genome_object_service.py` | 667 | GOM：SQLite CRUD + 版本管理 + 事件 + 文件产物 + FTS5 搜索 |
 | `schemas.py` | 844 | 24 个 tool 的 JSON Schema 定义 |
 | `genome_annotator.py` | 280 | Python 版基因组注释（pyrodigal + Prokka DBs，替代 Prokka CLI） |
@@ -83,7 +83,7 @@
 | `gene_scanner.py` | 546 | 通用基因扫描引擎（委托 engine.SequenceMatcher） |
 | `shigella_serotyper.py` | 231 | Shigella 血清型预测（移植 ShigATyper，58 种血清型） |
 | `deterministic_verifier.py` | 216 | 确定性规则校验（species/MLST/serotype/AMR 四层检查） |
-| `__init__.py` | 172 | 插件注册（24 tools + 4 skills 自动发现） |
+| `__init__.py` | 28 | 插件注册（表驱动，24 tools + 4 skills 自动发现） |
 | `species_identifier.py` | 122 | 统一物种鉴定（invA/uidA/ipaH/toxR/tlh 五基因合并为 1 次 BLAST） |
 | `ecoh_serotyper.py` | 134 | E. coli O:H 血清型（委托 gene_scanner） |
 

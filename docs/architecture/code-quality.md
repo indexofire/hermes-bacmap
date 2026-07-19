@@ -12,22 +12,22 @@
 
 | 维度 | 评估时 | 修复后 |
 |---|---|---|
-| 架构 | 7.5/10 | 7.5/10（结构重构属阶段 3，未开始） |
-| 代码质量 | 5/10 | 9/10（门禁全绿，覆盖 90.26%) |
+| 架构 | 7.5/10 | 8.5/10（阶段 3 结构重构完成：上帝模块拆分、循环依赖破除、共用层抽取） |
+| 代码质量 | 5/10 | 9/10（门禁全绿，覆盖 92.21%) |
 
 ## 二、架构评估
 
 ### 分层结构
 
 ```
-tools.py            LLM 门面层(24 个 tool handler,JSON in/out)
+tools/              LLM 门面层(24 个 tool handler,按 seq/cli/pipeline/services 分包,JSON in/out)
     ↓ 懒加载
 analysis/           算法层(gene_scanner, species_identifier, verifier…)
     ↓
 engine/             CLI 抽象层(SequenceMatcher/ReadMapper + 后端注册表)
     ↓
 backends/           blast / minimap2 / kma / mash / sourmash
-services/           持久层(GOM + strain_index + metadata + lab_results,独立无依赖)
+services/           持久层(GOM + strain_index + metadata + lab_results + sample_summary,独立无依赖)
 ```
 
 ### 架构优点
@@ -37,16 +37,16 @@ services/           持久层(GOM + strain_index + metadata + lab_results,独立
 - tool handler "永不抛异常、错误转 JSON" 的约定对 LLM 场景是正确设计。
 - 参考数据库路径集中在 `db.py` 注册表,`config.py` 支持环境变量覆盖。
 
-### 架构问题(阶段 3 待处理)
+### 架构问题(已全部处理,2026-07-18)
 
 | 问题 | 位置 | 状态 |
 |---|---|---|
-| 上帝模块 1886 行，24 个 handler 单文件 | `tools.py` | 待拆分 |
-| 1012 行引擎类，含嵌套闭包，难单测 | `typing/vpa_serotyper_engine.py` | 待拆分 |
-| 软循环依赖(互相懒加载) | `species_identifier ↔ taxonomic_validator` | 待解耦 |
-| 子包 `__init__.py` 全空，无 `__all__` | `analysis/ services/ typing/` | 待补 |
-| 样本状态判定逻辑两处重复 | `scripts/run_analysis.py`、`web/app.py` | 待抽取共用层 |
-| 24 段重复注册代码 | `__init__.py:register()` | 待改表驱动 |
+| 上帝模块 1887 行，24 个 handler 单文件 | `tools.py` | ✅ 已拆分为 `tools/` 包(seq / cli / pipeline / services + `_common` + `registry`),并引入 `@tool_handler` 统一错误兜底 |
+| 1012 行引擎类，含嵌套闭包，难单测 | `typing/vpa_serotyper_engine.py` | ✅ 已拆分为 `_vpa_kmer` / `_vpa_genes` / `_vpa_report` + 430 行编排 facade,6 个闭包收敛为纯函数,6 处全库扫描收敛为 `_RefFasta` 缓存 |
+| 软循环依赖(互相懒加载) | `species_identifier ↔ taxonomic_validator` | ✅ 已破环:删除 `identify(mode="standard")` 透传分支,依赖单向化 |
+| 子包 `__init__.py` 全空，无 `__all__` | `analysis/ services/ typing/` | ✅ 已补导出 + `__all__` |
+| 样本状态判定逻辑两处重复 | `scripts/run_analysis.py`、`web/app.py` | ✅ 已抽取为 `services/sample_summary.py` 共用层 |
+| 24 段重复注册代码 | `__init__.py:register()` | ✅ 已改为 `tools/registry.py` 单张注册表 + for 循环(28 行) |
 
 ## 三、评估时实测数据(2026-07-18 修复前基线)
 
@@ -104,14 +104,14 @@ services/           持久层(GOM + strain_index + metadata + lab_results,独立
 | 4 🟡 | `analysis/failure_diagnostics.py` | 未知错误 exit code 被"最后 3 行"兜底覆盖。修复:改为追加。 |
 | 5 🟢 | `tools.py:seq_convert` | `_resolve_path('')` 返回 CWD 导致 output_file 校验失效。修复:resolve 前判空。 |
 
-## 五、当前质量门禁状态(2026-07-18)
+## 五、当前质量门禁状态(2026-07-18,结构重构后)
 
 ```
 ruff check src/ tests/        ✅ All checks passed
-ruff format --check           ✅ 67 files already formatted
-mypy --strict src/            ✅ Success: no issues found in 34 source files
-pytest tests/                 ✅ 994 passed, 0 xfailed
-coverage (branch, fail_under=80) ✅ 90.26%
+ruff format --check           ✅ 78 files already formatted
+mypy --strict src/            ✅ Success: no issues found in 44 source files
+pytest tests/                 ✅ 1014 passed
+coverage (branch, fail_under=80) ✅ 92.21%
 ```
 
 ## 六、遗留事项(阶段 3 路线图)
@@ -122,5 +122,5 @@ coverage (branch, fail_under=80) ✅ 90.26%
 2. **小重复收敛**:`kma._parse_template` 与 `gene_scanner._parse_db_header` 的 `~~~` header 解析合并为一处。
 3. ~~**文档对账**~~ ✅(2026-07-18 完成):工具数统一为 24(7 处 17/19/23 矛盾)、测试数 193 → 994、README/overview/features 模块行数表按实测更新、rules 数统一为 24(10 个 .smk 共 23 rules + Snakefile `rule all`)、修复 7 处死链、`tools.md`/`features.md` 补齐漏列的 5–7 个工具。
 4. **sourmash 弃用 API 迁移**:`load_signatures`/`save_signatures` 将在 sourmash 5.0 移除(当前 45 条 deprecation warning)。
-5. **结构重构**:`tools.py` 拆分为 `tools/` 包 + 表驱动注册;`vpa_serotyper_engine.py` 按 kmer 排名 / 基因验证 / 报告生成拆分;样本状态逻辑抽取为 `services/sample_summary.py` 供 scripts 与 web 共用;子包补 `__all__`;`schemas.py` 外置。
-6. **集成测试**:`vpa_serotyper_engine` 剩余 ~51% 需 gold_standard 真实数据端到端测试;`web/app.py` 补 FastAPI TestClient 冒烟测试。
+5. ~~**结构重构**~~ ✅(2026-07-18 完成):`tools.py` 拆分为 `tools/` 包(seq / cli / pipeline / services + `_common` 共享基座 + `@tool_handler` 统一错误兜底,顺带补齐 5 个无保护 handler)+ `tools/registry.py` 表驱动注册;`vpa_serotyper_engine.py` 按 kmer 排名 / 基因验证 / 报告生成拆分为 `_vpa_kmer` / `_vpa_genes` / `_vpa_report`(6 个闭包收敛为纯函数,6 处全库扫描收敛为 `_RefFasta` 缓存,删除死属性),engine 瘦身为 430 行编排 facade 并保留私有方法委托兼容测试;样本状态逻辑抽取为 `services/sample_summary.py` 供 scripts 与 web 共用;`species_identifier → taxonomic_validator` 循环依赖破环;子包补 `__init__.py` 导出 + `__all__`。`schemas.py` 保持单文件不动(纯数据,无拆分收益)。
+6. **集成测试**:`_vpa_genes` 剩余 ~29% 需 gold_standard 真实数据端到端测试;`web/app.py` 补 FastAPI TestClient 冒烟测试。

@@ -132,7 +132,7 @@ Layer 3 · AI 解读                  Skills 知识库（interpret-results）
 
 | 模块 | 行数 | 职责 |
 |---|---|---|
-| `tools.py` | 1887 | 24 个 Hermes tool handler 实现 |
+| `tools/` | 2115 | 24 个 Hermes tool handler（7 文件包 + 表驱动注册） |
 | `genome_object_service.py` | 667 | GOM：SQLite CRUD + 版本 + 事件 + 文件 + FTS5 |
 | `schemas.py` | 844 | 24 个 tool 的 JSON Schema 定义 |
 | `genome_annotator.py` | 280 | 基因组注释（pyrodigal + Prokka DBs） |
@@ -142,7 +142,7 @@ Layer 3 · AI 解读                  Skills 知识库（interpret-results）
 | `deterministic_verifier.py` | 216 | 四层确定性规则校验 |
 | `species_identifier.py` | 122 | 五基因合并物种鉴定 |
 | `ecoh_serotyper.py` | 134 | E. coli O:H 血清型 |
-| `__init__.py` | 172 | 插件注册（24 tools + 4 skills 自动发现） |
+| `__init__.py` | 28 | 插件注册（表驱动，24 tools + 4 skills） |
 
 ## 项目目录
 
@@ -150,7 +150,7 @@ Layer 3 · AI 解读                  Skills 知识库（interpret-results）
 hermes-bacmap/
 ├── src/hermes_bacmap/           Hermes 插件 Python 包
 │   ├── engine/                  算法抽象层（8 文件，800 行）
-│   ├── tools.py                 Tool handler
+│   ├── tools/                   Tool handler 包（seq / cli / pipeline / services）
 │   ├── schemas.py               Tool JSON Schema
 │   ├── genome_object_service.py GOM
 │   ├── deterministic_verifier.py 校验
@@ -161,7 +161,7 @@ hermes-bacmap/
 │   └── scripts/                 collect_summary / SNP matrix
 ├── scripts/                     编排脚本（run_analysis / ingest / report）
 ├── skills/                      4 个 Hermes Skills
-├── tests/                       994 tests
+├── tests/                       1014 tests
 ├── data/reference/              13 个参考数据库
 ├── web/                         FastAPI Web UI
 ├── pixi.toml                    生信工具依赖

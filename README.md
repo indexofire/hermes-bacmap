@@ -67,7 +67,7 @@ uv pip install -e ".[dev]"
 
 | 模块 | 行数 | 功能 |
 |---|---|---|
-| `tools.py` | 1887 | 24 个 Hermes tool handler |
+| `tools/` | 2115 | 24 个 Hermes tool handler（seq / cli / pipeline / services 分包） |
 | `genome_object_service.py` | 667 | GOM（SQLite + 版本管理 + 事件 + 文件产物 + FTS5 搜索） |
 | `schemas.py` | 844 | 24 个 tool JSON Schema 定义 |
 | `genome_annotator.py` | 280 | 基因组注释（pyrodigal + Prokka DBs，Python 原生） |
@@ -85,7 +85,7 @@ hermes-bacmap/
 ├── src/hermes_bacmap/           Hermes 插件 Python 包
 │   ├── __init__.py             插件注册（24 tools + 4 skills）
 │   ├── schemas.py              Tool JSON Schema 定义
-│   ├── tools.py                Tool handler 实现
+│   ├── tools/                  Tool handler 包（含 registry 表驱动注册）
 │   ├── genome_object_service.py  GOM（SQLite + 版本管理）
 │   └── deterministic_verifier.py  确定性规则校验
 ├── workflows/bacmap/        Snakemake 分析流程
@@ -104,7 +104,7 @@ hermes-bacmap/
 │   ├── run-pipeline/           跨病原管线操作指南 + 5 个 references
 │   ├── bioinfo-analysis/       通用生信决策树
 │   └── interpret-results/      结果解读知识库 + 2 个 references
-├── tests/                       测试（994 tests）
+├── tests/                       测试（1014 tests）
 │   ├── unit/                   GOM + Verifier + Cohort TDD
 │   ├── conftest.py             共享 fixtures
 │   └── fixtures/gold_standard/ 10 株验证数据集

@@ -49,7 +49,7 @@ Hermes-bacmap 以 [Hermes Agent](https://github.com/NousResearch/hermes-agent) �
 |---|---|---|
 | Hermes Tools | **24** | 8 个生信原语 + 16 个高层分析工具 |
 | Snakemake Rules | **24** | per-sample DAG + cohort SNP DAG（3 物种组） |
-| 测试用例 | **994** | GOM + 溯源索引 + Verifier + Engine + Utils，全绿 |
+| 测试用例 | **1014** | GOM + 溯源索引 + Verifier + Engine + Utils，全绿 |
 | 支持病原 | **4** | Salmonella / DEC / Shigella / V. parahaemolyticus |
 | Skills | **4** | bio-router / run-pipeline / interpret-results / bioinfo-analysis |
 | 参考数据库 | **15** | 物种鉴定 + AMR + 毒力 + 血清型 + SNP 参考 + Prokka 注释 |
@@ -70,7 +70,7 @@ hermes plugins enable hermes_bacmap
 
 # 4. 验证安装
 pixi run snakemake --version    # 应输出 7.32.x
-uv run pytest -q                # 994 tests 全过
+uv run pytest -q                # 1014 tests 全过
 
 # 5. 启动 Hermes Agent
 hermes chat

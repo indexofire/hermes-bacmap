@@ -172,7 +172,7 @@ Agent 通常自动加载，也可在对话中手动触发：
 
 4. 重启 Hermes，`__init__.py` 自动发现并注册
 
-Skill 是纯 Markdown，无 Python 代码。它通过自然语言指导 Agent 调用已有 Tools，不新增执行能力。若需要新的执行能力，应在 `tools.py` 注册新 tool。
+Skill 是纯 Markdown，无 Python 代码。它通过自然语言指导 Agent 调用已有 Tools，不新增执行能力。若需要新的执行能力，应在 `tools/` 包新增 handler 并在 `tools/registry.py` 注册新 tool。
 
 ## 相关
 
