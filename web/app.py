@@ -20,7 +20,12 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
 from hermes_bacmap.config import RESULTS_DIR as _RESULTS_DIR, DB_PATH as _DB_PATH
-from hermes_bacmap.utils import parse_mlst
+from hermes_bacmap.services.sample_summary import (
+    read_summary,
+    sample_status,
+    snp_cohort_status,
+    summary_fields,
+)
 
 _WORKFLOW_DIR = _PROJECT_ROOT / "workflows" / "bacmap"
 _SAMPLES_TSV = _WORKFLOW_DIR / "config" / "samples.tsv"
@@ -34,16 +39,6 @@ def _read_samples_tsv() -> list[dict]:
         return []
     with _SAMPLES_TSV.open() as f:
         return list(csv.DictReader(f, delimiter="\t"))
-
-
-def _get_summary(sample_id: str) -> dict | None:
-    p = _RESULTS_DIR / sample_id / "report" / f"{sample_id}_summary.json"
-    if not p.exists():
-        return None
-    try:
-        return json.loads(p.read_text())
-    except json.JSONDecodeError:
-        return None
 
 
 def _get_annotation(sample_id: str) -> dict | None:
@@ -61,46 +56,26 @@ def list_samples() -> dict:
     samples = []
     for row in _read_samples_tsv():
         sid = row.get("sample", "")
-        summary = _get_summary(sid)
-        contigs = _RESULTS_DIR / sid / "assembly" / "contigs.fasta"
-
-        if summary:
-            status = "completed"
-        elif contigs.exists():
-            status = "in-progress"
-        else:
-            status = "not-started"
-
-        steps_data = summary.get("steps", {}) if summary else {}
-        species = steps_data.get("species", {})
-        species_name = species.get("species", "N/A") if isinstance(species, dict) else str(species)
-
-        mlst_raw = steps_data.get("mlst", "")
-        st = parse_mlst(mlst_raw)["st"] if mlst_raw and isinstance(mlst_raw, str) else "N/A"
-
-        sero = steps_data.get("serotype", {})
-        serotype = sero.get("sistr", "N/A") if isinstance(sero, dict) else "N/A"
+        fields = summary_fields(read_summary(_RESULTS_DIR, sid) or {})
 
         samples.append(
             {
                 "sample_id": sid,
                 "species_configured": row.get("species", ""),
-                "species_detected": species_name,
-                "mlst_st": st,
-                "serotype": serotype,
-                "status": status,
+                "species_detected": fields["species"],
+                "mlst_st": fields["mlst_st"],
+                "serotype": fields["serotype"],
+                "status": sample_status(_RESULTS_DIR, sid),
             }
         )
 
-    snp_tree = _RESULTS_DIR / "snp" / "snp_summary.json"
-    snp_status = snp_tree.exists()
-
-    return {"samples": samples, "snp_cohort": {"summary": snp_status}}
+    snp_summary = snp_cohort_status(_RESULTS_DIR)["summary"]
+    return {"samples": samples, "snp_cohort": {"summary": snp_summary}}
 
 
 @app.get("/api/samples/{sample_id}")
 def get_sample(sample_id: str) -> dict:
-    summary = _get_summary(sample_id)
+    summary = read_summary(_RESULTS_DIR, sample_id)
     if not summary:
         return JSONResponse({"error": f"Sample {sample_id} not found"}, status_code=404)
     return summary
@@ -133,27 +108,13 @@ def search_samples(q: str = Query(..., description="Search query")) -> dict:
 @app.get("/api/status")
 def pipeline_status() -> dict:
     samples = _read_samples_tsv()
-    done = sum(1 for r in samples if _get_summary(r.get("sample", "")))
-    total = len(samples)
-    snp_p = _RESULTS_DIR / "snp" / "snp_summary.json"
+    statuses = [sample_status(_RESULTS_DIR, r.get("sample", "")) for r in samples]
     return {
-        "total_samples": total,
-        "completed": done,
-        "in_progress": sum(
-            1
-            for r in samples
-            if (_RESULTS_DIR / r.get("sample", "") / "assembly" / "contigs.fasta").exists()
-            and not _get_summary(r.get("sample", ""))
-        ),
-        "not_started": total
-        - done
-        - sum(
-            1
-            for r in samples
-            if (_RESULTS_DIR / r.get("sample", "") / "assembly" / "contigs.fasta").exists()
-            and not _get_summary(r.get("sample", ""))
-        ),
-        "snp_available": snp_p.exists(),
+        "total_samples": len(samples),
+        "completed": statuses.count("completed"),
+        "in_progress": statuses.count("in-progress"),
+        "not_started": statuses.count("not-started"),
+        "snp_available": snp_cohort_status(_RESULTS_DIR)["summary"],
     }
 
 

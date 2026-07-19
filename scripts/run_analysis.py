@@ -14,11 +14,16 @@ Snakemake DAG 自动编排所有依赖，无需人为逐步触发。
 from __future__ import annotations
 
 import argparse
-import json
 import subprocess
 import sys
 
 from _common import ROOT
+from hermes_bacmap.services.sample_summary import (
+    classify_samples,
+    read_summary,
+    summary_fields,
+    summary_path,
+)
 
 PIXI_BIN = ROOT / ".pixi/envs/default/bin"
 WORKFLOW_DIR = ROOT / "workflows/bacmap"
@@ -82,82 +87,32 @@ def check_status(sample: str | None = None) -> dict:
     with samples_tsv.open() as f:
         all_samples = [r["sample"] for r in csv.DictReader(f, delimiter="\t")]
 
-    samples_done = {}
-    samples_in_progress = {}
-    samples_not_started = []
-
-    for s in all_samples:
-        if sample and s != sample:
-            continue
-
-        summary = RESULTS_DIR / s / "report" / f"{s}_summary.json"
-        contigs = RESULTS_DIR / s / "assembly" / "contigs.fasta"
-        qc_json = RESULTS_DIR / s / "qc" / f"{s}_fastp.json"
-        species_json = RESULTS_DIR / s / "species" / "species_id.json"
-        mlst = RESULTS_DIR / s / "typing" / "mlst.tsv"
-        amr_card = RESULTS_DIR / s / "amr" / "abricate_card.tsv"
-
-        steps = {
-            "qc": qc_json.exists(),
-            "assembly": contigs.exists(),
-            "species": species_json.exists(),
-            "mlst": mlst.exists(),
-            "amr": amr_card.exists(),
-            "report": summary.exists(),
-        }
-        done_count = sum(steps.values())
-
-        if summary.exists():
-            samples_done[s] = steps
-        elif done_count > 0:
-            samples_in_progress[s] = steps
-        else:
-            samples_not_started.append(s)
-
-    snp_treefile = RESULTS_DIR / "snp" / "core.treefile"
-    snp_summary = RESULTS_DIR / "snp" / "snp_summary.json"
-
-    return {
-        "done": samples_done,
-        "in_progress": samples_in_progress,
-        "not_started": samples_not_started,
-        "snp_cohort": {
-            "tree": snp_treefile.exists(),
-            "summary": snp_summary.exists(),
-        },
-    }
+    ids = [s for s in all_samples if not sample or s == sample]
+    return classify_samples(RESULTS_DIR, ids)
 
 
 def interpret_summary(sample: str) -> None:
-    summary_path = RESULTS_DIR / sample / "report" / f"{sample}_summary.json"
-    if not summary_path.exists():
+    summary = read_summary(RESULTS_DIR, sample)
+    if summary is None:
         print(f"  ❌ {sample}: summary not found")
         return
-
-    with summary_path.open() as f:
-        summary = json.load(f)
 
     print(f"\n{'=' * 60}")
     print(f"  {sample} 分析结果")
     print(f"{'=' * 60}")
 
-    species = summary.get("steps", {}).get("species", {})
-    verdict = species.get("species", "N/A") if isinstance(species, dict) else str(species)
+    fields = summary_fields(summary)
+
+    verdict = fields["species"]
     icon = "✅" if verdict != "N/A" and verdict != "Unknown" else "❌"
     print(f"\n  {icon} Species: {verdict}")
 
-    mlst_raw = summary.get("steps", {}).get("mlst", "")
-    if mlst_raw and mlst_raw != "N/A":
-        from hermes_bacmap.utils import parse_mlst
-
-        st = parse_mlst(mlst_raw)["st"]
-        if st != "N/A":
-            print(f"  🧬 MLST: ST{st}")
+    if fields["mlst_st"] != "N/A":
+        print(f"  🧬 MLST: ST{fields['mlst_st']}")
 
     serotype = summary.get("steps", {}).get("serotype", {})
     if isinstance(serotype, dict):
-        sistr = serotype.get("sistr", "N/A")
-        print(f"  🔬 Serotype (SISTR): {sistr}")
+        print(f"  🔬 Serotype (SISTR): {fields['serotype']}")
 
     amr = summary.get("steps", {}).get("amr", {})
     if isinstance(amr, dict):
@@ -168,7 +123,7 @@ def interpret_summary(sample: str) -> None:
         else:
             print("  💊 AMR genes: none found (susceptible)")
 
-    print(f"\n  Full report: {summary_path}")
+    print(f"\n  Full report: {summary_path(RESULTS_DIR, sample)}")
 
 
 def main() -> int:
