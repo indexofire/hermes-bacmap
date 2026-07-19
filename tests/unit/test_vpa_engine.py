@@ -217,8 +217,8 @@ def _build_synthetic_db(
                 seq = meta["seq"][g["start"] : g["end"]]
                 f.write(f">{lid}_gene_{i}\n{seq}\n")
 
-    import sourmash
     from sourmash import MinHash, SourmashSignature
+    from sourmash.sourmash_args import SaveSignaturesToLocation
 
     sigs = []
     for lid, meta in loci.items():
@@ -227,8 +227,9 @@ def _build_synthetic_db(
         sigs.append(SourmashSignature(mh, name=lid))
 
     sketch_path = db_dir / "ref_sketches.sig"
-    with sketch_path.open("w") as f:
-        sourmash.save_signatures(sigs, fp=f)
+    with SaveSignaturesToLocation(str(sketch_path)) as save_sigs:
+        for sig in sigs:
+            save_sigs.add(sig)
 
     metadata: dict[str, Any] = {}
     for lid, meta in loci.items():

@@ -70,9 +70,9 @@ class SerotyperEngine:
             raise ImportError("mappy is required. Install: conda install -c bioconda minimap2")
 
         try:
-            from sourmash import load_signatures
+            from sourmash import load_file_as_signatures
 
-            self._load_signatures = load_signatures
+            self._load_signatures = load_file_as_signatures
         except ImportError:
             raise ImportError("sourmash is required. Install: pip install sourmash")
 
