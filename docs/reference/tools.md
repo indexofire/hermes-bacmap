@@ -1,6 +1,7 @@
 # 工具列表
 
-Hermes-bacmap 注册 **24 个 Tools**，分为两类：8 个生信原语（底层算法封装）与 16 个高层分析工具（业务级流程）。所有 tool 在 `src/hermes_bacmap/tools/` 包实现 handler（按 seq / cli / pipeline / services 分组），`schemas.py` 定义 JSON Schema，`tools/registry.py` 统一注册。
+Hermes-bacmap 注册 **24 个 Tools**，分为两类：8 个生信原语（底层算法封装）与 16 个高层分析工具（业务级流程）。
+所有 tool 在 `src/hermes_bacmap/tools/` 包实现 handler（按 seq / cli / pipeline / services 分组），`schemas.py` 定义 JSON Schema，`tools/registry.py` 统一注册。
 
 ## 生信原语（8 个）
 

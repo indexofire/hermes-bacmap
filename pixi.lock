@@ -201,6 +201,7 @@ environments:
       - conda: https://conda.anaconda.org/bioconda/linux-64/muscle-3.8.1551-h9948957_9.tar.bz2
       - conda: https://conda.anaconda.org/bioconda/linux-64/mustang-3.2.4-h9948957_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/nbformat-5.10.4-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/bioconda/linux-64/ncbi-amrfinderplus-3.12.8-h283d18e_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ncbi-datasets-cli-18.33.1-ha770c72_0.conda
       - conda: https://conda.anaconda.org/bioconda/linux-64/ncbi-vdb-3.4.1-hd63eeec_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.6-hdb14827_0.conda
@@ -3156,6 +3157,20 @@ packages:
   - pkg:pypi/nbformat?source=hash-mapping
   size: 100945
   timestamp: 1733402844974
+- conda: https://conda.anaconda.org/bioconda/linux-64/ncbi-amrfinderplus-3.12.8-h283d18e_0.tar.bz2
+  sha256: 4361f38afc436dad86839820aab59be799e03041bdba023960b4fc76bbe737f2
+  md5: 940ebbfac4198b74adcfb7c939d0f5ea
+  depends:
+  - blast >=2.9
+  - curl
+  - hmmer >=3.2
+  - libcurl >=8.5.0,<9.0a0
+  - libgcc-ng >=12
+  - libstdcxx-ng >=12
+  license: Public Domain
+  purls: []
+  size: 1184565
+  timestamp: 1707154363319
 - conda: https://conda.anaconda.org/conda-forge/linux-64/ncbi-datasets-cli-18.33.1-ha770c72_0.conda
   sha256: 6ef53fc8e0a4502cd661c222fd52465a2f33ade4d832a2f9b1c9f63bf143aaf6
   md5: 3f5caecb75410d9719a445b6d183c6e5

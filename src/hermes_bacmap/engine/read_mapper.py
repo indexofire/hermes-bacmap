@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import gzip
 import os
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any
 
 from ._env import which
+
+_LONG_READ_MIN_LEN = 1000
 
 
 def _ensure_bwa_index(ref: str) -> None:
@@ -16,18 +20,57 @@ def _ensure_bwa_index(ref: str) -> None:
         subprocess.run([bwa, "index", ref], check=True, capture_output=True, timeout=120)
 
 
-def _sort_and_index(sam_stdout: str, out_bam: str, threads: int) -> None:
+def _sniff_read_type(reads: list[str]) -> str:
+    """Inspect the first FASTQ records; any read >= _LONG_READ_MIN_LEN bp ⇒ 'long'.
+
+    Falls back to 'short' when the file cannot be opened (missing, not FASTQ).
+    """
+    if not reads:
+        return "short"
+    path = reads[0]
+    opener = gzip.open if path.endswith(".gz") else open
+    try:
+        with opener(path, "rt") as fh:
+            for i, line in enumerate(fh):
+                if i > 400:  # first ~100 FASTQ records
+                    break
+                if i % 4 == 1 and len(line.strip()) >= _LONG_READ_MIN_LEN:
+                    return "long"
+    except OSError:
+        pass
+    return "short"
+
+
+def _run_align_and_sort(
+    aligner_cmd: list[str],
+    out_bam: str,
+    threads: int,
+    aligner_name: str,
+) -> None:
+    """Run the aligner, stream its SAM stdout into samtools sort, then index.
+
+    Uses a pipe instead of buffering the whole SAM in memory (multi-GB for
+    deep-coverage samples). Aligner stderr goes to a temp file to avoid
+    pipe-buffer deadlock, and is surfaced on failure.
+    """
     samtools = which("samtools")
     if not samtools:
         raise RuntimeError("samtools not found")
 
-    proc = subprocess.run(
-        [samtools, "sort", "-@", str(threads), "-o", out_bam, "-"],
-        input=sam_stdout,
-        capture_output=True,
-        text=True,
-        timeout=600,
-    )
+    with tempfile.TemporaryFile(mode="w+t") as err:
+        with subprocess.Popen(aligner_cmd, stdout=subprocess.PIPE, stderr=err) as ap:
+            proc = subprocess.run(
+                [samtools, "sort", "-@", str(threads), "-o", out_bam, "-"],
+                stdin=ap.stdout,
+                capture_output=True,
+                text=True,
+                timeout=600,
+            )
+            rc = ap.wait(timeout=600)
+        if rc != 0:
+            err.seek(0)
+            raise RuntimeError(f"{aligner_name} failed (exit {rc}): {err.read()[:500]}")
+
     if proc.returncode != 0:
         raise RuntimeError(f"samtools sort failed: {proc.stderr[:500]}")
 
@@ -56,11 +99,7 @@ class BwaReadMapper:
             cmd += extra.split()
         cmd += [reference] + reads
 
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-        if proc.returncode != 0:
-            raise RuntimeError(f"bwa mem failed: {proc.stderr[:500]}")
-
-        _sort_and_index(proc.stdout, out_bam, threads)
+        _run_align_and_sort(cmd, out_bam, threads, "bwa mem")
 
         return {
             "aligner": "bwa-mem",
@@ -93,11 +132,7 @@ class Minimap2ReadMapper:
             cmd += extra.split()
         cmd += [reference] + reads
 
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-        if proc.returncode != 0:
-            raise RuntimeError(f"minimap2 failed: {proc.stderr[:500]}")
-
-        _sort_and_index(proc.stdout, out_bam, threads)
+        _run_align_and_sort(cmd, out_bam, threads, "minimap2")
 
         return {
             "aligner": "minimap2",
@@ -128,16 +163,21 @@ class ReadMapper:
         reference: str,
         out_bam: str,
         mode: str = "auto",
+        read_type: str | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
+        if read_type is not None and read_type not in ("short", "long"):
+            raise ValueError(f"read_type must be 'short' or 'long', got {read_type!r}")
         if mode == "auto":
-            mode = cls._select(reads)
+            mode = cls._select(reads, read_type)
         mapper = _get_mapper(mode)
         return mapper.map(reads, reference, out_bam, **kwargs)
 
     @staticmethod
-    def _select(reads: list[str]) -> str:
+    def _select(reads: list[str], read_type: str | None = None) -> str:
         for r in reads:
             if r.endswith((".fasta", ".fa", ".fna")):
                 return "minimap2"
-        return "bwa"
+        if read_type is None:
+            read_type = _sniff_read_type(reads)
+        return "minimap2" if read_type == "long" else "bwa"

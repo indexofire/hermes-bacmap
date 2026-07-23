@@ -240,7 +240,13 @@ class TestMissingInputFileExtraction:
 
 
 class TestDiagnoseFromLog:
-    def test_missing_log_returns_no_log_diagnosis(self, tmp_path):
+    def test_missing_log_returns_no_log_diagnosis(self, tmp_path, monkeypatch):
+        # Patch _PROJECT_ROOT so the fallback log dir lookup does not find
+        # real Snakemake logs from the working tree.
+        module = __import__(
+            "hermes_bacmap.analysis.failure_diagnostics", fromlist=["_PROJECT_ROOT"]
+        )
+        monkeypatch.setattr(module, "_PROJECT_ROOT", tmp_path)
         out = diagnose_from_log(str(tmp_path / "does_not_exist.log"))
         assert out.error_type == "no_log"
         assert out.severity == "low"

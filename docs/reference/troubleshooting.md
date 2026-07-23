@@ -96,4 +96,3 @@ makeblastdb -in data/reference/species/markers.fasta -dbtype nucl -out data/refe
 1. 查看状态：`python scripts/run_analysis.py --status`
 2. 查看 Snakemake 最新日志：`ls -t workflows/bacmap/.snakemake/logs/*.snakemake.log | head -1 | xargs tail -80`
 3. 通过 `bio_diagnose` 提交完整日志
-

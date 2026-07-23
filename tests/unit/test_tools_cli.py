@@ -336,6 +336,35 @@ class TestAlign:
         assert captured["kwargs"]["preset"] == "lr:hq"
         assert captured["kwargs"]["extra_args"] == "-x asm5"
 
+    def test_read_type_forwarded(self, tmp_path, monkeypatch):
+        ref = _write(tmp_path, "ref.fa", ">r\nACGT\n")
+        read1 = _write(tmp_path, "r1.fq", "@r\nACGT\n+\nIIII\n")
+
+        captured = {}
+
+        class FakeMapper:
+            @classmethod
+            def map(cls, reads, reference, out_bam, mode="auto", **kwargs):
+                captured.update(mode=mode, kwargs=kwargs)
+                return {"out_bam": out_bam, "mode": mode}
+
+        monkeypatch.setattr("hermes_bacmap.engine.ReadMapper", FakeMapper)
+
+        out = str(tmp_path / "out.bam")
+        _ = _parse(
+            tools.align(
+                {
+                    "reference": ref,
+                    "reads": [read1],
+                    "output_bam": out,
+                    "aligner": "",
+                    "read_type": "long",
+                }
+            )
+        )
+        assert captured["mode"] == "auto"
+        assert captured["kwargs"]["read_type"] == "long"
+
     def test_auto_mode_selection(self, tmp_path, monkeypatch):
         ref = _write(tmp_path, "ref.fa", ">r\nACGT\n")
         read1 = _write(tmp_path, "r1.fq", "@r\nACGT\n+\nIIII\n")

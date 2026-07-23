@@ -79,7 +79,7 @@ svc.delete("SAM-001")
 ```tsv
 strain_id	sample_id	patient_name	patient_age	province	isolation_date	sample_source	outbreak_id
 SAM-TYP-001	SAM-TYP-001	张三	35	北京	2024-03-10	clinical	OB-2024-03
-SAM-DEC-012	SAM-DEC-012	李四	28	上海	2024-04-18	clinical	
+SAM-DEC-012	SAM-DEC-012	李四	28	上海	2024-04-18	clinical
 ```
 
 ---

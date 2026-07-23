@@ -1,11 +1,14 @@
 """Unit tests for engine.read_mapper — BWA/Minimap2 mappers and ReadMapper facade.
 
-bwa, minimap2, samtools are mocked at the subprocess.run boundary; `which` is
-mocked at hermes_bacmap.engine.read_mapper.which (imported from `._env`).
+bwa/minimap2 are mocked at the subprocess.Popen boundary (streaming pipe);
+samtools sort/index stay at the subprocess.run boundary; `which` is mocked at
+hermes_bacmap.engine.read_mapper.which (imported from `._env`).
 """
 
 from __future__ import annotations
 
+import io
+import subprocess
 import sys
 from pathlib import Path
 from subprocess import CompletedProcess
@@ -22,12 +25,52 @@ from hermes_bacmap.engine.read_mapper import (  # noqa: E402
     ReadMapper,
     _ensure_bwa_index,
     _get_mapper,
-    _sort_and_index,
+    _run_align_and_sort,
+    _sniff_read_type,
 )
 
 
 def _proc(stdout: str = "", stderr: str = "", returncode: int = 0) -> CompletedProcess:
     return CompletedProcess(args=[], returncode=returncode, stdout=stdout, stderr=stderr)
+
+
+class _FakePopen:
+    """Minimal Popen stand-in: captures cmd, drains stderr file, returns rc."""
+
+    rc = 0
+    err_text = ""
+    instances: list[_FakePopen] = []
+
+    def __init__(self, cmd, stdout=None, stderr=None, **kwargs):
+        self.cmd = cmd
+        self.stdout = io.StringIO("SAM\n") if stdout == subprocess.PIPE else None
+        if stderr is not None and self.err_text:
+            stderr.write(self.err_text)
+        _FakePopen.instances.append(self)
+
+    def wait(self, timeout=None):
+        return self.rc
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+
+def _patch_aligner(run=None, popen_rc: int = 0, popen_err: str = ""):
+    """Patch which/subprocess.run/subprocess.Popen in read_mapper."""
+    _FakePopen.instances = []
+    _FakePopen.rc = popen_rc
+    _FakePopen.err_text = popen_err
+    return (
+        patch("hermes_bacmap.engine.read_mapper.which", return_value="/fake/tool"),
+        patch(
+            "hermes_bacmap.engine.read_mapper.subprocess.run",
+            return_value=run if run is not None else _proc(),
+        ),
+        patch("hermes_bacmap.engine.read_mapper.subprocess.Popen", _FakePopen),
+    )
 
 
 # ===========================================================================
@@ -69,47 +112,88 @@ class TestEnsureBwaIndex:
 
 
 # ===========================================================================
-# _sort_and_index
+# _sniff_read_type
 # ===========================================================================
 
 
-class TestSortAndIndex:
-    def test_calls_sort_then_index(self, tmp_path):
+def _write_fastq(path: Path, read_len: int, n: int = 2) -> None:
+    rec = "@r\n" + "A" * read_len + "\n+\n" + "!" * read_len + "\n"
+    path.write_text(rec * n)
+
+
+class TestSniffReadType:
+    def test_short_reads(self, tmp_path):
+        fq = tmp_path / "r1.fastq"
+        _write_fastq(fq, 150)
+        assert _sniff_read_type([str(fq)]) == "short"
+
+    def test_long_reads(self, tmp_path):
+        fq = tmp_path / "ont.fastq"
+        _write_fastq(fq, 5000)
+        assert _sniff_read_type([str(fq)]) == "long"
+
+    def test_long_reads_gz(self, tmp_path):
+        import gzip
+
+        fq = tmp_path / "ont.fastq.gz"
+        rec = "@r\n" + "A" * 5000 + "\n+\n" + "!" * 5000 + "\n"
+        with gzip.open(fq, "wt") as fh:
+            fh.write(rec)
+        assert _sniff_read_type([str(fq)]) == "long"
+
+    def test_missing_file_falls_back_to_short(self, tmp_path):
+        assert _sniff_read_type([str(tmp_path / "nope.fastq")]) == "short"
+
+    def test_empty_reads_returns_short(self):
+        assert _sniff_read_type([]) == "short"
+
+
+# ===========================================================================
+# _run_align_and_sort
+# ===========================================================================
+
+
+class TestRunAlignAndSort:
+    def test_pipes_aligner_into_sort_then_index(self, tmp_path):
         out_bam = tmp_path / "out.bam"
-        with (
-            patch("hermes_bacmap.engine.read_mapper.which", return_value="/fake/samtools"),
-            patch(
-                "hermes_bacmap.engine.read_mapper.subprocess.run",
-                return_value=_proc(),
-            ) as run,
-        ):
-            _sort_and_index("SAM-STDOUT", str(out_bam), threads=4)
-        assert run.call_count == 2
-        sort_cmd = run.call_args_list[0][0][0]
-        index_cmd = run.call_args_list[1][0][0]
-        assert sort_cmd[0] == "/fake/samtools"
+        w, run, popen = _patch_aligner()
+        with w, run as run_mock, popen:
+            _run_align_and_sort(
+                ["/fake/bwa", "mem", "ref", "r1"], str(out_bam), threads=4, aligner_name="bwa mem"
+            )
+        assert _FakePopen.instances[0].cmd == ["/fake/bwa", "mem", "ref", "r1"]
+        assert run_mock.call_count == 2
+        sort_cmd = run_mock.call_args_list[0][0][0]
+        index_cmd = run_mock.call_args_list[1][0][0]
         assert "sort" in sort_cmd
         assert "-@" in sort_cmd and "4" in sort_cmd
         assert "-o" in sort_cmd and str(out_bam) in sort_cmd
-        assert index_cmd[0] == "/fake/samtools"
+        # sort reads from the aligner's stdout pipe, not a buffered string
+        assert run_mock.call_args_list[0][1]["stdin"] is _FakePopen.instances[0].stdout
         assert "index" in index_cmd
-        assert str(out_bam) in index_cmd
 
     def test_raises_when_samtools_missing(self, tmp_path):
         with patch("hermes_bacmap.engine.read_mapper.which", return_value=None):
             with pytest.raises(RuntimeError, match="samtools not found"):
-                _sort_and_index("SAM", str(tmp_path / "out.bam"), threads=2)
+                _run_align_and_sort(
+                    ["x"], str(tmp_path / "out.bam"), threads=2, aligner_name="bwa mem"
+                )
 
     def test_raises_on_sort_failure(self, tmp_path):
-        with (
-            patch("hermes_bacmap.engine.read_mapper.which", return_value="/fake/samtools"),
-            patch(
-                "hermes_bacmap.engine.read_mapper.subprocess.run",
-                return_value=_proc(stderr="bad sort", returncode=1),
-            ),
-        ):
+        w, run, popen = _patch_aligner(run=_proc(stderr="bad sort", returncode=1))
+        with w, run, popen:
             with pytest.raises(RuntimeError, match="samtools sort failed"):
-                _sort_and_index("SAM", str(tmp_path / "out.bam"), threads=2)
+                _run_align_and_sort(
+                    ["x"], str(tmp_path / "out.bam"), threads=2, aligner_name="bwa mem"
+                )
+
+    def test_raises_on_aligner_failure_with_stderr(self, tmp_path):
+        w, run, popen = _patch_aligner(popen_rc=1, popen_err="mem fail")
+        with w, run, popen:
+            with pytest.raises(RuntimeError, match=r"bwa mem failed \(exit 1\): mem fail"):
+                _run_align_and_sort(
+                    ["x"], str(tmp_path / "out.bam"), threads=2, aligner_name="bwa mem"
+                )
 
 
 # ===========================================================================
@@ -131,16 +215,11 @@ class TestBwaReadMapper:
         r1.write_text("@r\nACGT\n+\n!!!!\n")
         r2.write_text("@r\nACGT\n+\n!!!!\n")
         out_bam = tmp_path / "out.bam"
-        with (
-            patch("hermes_bacmap.engine.read_mapper.which", return_value="/fake/bwa"),
-            patch(
-                "hermes_bacmap.engine.read_mapper.subprocess.run",
-                return_value=_proc(stdout="SAM"),
-            ) as run,
-        ):
+        w, run, popen = _patch_aligner()
+        with w, run, popen:
             result = BwaReadMapper().map([str(r1), str(r2)], str(ref), str(out_bam))
-        mem_cmd = run.call_args_list[0][0][0]
-        assert mem_cmd[0] == "/fake/bwa"
+        mem_cmd = _FakePopen.instances[0].cmd
+        assert mem_cmd[0] == "/fake/tool"
         assert "mem" in mem_cmd
         assert str(r1) in mem_cmd and str(r2) in mem_cmd
         assert str(ref) in mem_cmd
@@ -157,13 +236,8 @@ class TestBwaReadMapper:
         r1 = tmp_path / "r1.fq"
         r1.write_text("@r\nACGT\n+\n!!!!\n")
         out_bam = tmp_path / "out.bam"
-        with (
-            patch("hermes_bacmap.engine.read_mapper.which", return_value="/fake/bwa"),
-            patch(
-                "hermes_bacmap.engine.read_mapper.subprocess.run",
-                return_value=_proc(stdout="SAM"),
-            ),
-        ):
+        w, run, popen = _patch_aligner()
+        with w, run, popen:
             result = BwaReadMapper().map([str(r1)], str(ref), str(out_bam))
         assert result["paired_end"] is False
 
@@ -174,15 +248,10 @@ class TestBwaReadMapper:
         r1 = tmp_path / "r1.fq"
         r1.write_text("@r\nACGT\n+\n!!!!\n")
         out_bam = tmp_path / "out.bam"
-        with (
-            patch("hermes_bacmap.engine.read_mapper.which", return_value="/fake/bwa"),
-            patch(
-                "hermes_bacmap.engine.read_mapper.subprocess.run",
-                return_value=_proc(stdout="SAM"),
-            ) as run,
-        ):
+        w, run, popen = _patch_aligner()
+        with w, run, popen:
             BwaReadMapper().map([str(r1)], str(ref), str(out_bam), threads=8)
-        mem_cmd = run.call_args_list[0][0][0]
+        mem_cmd = _FakePopen.instances[0].cmd
         idx_t = mem_cmd.index("-t")
         assert mem_cmd[idx_t + 1] == "8"
 
@@ -193,20 +262,15 @@ class TestBwaReadMapper:
         r1 = tmp_path / "r1.fq"
         r1.write_text("@r\nACGT\n+\n!!!!\n")
         out_bam = tmp_path / "out.bam"
-        with (
-            patch("hermes_bacmap.engine.read_mapper.which", return_value="/fake/bwa"),
-            patch(
-                "hermes_bacmap.engine.read_mapper.subprocess.run",
-                return_value=_proc(stdout="SAM"),
-            ) as run,
-        ):
+        w, run, popen = _patch_aligner()
+        with w, run, popen:
             BwaReadMapper().map(
                 [str(r1)],
                 str(ref),
                 str(out_bam),
                 extra_args="-Y -K 100000",
             )
-        mem_cmd = run.call_args_list[0][0][0]
+        mem_cmd = _FakePopen.instances[0].cmd
         assert "-Y" in mem_cmd
         assert "-K" in mem_cmd
         assert "100000" in mem_cmd
@@ -218,13 +282,8 @@ class TestBwaReadMapper:
         r1 = tmp_path / "r1.fq"
         r1.write_text("@r\nACGT\n+\n!!!!\n")
         out_bam = tmp_path / "out.bam"
-        with (
-            patch("hermes_bacmap.engine.read_mapper.which", return_value="/fake/bwa"),
-            patch(
-                "hermes_bacmap.engine.read_mapper.subprocess.run",
-                return_value=_proc(stderr="mem fail", returncode=1),
-            ),
-        ):
+        w, run, popen = _patch_aligner(popen_rc=1, popen_err="mem fail")
+        with w, run, popen:
             with pytest.raises(RuntimeError, match="bwa mem failed"):
                 BwaReadMapper().map([str(r1)], str(ref), str(out_bam))
 
@@ -241,16 +300,11 @@ class TestMinimap2ReadMapper:
         r1 = tmp_path / "r1.fq"
         r1.write_text("@r\nACGT\n+\n!!!!\n")
         out_bam = tmp_path / "out.bam"
-        with (
-            patch("hermes_bacmap.engine.read_mapper.which", return_value="/fake/minimap2"),
-            patch(
-                "hermes_bacmap.engine.read_mapper.subprocess.run",
-                return_value=_proc(stdout="SAM"),
-            ) as run,
-        ):
+        w, run, popen = _patch_aligner()
+        with w, run, popen:
             result = Minimap2ReadMapper().map([str(r1)], str(ref), str(out_bam))
-        cmd = run.call_args_list[0][0][0]
-        assert cmd[0] == "/fake/minimap2"
+        cmd = _FakePopen.instances[0].cmd
+        assert cmd[0] == "/fake/tool"
         assert "-ax" in cmd
         idx_ax = cmd.index("-ax")
         assert cmd[idx_ax + 1] == "map-ont"
@@ -266,15 +320,10 @@ class TestMinimap2ReadMapper:
         r1 = tmp_path / "r1.fq"
         r1.write_text("@r\nACGT\n+\n!!!!\n")
         out_bam = tmp_path / "out.bam"
-        with (
-            patch("hermes_bacmap.engine.read_mapper.which", return_value="/fake/minimap2"),
-            patch(
-                "hermes_bacmap.engine.read_mapper.subprocess.run",
-                return_value=_proc(stdout="SAM"),
-            ) as run,
-        ):
+        w, run, popen = _patch_aligner()
+        with w, run, popen:
             Minimap2ReadMapper().map([str(r1)], str(ref), str(out_bam), preset="sr")
-        cmd = run.call_args_list[0][0][0]
+        cmd = _FakePopen.instances[0].cmd
         idx_ax = cmd.index("-ax")
         assert cmd[idx_ax + 1] == "sr"
 
@@ -284,13 +333,8 @@ class TestMinimap2ReadMapper:
         r1 = tmp_path / "r1.fq"
         r1.write_text("@r\nACGT\n+\n!!!!\n")
         out_bam = tmp_path / "out.bam"
-        with (
-            patch("hermes_bacmap.engine.read_mapper.which", return_value="/fake/minimap2"),
-            patch(
-                "hermes_bacmap.engine.read_mapper.subprocess.run",
-                return_value=_proc(stderr="mm2 fail", returncode=1),
-            ),
-        ):
+        w, run, popen = _patch_aligner(popen_rc=1, popen_err="mm2 fail")
+        with w, run, popen:
             with pytest.raises(RuntimeError, match="minimap2 failed"):
                 Minimap2ReadMapper().map([str(r1)], str(ref), str(out_bam))
 
@@ -328,6 +372,7 @@ class TestReadMapperSelect:
 
     @pytest.mark.parametrize("name", ["r1.fastq", "r1.fq", "reads.fastq.gz"])
     def test_fastq_extensions_route_to_bwa(self, name):
+        # files do not exist → sniff falls back to short
         assert ReadMapper._select([name]) == "bwa"
 
     def test_any_fasta_in_list_routes_to_minimap2(self):
@@ -338,6 +383,25 @@ class TestReadMapperSelect:
 
     def test_unknown_extension_returns_bwa(self):
         assert ReadMapper._select(["reads.unknown"]) == "bwa"
+
+    def test_explicit_long_read_type_routes_to_minimap2(self):
+        assert ReadMapper._select(["ont.fastq"], read_type="long") == "minimap2"
+
+    def test_explicit_short_read_type_routes_to_bwa(self):
+        assert ReadMapper._select(["r1.fastq"], read_type="short") == "bwa"
+
+    def test_fasta_wins_over_read_type(self):
+        assert ReadMapper._select(["asm.fa"], read_type="short") == "minimap2"
+
+    def test_sniffed_long_reads_route_to_minimap2(self, tmp_path):
+        fq = tmp_path / "ont.fastq"
+        _write_fastq(fq, 8000)
+        assert ReadMapper._select([str(fq)]) == "minimap2"
+
+    def test_sniffed_short_reads_route_to_bwa(self, tmp_path):
+        fq = tmp_path / "r1.fastq"
+        _write_fastq(fq, 150)
+        assert ReadMapper._select([str(fq)]) == "bwa"
 
 
 class TestReadMapperFacadeRouting:
@@ -350,6 +414,15 @@ class TestReadMapperFacadeRouting:
         with patch("hermes_bacmap.engine.read_mapper._get_mapper") as gm:
             ReadMapper.map(["contigs.fasta"], "ref.fasta", "out.bam")
         gm.assert_called_once_with("minimap2")
+
+    def test_auto_routes_to_minimap2_for_long_read_type(self):
+        with patch("hermes_bacmap.engine.read_mapper._get_mapper") as gm:
+            ReadMapper.map(["ont.fastq"], "ref.fasta", "out.bam", read_type="long")
+        gm.assert_called_once_with("minimap2")
+
+    def test_invalid_read_type_raises(self):
+        with pytest.raises(ValueError, match="read_type"):
+            ReadMapper.map(["r1.fq"], "ref.fasta", "out.bam", read_type="medium")
 
     def test_explicit_mode_overrides_auto(self):
         with patch("hermes_bacmap.engine.read_mapper._get_mapper") as gm:

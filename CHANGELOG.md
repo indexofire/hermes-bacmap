@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed — 阶段 3 结构重构 + 质量改进（2026-07-18）
 
+- **ReadMapper 长读段路由（M2）**：新增 `read_type` 参数（short/long）+ FASTQ 内容嗅探（前 ~100 条记录 ≥1000bp 判长读段，支持 .gz）;`bio_align` schema 同步暴露
+- **SAM 流式管道（M3）**：aligner stdout 经 Popen 管道直连 `samtools sort`，消除全量 SAM 内存缓冲（大样本 OOM 风险）;stderr 落临时文件避免死锁
+- **AMRFinderPlus 集成**：pixi 新增 `ncbi-amrfinderplus 3.12`（4.x libcurl/libzlib 与环境冲突）;`amr_amrfinderplus` rule（按物种映射 --organism）+ `collect_summary.py` 接入 `steps.amr.amrfinderplus`;rules 24 → 25
 - **tools.py 拆包**：1887 行上帝模块 → `tools/` 包（seq / cli / pipeline / services + `_common` 共享基座），`registry.py` 表驱动注册；新增 `@tool_handler` 装饰器统一错误兜底，补齐 5 个无保护 handler
 - **vpa_serotyper_engine 拆分**：1027 行 → `_vpa_kmer` / `_vpa_genes` / `_vpa_report` + 430 行编排 facade；6 个嵌套闭包收敛为纯函数，6 处全库扫描收敛为 `_RefFasta` 缓存
 - **样本状态逻辑收敛**：新增 `services/sample_summary.py`，`run_analysis.py` 与 `web/app.py` 共用
@@ -201,7 +204,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Salmonella Gold standard sample set (11 strains)** (`tests/fixtures/gold_standard/salmonella/gold_standard.csv`):
   - Implements `project.md` §12.3 analytical validation spec
-  - 7 verified strains (BioSample + SRA both confirmed via webfetch): 2 S. Typhimurium (ST19/ST34), 2 S. Enteritidis ST11, 1 S. Infantis ST32 with pESI megaplasmid (blaCTX-M-65 ESBL), 1 S. Newport ST45, 1 E. coli ATCC 25922 (CLSI AST QC reference)
+  - 7 verified strains (BioSample + SRA both confirmed via webfetch): 2 S. Typhimurium (ST19/ST34), 2 S. Enteritidis ST11,
+    1 S. Infantis ST32 with pESI megaplasmid (blaCTX-M-65 ESBL), 1 S. Newport ST45, 1 E. coli ATCC 25922 (CLSI AST QC reference)
   - 3 partial-verified strains (BioSample confirmed, SRA pending Run Selector): GenomeTrakr 2017 PT Typhimurium (SAMN11787766), PulseNet Enteritidis (SAMN07568553)
   - 4 pending strains with explicit NCBI Pathogen Detection queries for completion: pansusceptible, ESBL blaCTX-M-15, ESBL blaCTX-M-14, mcr-1
   - JSONL mirror synced with CSV (schema-validated, conftest.py fixtures load correctly)

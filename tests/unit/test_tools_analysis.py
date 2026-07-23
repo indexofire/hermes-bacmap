@@ -24,6 +24,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
 from hermes_bacmap import tools  # noqa: E402
+from hermes_bacmap.analysis import failure_diagnostics  # noqa: E402
 from hermes_bacmap.services.genome_object_service import (  # noqa: E402
     GenomeObject,
     GenomeObjectService,
@@ -851,7 +852,10 @@ class TestDiagnoseFailure:
 
     def test_log_path_no_log(self, tmp_path, monkeypatch):
         # No log file at given path and no .snakemake/log either.
+        # diagnose_from_log falls back to failure_diagnostics._PROJECT_ROOT,
+        # so patch both module roots to keep the test off the real log dir.
         monkeypatch.setattr(tools_pipeline, "_PROJECT_ROOT", tmp_path)
+        monkeypatch.setattr(failure_diagnostics, "_PROJECT_ROOT", tmp_path)
         r = _parse(tools.diagnose_failure({"log_path": str(tmp_path / "missing.log")}))
         assert r["error_type"] == "no_log"
 
@@ -876,5 +880,6 @@ class TestDiagnoseFailure:
         # workflows/bacmap/.snakemake/log. We point _PROJECT_ROOT to tmp
         # so the lookup happens in an empty dir → no_log.
         monkeypatch.setattr(tools_pipeline, "_PROJECT_ROOT", tmp_path)
+        monkeypatch.setattr(failure_diagnostics, "_PROJECT_ROOT", tmp_path)
         r = _parse(tools.diagnose_failure({}))
         assert r["error_type"] == "no_log"

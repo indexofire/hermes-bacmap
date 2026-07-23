@@ -20,7 +20,7 @@ Hermes-bacmap 采用**分层架构**：LLM 编排在顶层，工具与技能在�
 │  Layer 2 · 执行引擎                                             │
 │  Engine 抽象层（SequenceMatcher + ReadMapper + Hit + Registry） │
 │  Deterministic Verifier（三层 AI 防御）                          │
-│  Snakemake DAG（24 rules，per-sample + cohort）                  │
+│  Snakemake DAG（25 rules，per-sample + cohort）                  │
 └────────────────────────────┬────────────────────────────────────┘
                              │
 ┌────────────────────────────▼────────────────────────────────────┐
@@ -157,11 +157,11 @@ hermes-bacmap/
 │   └── ...
 ├── workflows/bacmap/        Snakemake 流程
 │   ├── Snakefile                主入口
-│   ├── rules/                   10 个 .smk（23 rules）
+│   ├── rules/                   10 个 .smk（24 rules）
 │   └── scripts/                 collect_summary / SNP matrix
 ├── scripts/                     编排脚本（run_analysis / ingest / report）
 ├── skills/                      4 个 Hermes Skills
-├── tests/                       1042 tests
+├── tests/                       1051 tests
 ├── data/reference/              13 个参考数据库
 ├── web/                         FastAPI Web UI
 ├── pixi.toml                    生信工具依赖
@@ -172,5 +172,5 @@ hermes-bacmap/
 
 - [Engine 引擎层](engine.md) — SequenceMatcher / ReadMapper / Hit / Registry
 - [GOM 数据模型](gom.md) — SQLite schema、版本管理、事件流
-- [Snakemake 管线](pipeline.md) — 24 rules、DAG、物种路由、SNP 流程
+- [Snakemake 管线](pipeline.md) — 25 rules、DAG、物种路由、SNP 流程
 - [Skills 技能系统](skills.md) — 4 skills、三层渐进加载、bio-router 决策树

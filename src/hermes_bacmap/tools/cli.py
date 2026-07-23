@@ -277,6 +277,8 @@ def align(args: dict[str, Any], **kwargs: Any) -> str:
         mapper_kwargs["extra_args"] = extra
     if aligner == "minimap2" and args.get("preset"):
         mapper_kwargs["preset"] = args["preset"]
+    if args.get("read_type"):
+        mapper_kwargs["read_type"] = args["read_type"]
 
     try:
         from hermes_bacmap.engine import ReadMapper

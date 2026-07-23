@@ -91,7 +91,7 @@ hermes-bacmap/
 ├── workflows/bacmap/        Snakemake 分析流程
 │   ├── Snakefile               主入口（per-sample + cohort DAG）
 │   ├── config/                 配置 + 样本表
-│   ├── rules/                  10 个 rule 文件（23 rules，+ Snakefile `rule all` 共 24）
+│   ├── rules/                  10 个 rule 文件（24 rules，+ Snakefile `rule all` 共 25）
 │   └── scripts/                collect_summary + SNP matrix + pathotype
 ├── scripts/                     编排脚本
 │   ├── run_analysis.py         端到端编排器（--sample/--all/--snp/--status）
@@ -104,7 +104,7 @@ hermes-bacmap/
 │   ├── run-pipeline/           跨病原管线操作指南 + 5 个 references
 │   ├── bioinfo-analysis/       通用生信决策树
 │   └── interpret-results/      结果解读知识库 + 2 个 references
-├── tests/                       测试（1042 tests）
+├── tests/                       测试（1051 tests）
 │   ├── unit/                   GOM + Verifier + Cohort TDD
 │   ├── conftest.py             共享 fixtures
 │   └── fixtures/gold_standard/ 10 株验证数据集

@@ -278,6 +278,14 @@ ALIGN = {
                 "type": "string",
                 "description": "minimap2 preset: map-pb, map-ont, splice, etc. (minimap2 only).",
             },
+            "read_type": {
+                "type": "string",
+                "enum": ["short", "long"],
+                "description": (
+                    "Read type for auto aligner selection: 'long' routes FASTQ to minimap2, "
+                    "'short' to BWA-MEM. Omit to auto-sniff read lengths from the FASTQ."
+                ),
+            },
             "extra_args": {
                 "type": "string",
                 "description": "Extra CLI args passed verbatim to the aligner.",

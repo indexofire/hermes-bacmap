@@ -110,7 +110,7 @@ services/           持久层(GOM + strain_index + metadata + lab_results + samp
 ruff check src/ tests/        ✅ All checks passed
 ruff format --check           ✅ 80 files already formatted
 mypy --strict src/            ✅ Success: no issues found in 44 source files
-pytest tests/                 ✅ 1042 passed
+pytest tests/                 ✅ 1051 passed
 coverage (branch, fail_under=80) ✅ 92.41%
 ```
 
@@ -120,7 +120,15 @@ coverage (branch, fail_under=80) ✅ 92.41%
 
 1. ~~**提交保护成果**~~ ✅(2026-07-18 完成):拆为 4 个原子提交 —— `12cd7e9` 配置门禁、`d5a4525` bug 修复 + 收敛、`a828d7e` 测试扩充、`be2c59b` 评估文档。
 2. ~~**小重复收敛**~~ ✅(2026-07-18 完成):`kma._parse_template` 与 `gene_scanner._parse_db_header` 的 `~~~` header 解析合并为 `utils.parse_db_header` 单一实现,两处保留薄委托。
-3. ~~**文档对账**~~ ✅(2026-07-18 完成):工具数统一为 24(7 处 17/19/23 矛盾)、测试数 193 → 994、README/overview/features 模块行数表按实测更新、rules 数统一为 24(10 个 .smk 共 23 rules + Snakefile `rule all`)、修复 7 处死链、`tools.md`/`features.md` 补齐漏列的 5–7 个工具。
-4. ~~**sourmash 弃用 API 迁移**~~ ✅(2026-07-18 完成):`load_signatures` → `load_file_as_signatures`,`save_signatures` → `SaveSignaturesToLocation`;45 条 deprecation warning 全部消除(套件仅剩 1 条 fastapi 第三方 warning)。
-5. ~~**结构重构**~~ ✅(2026-07-18 完成):`tools.py` 拆分为 `tools/` 包(seq / cli / pipeline / services + `_common` 共享基座 + `@tool_handler` 统一错误兜底,顺带补齐 5 个无保护 handler)+ `tools/registry.py` 表驱动注册;`vpa_serotyper_engine.py` 按 kmer 排名 / 基因验证 / 报告生成拆分为 `_vpa_kmer` / `_vpa_genes` / `_vpa_report`(6 个闭包收敛为纯函数,6 处全库扫描收敛为 `_RefFasta` 缓存,删除死属性),engine 瘦身为 430 行编排 facade 并保留私有方法委托兼容测试;样本状态逻辑抽取为 `services/sample_summary.py` 供 scripts 与 web 共用;`species_identifier → taxonomic_validator` 循环依赖破环;子包补 `__init__.py` 导出 + `__all__`。`schemas.py` 保持单文件不动(纯数据,无拆分收益)。
-6. ~~**集成测试**~~ ✅(2026-07-18 完成):`web/app.py` 补 13 个 FastAPI TestClient 冒烟测试(状态/详情/注释/SNP/搜索/元数据/实验室结果路由);新增 `test_vpa_e2e.py` 端到端测试 5 个(RIMD 2210633 真实基因组 → O3:K6 Perfect,Salmonella/E.coli 阴性对照);CI 新增 `snakemake-dag` job 并安装 web extra 使冒烟测试入流水线。
+3. ~~**文档对账**~~ ✅(2026-07-18 完成):工具数统一为 24(7 处 17/19/23 矛盾)、测试数 193 → 994、README/overview/features 模块行数表按实测更新、
+   rules 数统一为 24(10 个 .smk 共 23 rules + Snakefile `rule all`)、修复 7 处死链、`tools.md`/`features.md` 补齐漏列的 5–7 个工具。
+4. ~~**sourmash 弃用 API 迁移**~~ ✅(2026-07-18 完成):`load_signatures` → `load_file_as_signatures`,`save_signatures` → `SaveSignaturesToLocation`;
+   45 条 deprecation warning 全部消除(套件仅剩 1 条 fastapi 第三方 warning)。
+5. ~~**结构重构**~~ ✅(2026-07-18 完成):`tools.py` 拆分为 `tools/` 包(seq / cli / pipeline / services + `_common` 共享基座 + `@tool_handler` 统一错误兜底,
+   顺带补齐 5 个无保护 handler)+ `tools/registry.py` 表驱动注册;`vpa_serotyper_engine.py` 按 kmer 排名 / 基因验证 / 报告生成拆分为
+   `_vpa_kmer` / `_vpa_genes` / `_vpa_report`(6 个闭包收敛为纯函数,6 处全库扫描收敛为 `_RefFasta` 缓存,删除死属性),
+   engine 瘦身为 430 行编排 facade 并保留私有方法委托兼容测试;样本状态逻辑抽取为 `services/sample_summary.py` 供 scripts 与 web 共用;
+   `species_identifier → taxonomic_validator` 循环依赖破环;子包补 `__init__.py` 导出 + `__all__`。`schemas.py` 保持单文件不动(纯数据,无拆分收益)。
+6. ~~**集成测试**~~ ✅(2026-07-18 完成):`web/app.py` 补 13 个 FastAPI TestClient 冒烟测试(状态/详情/注释/SNP/搜索/元数据/实验室结果路由);
+   新增 `test_vpa_e2e.py` 端到端测试 5 个(RIMD 2210633 真实基因组 → O3:K6 Perfect,Salmonella/E.coli 阴性对照);
+   CI 新增 `snakemake-dag` job 并安装 web extra 使冒烟测试入流水线。

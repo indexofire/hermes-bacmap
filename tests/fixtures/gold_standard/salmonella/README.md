@@ -53,7 +53,8 @@
 
 ### V0.2 expansion pool（保留，V0.1 未启用）
 
-- **SAM-HEI-007** (S. Heidelberg ST15, SAMN01832089 / CFSAN002069) — 2013 multistate outbreak isolate, USA:WA chicken, PFGE JF6X01.0122. Closed genome GCF_000430085.2. PacBio + Illumina hybrid; verify Illumina-only run via SRS452294 before V0.2 inclusion.
+- **SAM-HEI-007** (S. Heidelberg ST15, SAMN01832089 / CFSAN002069) — 2013 multistate outbreak isolate, USA:WA chicken,
+  PFGE JF6X01.0122. Closed genome GCF_000430085.2. PacBio + Illumina hybrid; verify Illumina-only run via SRS452294 before V0.2 inclusion.
 
 ## 数据源（按可信度）
 

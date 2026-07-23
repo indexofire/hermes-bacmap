@@ -69,6 +69,7 @@ summary["steps"]["serotype"] = {
 summary["steps"]["amr"] = {
     "abricate_vfdb": parse_tsv(snakemake.input.vfdb, []),
     "abricate_card": parse_tsv(snakemake.input.card, []),
+    "amrfinderplus": parse_tsv(snakemake.input.amrfinderplus, []),
 }
 
 summary["steps"]["plasmid"] = {
