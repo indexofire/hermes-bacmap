@@ -9,8 +9,8 @@ bio_diagnose -> diagnose_failure.
 from collections.abc import Callable
 from typing import Any
 
-from hermes_bacmap import schemas
-from hermes_bacmap.tools import cli, pipeline, seq, services
+from .. import schemas
+from . import cli, pipeline, seq, services
 
 Handler = Callable[..., str]
 

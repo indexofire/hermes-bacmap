@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from hermes_bacmap.utils import parse_mlst
+from ..utils import parse_mlst
 
 
 @dataclass

@@ -1,7 +1,7 @@
 """Pipeline failure diagnostics — parse Snakemake errors and suggest fixes.
 
 Usage:
-    from hermes_bacmap.analysis.failure_diagnostics import diagnose
+    from ..analysis.failure_diagnostics import diagnose
     result = diagnose(stderr_text)
     print(result.summary)
     print(result.suggested_fix)
@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from hermes_bacmap.config import PROJECT_ROOT as _PROJECT_ROOT
+from ..config import PROJECT_ROOT as _PROJECT_ROOT
 
 
 @dataclass

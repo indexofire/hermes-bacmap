@@ -8,7 +8,7 @@ Design principles:
   - All handlers return JSON strings. Errors are {"error": "..."}.
 
 Handlers live in submodules by group (seq, cli, pipeline, services) and are
-re-exported here so `from hermes_bacmap.tools import <handler>` keeps working.
+re-exported here so `from ..tools import <handler>` keeps working.
 """
 
 from .cli import align, blast, samtools_op, variant

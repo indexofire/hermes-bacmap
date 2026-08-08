@@ -15,16 +15,16 @@ import shutil
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, TypeVar, cast
 
-from hermes_bacmap.config import (
+from ..config import (
     DB_PATH as _DEFAULT_DB_PATH,
 )
-from hermes_bacmap.config import PIXI_BIN, PIXI_PYTHON
-from hermes_bacmap.config import (
+from ..config import PIXI_BIN, PIXI_PYTHON
+from ..config import (
     PROJECT_ROOT as _PROJECT_ROOT,
 )
-from hermes_bacmap.config import (
+from ..config import (
     RESULTS_DIR as _RESULTS_DIR,
 )
 
@@ -137,7 +137,10 @@ def _run_cmd(cmd: list[str], timeout: int = 3600) -> dict[str, Any]:
     }
 
 
-def tool_handler[F: Callable[..., str]](func: F) -> F:
+F = TypeVar("F", bound=Callable[..., str])
+
+
+def tool_handler(func: F) -> F:
     """Catch-all wrapper for tool handlers.
 
     Handlers with their own try/except keep their error paths; this decorator

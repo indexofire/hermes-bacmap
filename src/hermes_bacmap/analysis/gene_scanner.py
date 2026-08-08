@@ -13,7 +13,7 @@ Usage:
     python -m hermes_bacmap.gene_scanner contigs.fasta --db ecoh --json
 
     # Python API
-    from hermes_bacmap.analysis.gene_scanner import scan
+    from ..analysis.gene_scanner import scan
     result = scan("contigs.fasta", db_name="card")
     genes = result.genes
 
@@ -33,8 +33,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from hermes_bacmap.config import REF_DIR as _REF_DIR
-from hermes_bacmap.utils import parse_db_header
+from ..config import REF_DIR as _REF_DIR
+from ..utils import parse_db_header
 
 _DEFAULT_MIN_IDENTITY = 80.0
 _DEFAULT_MIN_COVERAGE = 80.0
@@ -209,7 +209,7 @@ def _scan_assembly(
 ) -> ScanResult:
     db_path = _find_db(db_name)
 
-    from hermes_bacmap.engine import SequenceMatcher
+    from ..engine import SequenceMatcher
 
     hits = SequenceMatcher.match(
         query=str(contigs),
@@ -271,7 +271,7 @@ def _scan_reads(
             f"Run gene_scanner.setup_db('{db_name}', build_kma=True) to create it."
         )
 
-    from hermes_bacmap.engine.backends.kma import KmaBackend
+    from ..engine.backends.kma import KmaBackend
 
     backend = KmaBackend(threads=threads)
     hits = backend.find(
@@ -380,7 +380,7 @@ def setup_db(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     if fasta_source is None:
-        from hermes_bacmap.db import DB_NAME_TO_SOURCE
+        from ..db import DB_NAME_TO_SOURCE
 
         src = DB_NAME_TO_SOURCE.get(db_name)
         if src and src.exists():
@@ -402,7 +402,7 @@ def setup_db(
 
     shutil.copy2(fasta_source, local_fasta)
 
-    from hermes_bacmap.engine.backends.blast import BlastBackend
+    from ..engine.backends.blast import BlastBackend
 
     backend = BlastBackend(tool="blastn")
     backend.make_db(local_fasta, db_prefix, db_type="nucl")
@@ -419,7 +419,7 @@ def setup_kma_index(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     if fasta_source is None:
-        from hermes_bacmap.db import DB_NAME_TO_SOURCE
+        from ..db import DB_NAME_TO_SOURCE
 
         src = DB_NAME_TO_SOURCE.get(db_name)
         if src and src.exists():
@@ -430,7 +430,7 @@ def setup_kma_index(
     kma_index_dir = output_dir / f"{db_name}_kma"
 
     try:
-        from hermes_bacmap.engine.backends.kma import KmaBackend
+        from ..engine.backends.kma import KmaBackend
 
         backend = KmaBackend()
         backend.make_index(Path(fasta_source), kma_index_dir)

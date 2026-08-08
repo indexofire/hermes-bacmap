@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from hermes_bacmap.utils import parse_mlst
+from ..utils import parse_mlst
 
 from ._common import (
     _DEFAULT_DB_PATH,
@@ -29,7 +29,7 @@ def query_metadata(args: dict[str, Any], **kwargs: Any) -> str:
         return json.dumps({"error": "Database not found. Run analysis first."})
 
     try:
-        from hermes_bacmap.services.strain_metadata import StrainMetadataService
+        from ..services.strain_metadata import StrainMetadataService
 
         strain_id = args.get("strain_id")
         search_kwargs = {}
@@ -75,7 +75,7 @@ def add_metadata(args: dict[str, Any], **kwargs: Any) -> str:
     db_path = _DEFAULT_DB_PATH
 
     try:
-        from hermes_bacmap.services.strain_metadata import StrainMetadataService
+        from ..services.strain_metadata import StrainMetadataService
 
         with StrainMetadataService(db_path) as svc:
             meta = svc.upsert(strain_id, data)
@@ -100,7 +100,7 @@ def query_lab_results(args: dict[str, Any], **kwargs: Any) -> str:
         return json.dumps({"error": "Database not found."})
 
     try:
-        from hermes_bacmap.services.lab_results import LabResultService
+        from ..services.lab_results import LabResultService
 
         sample_id = args.get("sample_id", "")
         category = args.get("category", "")
@@ -148,7 +148,7 @@ def add_lab_result(args: dict[str, Any], **kwargs: Any) -> str:
     db_path = _DEFAULT_DB_PATH
 
     try:
-        from hermes_bacmap.services.lab_results import LabResultService
+        from ..services.lab_results import LabResultService
 
         optional = {}
         for key in (
@@ -188,7 +188,7 @@ def snp_tree(args: dict[str, Any], **kwargs: Any) -> str:
     db_path = _DEFAULT_DB_PATH
     if db_path.exists():
         try:
-            from hermes_bacmap.services.genome_object_service import GenomeObjectService, ObjectType
+            from ..services.genome_object_service import GenomeObjectService, ObjectType
 
             with GenomeObjectService(db_path) as gos:
                 cohort_objs = [
@@ -253,7 +253,7 @@ def search_samples(args: dict[str, Any], **kwargs: Any) -> str:
         )
 
     try:
-        from hermes_bacmap.services.strain_index import StrainGenotypeIndex
+        from ..services.strain_index import StrainGenotypeIndex
 
         idx = StrainGenotypeIndex(db_path)
         has_structured = any([serotype, mlst_st, amr_gene, organism])
@@ -304,7 +304,7 @@ def search_samples(args: dict[str, Any], **kwargs: Any) -> str:
                 {"error": "Provide at least one of: query, serotype, mlst_st, amr_gene, organism"}
             )
 
-        from hermes_bacmap.services.genome_object_service import GenomeObjectService, ObjectType
+        from ..services.genome_object_service import GenomeObjectService, ObjectType
 
         with GenomeObjectService(db_path) as gos:
             fts_results = gos.search(query, object_type=ObjectType.ANALYSIS, limit=limit * 2)

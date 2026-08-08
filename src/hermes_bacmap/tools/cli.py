@@ -281,7 +281,7 @@ def align(args: dict[str, Any], **kwargs: Any) -> str:
         mapper_kwargs["read_type"] = args["read_type"]
 
     try:
-        from hermes_bacmap.engine import ReadMapper
+        from ..engine import ReadMapper
 
         result = ReadMapper.map(
             reads=read_args,

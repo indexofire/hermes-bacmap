@@ -6,7 +6,7 @@ Replaces Prokka (Perl) with:
   - JSON output optimized for AI/Hermes consumption
 
 Usage:
-    from hermes_bacmap.analysis.genome_annotator import annotate
+    from ..analysis.genome_annotator import annotate
     result = annotate("results/SAM-TYP-001/assembly/contigs.fasta")
     result.save("results/SAM-TYP-001/annotation/annotation.json")
 """
@@ -21,7 +21,7 @@ from typing import Any
 
 import pyrodigal
 
-from hermes_bacmap.config import REF_DIR as _REF_DIR
+from ..config import REF_DIR as _REF_DIR
 
 _MIN_CONTIG_LEN = 200
 _SINGLE_MODE_THRESHOLD = 100_000
@@ -151,7 +151,7 @@ def _run_blastp(
     evalue: float,
     min_coverage: float,
 ) -> dict[str, dict[str, Any]]:
-    from hermes_bacmap.engine import SequenceMatcher
+    from ..engine import SequenceMatcher
 
     db_path = str(_REF_DIR / db_prefix)
 

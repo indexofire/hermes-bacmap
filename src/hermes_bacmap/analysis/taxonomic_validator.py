@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from hermes_bacmap.config import CHECKM2_DB, GTDB_DB, pixi_path
+from ..config import CHECKM2_DB, GTDB_DB, pixi_path
 
 logger = logging.getLogger(__name__)
 
@@ -176,7 +176,7 @@ def validate_genome(
         output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    from hermes_bacmap.analysis.species_identifier import identify
+    from ..analysis.species_identifier import identify
 
     marker_result = identify(contigs_path)
     result = TaxonomyResult(

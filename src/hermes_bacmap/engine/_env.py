@@ -6,6 +6,6 @@ it so backends can import from a local module (``from .._env import which``).
 
 from __future__ import annotations
 
-from hermes_bacmap.config import pixi_path, which
+from ..config import pixi_path, which
 
 __all__ = ["pixi_path", "which"]

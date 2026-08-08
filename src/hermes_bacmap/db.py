@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from hermes_bacmap.config import REF_DIR as REF
+from .config import REF_DIR as REF
 
 SPECIES_MARKERS = REF / "species" / "markers.fasta"
 

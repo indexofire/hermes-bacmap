@@ -4,7 +4,7 @@ Decouples pipeline logic from specific CLI tools (blastn, minimap2, bwa).
 Provides SequenceMatcher and ReadMapper facades with auto backend selection.
 
 Usage:
-    from hermes_bacmap.engine import SequenceMatcher
+    from ..engine import SequenceMatcher
 
     hits = SequenceMatcher.match(
         query="contigs.fasta",

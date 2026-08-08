@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from hermes_bacmap.utils import parse_mlst
+from ..utils import parse_mlst
 
 from ._common import (
     _PROJECT_ROOT,
@@ -117,7 +117,7 @@ def verify_result(args: dict[str, Any], **kwargs: Any) -> str:
         summary = json.load(f)
 
     try:
-        from hermes_bacmap.analysis.deterministic_verifier import DeterministicVerifier
+        from ..analysis.deterministic_verifier import DeterministicVerifier
 
         v = DeterministicVerifier()
         result = v.verify_all(summary)
@@ -194,7 +194,7 @@ def gene_scan(args: dict[str, Any], **kwargs: Any) -> str:
     db_list = [d.strip() for d in database.split(",")]
 
     try:
-        from hermes_bacmap.analysis.gene_scanner import scan, scan_multi
+        from ..analysis.gene_scanner import scan, scan_multi
 
         if len(db_list) == 1:
             result = scan(
@@ -234,7 +234,7 @@ def vpa_serotype(args: dict[str, Any], **kwargs: Any) -> str:
         sample_id = contigs.parent.parent.name
 
     try:
-        from hermes_bacmap.typing.vpa_serotyper import VpaSerotyper
+        from ..typing.vpa_serotyper import VpaSerotyper
 
         serotyper = VpaSerotyper()
         result = serotyper.analyze(contigs_path, sample_id)
@@ -255,7 +255,7 @@ def validate_taxonomy(args: dict[str, Any], **kwargs: Any) -> str:
         return json.dumps({"error": f"Contigs not found for {sample_id}. Run analysis first."})
 
     try:
-        from hermes_bacmap.analysis.taxonomic_validator import validate_genome
+        from ..analysis.taxonomic_validator import validate_genome
 
         output_dir = _RESULTS_DIR / sample_id / "taxonomy"
         result = validate_genome(contigs, mode=mode, output_dir=output_dir)
@@ -283,7 +283,7 @@ def annotate_genome(args: dict[str, Any], **kwargs: Any) -> str:
         output_path = str(_RESULTS_DIR / sample_id / "annotation" / "annotation.json")
 
     try:
-        from hermes_bacmap.analysis.genome_annotator import annotate
+        from ..analysis.genome_annotator import annotate
 
         result = annotate(contigs_path, sample_id)
         result.save(output_path)
@@ -315,7 +315,7 @@ def annotate_genome(args: dict[str, Any], **kwargs: Any) -> str:
 @tool_handler
 def diagnose_failure(args: dict[str, Any], **kwargs: Any) -> str:
     """Diagnose pipeline failure from Snakemake log or stderr text."""
-    from hermes_bacmap.analysis.failure_diagnostics import diagnose, diagnose_from_log
+    from ..analysis.failure_diagnostics import diagnose, diagnose_from_log
 
     stderr_text = args.get("stderr_text", "")
     log_path = args.get("log_path", "")

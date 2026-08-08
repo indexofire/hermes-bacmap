@@ -4,7 +4,7 @@ Wraps SerotyperEngine (minimap2 + sourmash + gene-level verification)
 for the hermes-bacmap pipeline.
 
 Usage:
-    from hermes_bacmap.typing.vpa_serotyper import VpaSerotyper
+    from ..typing.vpa_serotyper import VpaSerotyper
     serotyper = VpaSerotyper()
     result = serotyper.analyze("results/SAM-XXX/assembly/contigs.fasta")
 """
@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from hermes_bacmap.config import PROJECT_ROOT as _PROJECT_ROOT
+from ..config import PROJECT_ROOT as _PROJECT_ROOT
 
 from .vpa_serotyper_engine import SerotyperEngine
 

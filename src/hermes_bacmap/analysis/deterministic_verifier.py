@@ -10,7 +10,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-from hermes_bacmap.utils import parse_mlst
+from ..utils import parse_mlst
 
 _KNOWN_SEROGROUPS = frozenset(
     {
