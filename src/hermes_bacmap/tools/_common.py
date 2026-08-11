@@ -15,7 +15,7 @@ import shutil
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, TypeVar, cast
+from typing import Any, cast
 
 from ..config import (
     DB_PATH as _DEFAULT_DB_PATH,
@@ -137,10 +137,7 @@ def _run_cmd(cmd: list[str], timeout: int = 3600) -> dict[str, Any]:
     }
 
 
-F = TypeVar("F", bound=Callable[..., str])
-
-
-def tool_handler(func: F) -> F:
+def tool_handler[F: Callable[..., str]](func: F) -> F:
     """Catch-all wrapper for tool handlers.
 
     Handlers with their own try/except keep their error paths; this decorator
