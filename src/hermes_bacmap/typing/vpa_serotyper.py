@@ -16,7 +16,6 @@ from pathlib import Path
 from typing import Any
 
 from ..config import PROJECT_ROOT as _PROJECT_ROOT
-
 from .vpa_serotyper_engine import SerotyperEngine
 
 _DB_DIR = _PROJECT_ROOT / "data" / "reference" / "vpa_serotype"
