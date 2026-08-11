@@ -24,6 +24,7 @@ include: "rules/typing_amr.smk"
 include: "rules/dec_shigella.smk"
 include: "rules/vpara.smk"
 include: "rules/snp.smk"
+include: "rules/cgmlst.smk"
 include: "rules/taxonomy.smk"
 include: "rules/annotation.smk"
 include: "rules/report.smk"
@@ -36,4 +37,11 @@ rule all:
         expand(
             str(WORKDIR) + "/snp/{group}/snp_summary.json",
             group=_ACTIVE_GROUPS
+        ),
+        # cgMLST cohort summaries — opt-in. _CGMLST_ACTIVE_GROUPS (defined in
+        # rules/cgmlst.smk) is empty unless config.cgmlst.run_cgmlst_cohort is
+        # true, so this expand is a no-op when the cohort flag is off.
+        expand(
+            str(WORKDIR) + "/cgmlst/{group}/cgmlst_summary.json",
+            group=_CGMLST_ACTIVE_GROUPS
         )
