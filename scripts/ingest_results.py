@@ -21,12 +21,14 @@ from _common import ROOT
 
 sys.path.insert(0, str(ROOT / "src"))
 
+from hermes_bacmap.analysis.cgmlst_types import CgmlstProfile
 from hermes_bacmap.services.genome_object_service import (
     GenomeObject,
     GenomeObjectService,
     ObjectType,
 )
 from hermes_bacmap.services.strain_index import StrainGenotypeIndex, _extract_genotype
+from hermes_bacmap.utils import parse_cgmlst_profile
 
 RESULTS_DIR = ROOT / "results"
 DB_PATH = ROOT / "data" / "hermes_bacmap.sqlite"
@@ -71,6 +73,20 @@ SNP_GROUP_ORGANISMS = {
     "ecoli": "Escherichia coli / Shigella",
     "vpara": "Vibrio parahaemolyticus",
 }
+
+CGMLST_PIPELINE_VERSION = "cgmlst-pipeline-v0.1"
+
+CGMLST_SCHEME_ORGANISMS = {
+    "senterica_2": "Salmonella enterica",
+    "ecoli_2": "Escherichia coli",
+    "vparahaemolyticus_3": "Vibrio parahaemolyticus",
+}
+
+CGMLST_TOOL_VERSIONS = {
+    "gmlst": "0.1.1",
+}
+
+CGMLST_REFERENCE_DIR = ROOT / "data" / "reference" / "cgmlst"
 
 
 def sha256_file(path: Path) -> str:
@@ -415,12 +431,387 @@ def _create_cohort_version(
     return new_obj.object_id
 
 
+def _cgmlst_meta_hash(scheme: str) -> str:
+    if not scheme:
+        return "unversioned"
+    meta_path = CGMLST_REFERENCE_DIR / scheme / ".meta.json"
+    if not meta_path.exists():
+        return "unversioned"
+    return hashlib.sha256(meta_path.read_bytes()).hexdigest()[:12]
+
+
+def _build_cgmlst_payload(profile: CgmlstProfile) -> tuple[dict, str]:
+    organism = CGMLST_SCHEME_ORGANISMS.get(profile.scheme, "Unknown")
+    payload = {
+        "analysis_type": "cgmlst_profile",
+        "sample_id": profile.sample_id,
+        "scheme": profile.scheme,
+        "st_raw": profile.st_raw,
+        "n_loci": profile.n_total,
+        "alleles": dict(profile.alleles),
+        "n_called": profile.n_called,
+        "n_total": profile.n_total,
+        "missing_loci": list(profile.missing_loci),
+        "novel_loci": list(profile.novel_loci),
+        "ambiguous_loci": list(profile.ambiguous_loci),
+    }
+    return payload, organism
+
+
+def ingest_cgmlst(gos: GenomeObjectService) -> list[str]:
+    import csv
+
+    samples_tsv = ROOT / "workflows" / "bacmap" / "config" / "samples.tsv"
+    if not samples_tsv.exists():
+        print(f"  ✗ samples.tsv not found: {samples_tsv}")
+        return []
+
+    with samples_tsv.open() as f:
+        samples = [r["sample"] for r in csv.DictReader(f, delimiter="\t")]
+    if not samples:
+        print("  ✗ No samples in samples.tsv")
+        return []
+
+    ingested_ids: list[str] = []
+    for sid in samples:
+        oid = _ingest_sample_cgmlst(gos, sid)
+        if oid:
+            ingested_ids.append(oid)
+    return ingested_ids
+
+
+def _ingest_sample_cgmlst(gos: GenomeObjectService, sample_id: str) -> str | None:
+    cgmlst_path = RESULTS_DIR / sample_id / "typing" / "cgmlst.tsv"
+    if not cgmlst_path.exists():
+        print(f"  ⏭️  {sample_id}: cgmlst.tsv not found, skipped")
+        return None
+
+    try:
+        tsv_text = cgmlst_path.read_text()
+        profile = parse_cgmlst_profile(tsv_text)
+    except (ValueError, OSError) as exc:
+        print(f"  ❌ {sample_id}: cgmlst.tsv parse failed: {exc}")
+        return None
+
+    if not profile.scheme or profile.n_total == 0:
+        print(
+            f"  ⏭️  {sample_id}: cgmlst.tsv empty (scheme={profile.scheme!r}), skipped"
+        )
+        return None
+
+    payload, organism = _build_cgmlst_payload(profile)
+    meta_hash = _cgmlst_meta_hash(profile.scheme)
+    db_versions = {
+        "cgmlst_scheme": f"{profile.scheme}@{meta_hash}",
+        "gmlst": CGMLST_TOOL_VERSIONS["gmlst"],
+    }
+
+    existing = [
+        o for o in gos.list_by_type(ObjectType.ANALYSIS)
+        if o.strain_id == sample_id
+        and o.payload.get("analysis_type") == "cgmlst_profile"
+    ]
+
+    if existing:
+        latest = max(existing, key=lambda o: o.version)
+        if latest.pipeline_version == CGMLST_PIPELINE_VERSION and (
+            latest.database_versions.get("cgmlst_scheme") == db_versions["cgmlst_scheme"]
+        ):
+            print(
+                f"  ⏭️  {sample_id}: cgmlst_profile v{latest.version} 已存在, skipped"
+            )
+            return latest.object_id
+        return _create_cgmlst_version(gos, latest.object_id, payload, db_versions, sample_id)
+
+    return _create_cgmlst_new(gos, payload, db_versions, organism, sample_id, cgmlst_path)
+
+
+def _register_cgmlst_files(
+    gos: GenomeObjectService, object_id: str, version: int, sample_id: str
+) -> None:
+    cgmlst_path = RESULTS_DIR / sample_id / "typing" / "cgmlst.tsv"
+    if cgmlst_path.exists() and cgmlst_path.stat().st_size > 0:
+        gos.register_file_artifact(
+            object_id=object_id,
+            version=version,
+            file_type="cgmlst_profile",
+            file_path=cgmlst_path,
+            sha256=sha256_file(cgmlst_path),
+            size_bytes=cgmlst_path.stat().st_size,
+        )
+
+
+def _create_cgmlst_new(
+    gos: GenomeObjectService,
+    payload: dict,
+    db_versions: dict[str, str],
+    organism: str,
+    sample_id: str,
+    cgmlst_path: Path,
+) -> str:
+    object_id = str(uuid4())
+    now = datetime.now(UTC).replace(tzinfo=None)
+
+    obj = GenomeObject(
+        object_id=object_id,
+        object_type=ObjectType.ANALYSIS,
+        version=1,
+        schema_version=SCHEMA_VERSION,
+        created_at=now,
+        created_by="cgmlst-pipeline",
+        payload=payload,
+        pipeline_version=CGMLST_PIPELINE_VERSION,
+        database_versions=db_versions,
+        tool_versions=CGMLST_TOOL_VERSIONS,
+        organism=organism,
+        strain_id=sample_id,
+    )
+    gos.create(obj)
+    _register_cgmlst_files(gos, object_id, 1, sample_id)
+
+    gos.log_event(
+        object_id,
+        "mlst_finished",
+        {
+            "strain_id": sample_id,
+            "scheme": payload["scheme"],
+            "n_called": payload["n_called"],
+            "n_loci": payload["n_loci"],
+            "source_file": str(cgmlst_path),
+        },
+    )
+
+    print(
+        f"  ✅ {sample_id}: cgmlst_profile 新建 v1 "
+        f"({payload['scheme']}, {payload['n_called']}/{payload['n_loci']} called)"
+    )
+    return object_id
+
+
+def _create_cgmlst_version(
+    gos: GenomeObjectService,
+    existing_id: str,
+    payload: dict,
+    db_versions: dict[str, str],
+    sample_id: str,
+) -> str:
+    new_obj = gos.create_new_version(
+        existing_id,
+        payload,
+        pipeline_version=CGMLST_PIPELINE_VERSION,
+        database_versions=db_versions,
+        tool_versions=CGMLST_TOOL_VERSIONS,
+    )
+    _register_cgmlst_files(gos, new_obj.object_id, new_obj.version, sample_id)
+
+    gos.log_event(
+        new_obj.object_id,
+        "version_created",
+        {
+            "from_version": new_obj.version - 1,
+            "pipeline_version": CGMLST_PIPELINE_VERSION,
+            "scheme": payload["scheme"],
+        },
+    )
+
+    print(f"  🔄 {sample_id}: cgmlst_profile 新版本 v{new_obj.version}")
+    return new_obj.object_id
+
+
+def ingest_cohort_cgmlst(gos: GenomeObjectService) -> list[str]:
+    cgmlst_dir = RESULTS_DIR / "cgmlst"
+    if not cgmlst_dir.exists():
+        print("  ✗ cgMLST cohort results directory not found: results/cgmlst/")
+        return []
+
+    group_dirs = sorted(
+        d
+        for d in cgmlst_dir.iterdir()
+        if d.is_dir() and (d / "cgmlst_summary.json").exists()
+    )
+    if not group_dirs:
+        print("  ✗ No per-group cgMLST summaries found in results/cgmlst/")
+        return []
+
+    ingested_ids: list[str] = []
+    for group_dir in group_dirs:
+        group = group_dir.name
+        oid = _ingest_group_cgmlst(gos, group)
+        if oid:
+            ingested_ids.append(oid)
+
+    return ingested_ids
+
+
+def _ingest_group_cgmlst(gos: GenomeObjectService, group: str) -> str | None:
+    summary_path = RESULTS_DIR / "cgmlst" / group / "cgmlst_summary.json"
+    if not summary_path.exists():
+        print(f"  ✗ cgMLST cohort summary not found: {summary_path}")
+        return None
+
+    with summary_path.open() as f:
+        cgmlst_data = json.load(f)
+
+    cohort_strain_id = f"cohort:{group}-cgmlst"
+    scheme = cgmlst_data.get("scheme", "")
+    meta_hash = _cgmlst_meta_hash(scheme)
+    db_versions = {
+        "cgmlst_scheme": f"{scheme}@{meta_hash}" if scheme else "unversioned",
+        "gmlst": CGMLST_TOOL_VERSIONS["gmlst"],
+    }
+
+    existing = [
+        o
+        for o in gos.list_by_type(ObjectType.ANALYSIS)
+        if o.strain_id == cohort_strain_id
+    ]
+
+    if existing:
+        latest = max(existing, key=lambda o: o.version)
+        # Check both pipeline_version AND cgmlst_scheme hash so a scheme
+        # re-vendor (different .meta.json hash) triggers a new version even
+        # when CGMLST_PIPELINE_VERSION is unchanged.
+        if latest.pipeline_version == CGMLST_PIPELINE_VERSION and (
+            latest.database_versions.get("cgmlst_scheme") == db_versions["cgmlst_scheme"]
+        ):
+            print(f"  ⏭️  cgMLST cohort [{group}]: 已存在 v{latest.version}, skipped")
+            return latest.object_id
+        return _create_cgmlst_cohort_version(
+            gos, latest.object_id, cgmlst_data, group, db_versions
+        )
+
+    return _create_cgmlst_cohort_new(gos, cgmlst_data, group, db_versions)
+
+
+def _build_cgmlst_cohort_payload(cgmlst_data: dict, group: str) -> tuple[dict, str]:
+    scheme = cgmlst_data.get("scheme", "")
+    organism = (
+        cgmlst_data.get("organism")
+        or CGMLST_SCHEME_ORGANISMS.get(scheme, group)
+    )
+    payload = {
+        "analysis_type": "cgmlst_cohort",
+        "group": group,
+        "scheme": scheme,
+        "n_loci": cgmlst_data.get("n_loci", 0),
+        "samples": cgmlst_data.get("samples", []),
+        "n_samples": cgmlst_data.get("n_samples", 0),
+        "allele_distances": cgmlst_data.get("allele_distances", {}),
+        "tree_newick": cgmlst_data.get("tree_newick", ""),
+        "missing_rate": cgmlst_data.get("missing_rate", 0),
+        "thresholds_applied": cgmlst_data.get("thresholds_applied", {}),
+    }
+    return payload, organism
+
+
+def _register_cgmlst_cohort_files(
+    gos: GenomeObjectService, object_id: str, version: int, group: str
+) -> None:
+    group_dir = RESULTS_DIR / "cgmlst" / group
+    files_to_register = [
+        ("cgmlst_tree_newick", group_dir / "core.treefile"),
+        ("cgmlst_distance_matrix", group_dir / "distance_matrix.json"),
+        ("cgmlst_profiles", group_dir / "cgmlst_profiles.tsv"),
+        ("cgmlst_summary", group_dir / "cgmlst_summary.json"),
+    ]
+    for file_type, fpath in files_to_register:
+        if fpath.exists() and fpath.stat().st_size > 0:
+            gos.register_file_artifact(
+                object_id=object_id,
+                version=version,
+                file_type=file_type,
+                file_path=fpath,
+                sha256=sha256_file(fpath),
+                size_bytes=fpath.stat().st_size,
+            )
+
+
+def _create_cgmlst_cohort_new(
+    gos: GenomeObjectService,
+    cgmlst_data: dict,
+    group: str,
+    db_versions: dict[str, str],
+) -> str:
+    payload, organism = _build_cgmlst_cohort_payload(cgmlst_data, group)
+    cohort_strain_id = f"cohort:{group}-cgmlst"
+    object_id = str(uuid4())
+    now = datetime.now(UTC).replace(tzinfo=None)
+
+    obj = GenomeObject(
+        object_id=object_id,
+        object_type=ObjectType.ANALYSIS,
+        version=1,
+        schema_version=SCHEMA_VERSION,
+        created_at=now,
+        created_by="cgmlst-pipeline",
+        payload=payload,
+        pipeline_version=CGMLST_PIPELINE_VERSION,
+        database_versions=db_versions,
+        tool_versions=CGMLST_TOOL_VERSIONS,
+        organism=organism,
+        strain_id=cohort_strain_id,
+    )
+    gos.create(obj)
+    _register_cgmlst_cohort_files(gos, object_id, 1, group)
+
+    gos.log_event(
+        object_id,
+        "mlst_finished",
+        {
+            "group": group,
+            "scheme": payload["scheme"],
+            "n_samples": payload["n_samples"],
+            "n_loci": payload["n_loci"],
+        },
+    )
+
+    print(
+        f"  ✅ cgMLST cohort [{group}]: 新建 v1 "
+        f"({payload['scheme']}, {payload['n_samples']} samples, "
+        f"{payload['n_loci']} loci)"
+    )
+    return object_id
+
+
+def _create_cgmlst_cohort_version(
+    gos: GenomeObjectService,
+    existing_id: str,
+    cgmlst_data: dict,
+    group: str,
+    db_versions: dict[str, str],
+) -> str:
+    payload, _ = _build_cgmlst_cohort_payload(cgmlst_data, group)
+    new_obj = gos.create_new_version(
+        existing_id,
+        payload,
+        pipeline_version=CGMLST_PIPELINE_VERSION,
+        database_versions=db_versions,
+        tool_versions=CGMLST_TOOL_VERSIONS,
+    )
+    _register_cgmlst_cohort_files(gos, new_obj.object_id, new_obj.version, group)
+
+    gos.log_event(
+        new_obj.object_id,
+        "version_created",
+        {
+            "from_version": new_obj.version - 1,
+            "pipeline_version": CGMLST_PIPELINE_VERSION,
+            "scheme": payload["scheme"],
+        },
+    )
+
+    print(f"  🔄 cgMLST cohort [{group}]: 新版本 v{new_obj.version}")
+    return new_obj.object_id
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Snakemake 结果入库到 GOM")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--sample", type=str)
     group.add_argument("--all", action="store_true")
     group.add_argument("--snp", action="store_true")
+    group.add_argument("--cgmlst", action="store_true")
+    group.add_argument("--cgmlst-cohort", action="store_true", dest="cgmlst_cohort")
     group.add_argument("--rebuild-index", action="store_true")
     args = parser.parse_args()
 
@@ -453,6 +844,32 @@ def main() -> int:
         gos.close()
         return 0 if oids else 1
 
+    if args.cgmlst:
+        print("=== 入库 cgMLST Profile (per-sample) ===\n")
+        oids = ingest_cgmlst(gos)
+        if oids:
+            print(f"\n✓ cgMLST 入库完成: {len(oids)} sample(s)")
+            for oid in oids:
+                print(f"  object_id={oid[:12]}...")
+        else:
+            print("\n❌ cgMLST 入库失败 (无 cgmlst.tsv 或全部跳过)")
+        print(f"  Database: {DB_PATH}")
+        gos.close()
+        return 0 if oids else 1
+
+    if args.cgmlst_cohort:
+        print("=== 入库 cgMLST Cohort (per-group) ===\n")
+        oids = ingest_cohort_cgmlst(gos)
+        if oids:
+            print(f"\n✓ cgMLST cohort 入库完成: {len(oids)} group(s)")
+            for oid in oids:
+                print(f"  object_id={oid[:12]}...")
+        else:
+            print("\n❌ cgMLST cohort 入库失败")
+        print(f"  Database: {DB_PATH}")
+        gos.close()
+        return 0 if oids else 1
+
     if args.all:
         import csv
 
@@ -473,6 +890,15 @@ def main() -> int:
             print(f"  ❌ {sid}: failed")
 
     print(f"\n✓ 入库完成: {ingested}/{len(samples)}")
+
+    if args.all:
+        print("\n=== 入库 cgMLST Profile (per-sample, --all umbrella) ===\n")
+        cgmlst_oids = ingest_cgmlst(gos)
+        if cgmlst_oids:
+            print(f"\n✓ cgMLST 入库完成: {len(cgmlst_oids)} sample(s)")
+        else:
+            print("\n⏭️  cgMLST: 无 cgmlst.tsv 可入库 (跳过)")
+
     print(f"  Database: {DB_PATH}")
 
     gos.close()
