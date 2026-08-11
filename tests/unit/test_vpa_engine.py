@@ -903,3 +903,54 @@ class TestRunOneSampleFastxError:
         result = engine.run_one_sample(sample)
         assert result["Predicted_Serotype"] == "OUT:KUT"
         assert "fastx_read exploded" in result["O_Missing_Genes"]
+
+
+class TestDbUnpickleSafety:
+    """The committed VPA reference DB is a pickle; loading it must not allow
+    code execution even when an attacker forges a valid HMAC (the signing key
+    is public). Tests target the isolated _safe_pickle_load boundary."""
+
+    _REAL_DB = _PROJECT_ROOT / "data" / "reference" / "vpa_serotype" / "ref_meta.pkl"
+
+    def test_forged_payload_with_valid_signature_is_rejected(self, tmp_path):
+        class _RcePayload:
+            def __reduce__(self):
+                import os
+
+                return (os.system, ("echo pwned",))
+
+        metadata = {"OL1": _RcePayload()}
+        digest = hmac.new(eng.SIGNING_KEY, pickle.dumps(metadata), hashlib.sha256).digest()
+        db_file = tmp_path / "ref_meta.pkl"
+        with db_file.open("wb") as f:
+            pickle.dump((metadata, digest), f)
+
+        with pytest.raises(pickle.UnpicklingError, match="Refused global lookup"):
+            eng._safe_pickle_load(db_file)
+
+    def test_unsigned_forged_payload_is_rejected(self, tmp_path):
+        class _RcePayload:
+            def __reduce__(self):
+                return (eval, ("__import__('os').system('id')",))
+
+        db_file = tmp_path / "ref_meta.pkl"
+        with db_file.open("wb") as f:
+            pickle.dump({"OL1": _RcePayload()}, f)
+
+        with pytest.raises(pickle.UnpicklingError):
+            eng._safe_pickle_load(db_file)
+
+    def test_plain_dict_metadata_loads_cleanly(self, tmp_path):
+        metadata = {"OL1": {"type": "O", "genes": [{"gene": "wzx", "start": 1}]}}
+        db_file = tmp_path / "ref_meta.pkl"
+        with db_file.open("wb") as f:
+            pickle.dump((metadata, b"sig"), f)
+
+        loaded = eng._safe_pickle_load(db_file)
+        assert loaded[0]["OL1"]["type"] == "O"
+
+    @pytest.mark.skipif(not _REAL_DB.exists(), reason="committed reference DB absent")
+    def test_committed_reference_db_loads_without_global_lookup(self):
+        loaded = eng._safe_pickle_load(self._REAL_DB)
+        payload = loaded[0] if isinstance(loaded, tuple) else loaded
+        assert isinstance(payload, dict)

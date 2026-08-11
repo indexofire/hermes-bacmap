@@ -7,19 +7,23 @@ from __future__ import annotations
 
 import csv
 import json
+import logging
 import os
 import sys
 from pathlib import Path
-from typing import Any
 
-from fastapi import FastAPI, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Security, status
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.security import APIKeyHeader
 from fastapi.staticfiles import StaticFiles
+
+logger = logging.getLogger(__name__)
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
-from hermes_bacmap.config import RESULTS_DIR as _RESULTS_DIR, DB_PATH as _DB_PATH
+from hermes_bacmap.config import DB_PATH as _DB_PATH
+from hermes_bacmap.config import RESULTS_DIR as _RESULTS_DIR
 from hermes_bacmap.services.sample_summary import (
     read_summary,
     sample_status,
@@ -28,9 +32,35 @@ from hermes_bacmap.services.sample_summary import (
 )
 
 _WORKFLOW_DIR = _PROJECT_ROOT / "workflows" / "bacmap"
+
+_API_KEY_HEADER = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+def _require_api_key(api_key: str | None = Security(_API_KEY_HEADER)) -> str | None:
+    expected = os.environ.get("BACMAP_API_KEY")
+    if not expected:
+        return None
+    if api_key and api_key == expected:
+        return expected
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="invalid or missing X-API-Key header",
+    )
+
+
 _SAMPLES_TSV = _WORKFLOW_DIR / "config" / "samples.tsv"
 
-app = FastAPI(title="Hermes-bacmap", version="0.5.0")
+app = FastAPI(
+    title="Hermes-bacmap",
+    version="0.5.0",
+    dependencies=[Depends(_require_api_key)],
+)
+
+if not os.environ.get("BACMAP_API_KEY"):
+    logger.warning(
+        "BACMAP_API_KEY unset — web API is unauthenticated. Set it before "
+        "binding to a non-localhost interface."
+    )
 app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
 
 

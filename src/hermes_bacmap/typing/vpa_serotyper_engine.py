@@ -46,6 +46,28 @@ __all__ = [
 SIGNING_KEY = b"vpautils-serotype-db-integrity"
 
 
+class _RestrictedUnpickler(pickle.Unpickler):
+    """Pickle unpickler that refuses every global import.
+
+    Pickle deserialization RCE requires resolving a callable via find_class
+    (e.g. os.system, builtins.eval). The committed VPA reference DB is plain
+    dict/list/str data, so it loads without any global lookup; this guard
+    makes a forged DB (even one carrying a valid HMAC, since SIGNING_KEY is
+    public and forgeable) non-executable. The HMAC check below is retained
+    only as defense-in-depth, not as a security boundary.
+    """
+
+    def find_class(self, module: str, name: str) -> Any:
+        raise pickle.UnpicklingError(
+            f"Refused global lookup {module}.{name} during reference DB load"
+        )
+
+
+def _safe_pickle_load(path: Path) -> Any:
+    with open(path, "rb") as f:
+        return _RestrictedUnpickler(f).load()
+
+
 class SerotyperEngine:
     ANTIGEN_BOUNDARY = _vpa_genes.ANTIGEN_BOUNDARY
 
@@ -79,8 +101,7 @@ class SerotyperEngine:
         if self.sig_path.exists():
             self._verify_signature()
 
-        with open(self.meta_path, "rb") as f:
-            loaded = pickle.load(f)
+        loaded = _safe_pickle_load(self.meta_path)
         self.metadata = loaded[0] if isinstance(loaded, tuple) else loaded
 
         self._build_gene_maps()
@@ -105,8 +126,7 @@ class SerotyperEngine:
             self.sketch_mhs[sig.name] = sig.minhash
 
     def _verify_signature(self) -> None:
-        with open(self.meta_path, "rb") as f:
-            loaded = pickle.load(f)
+        loaded = _safe_pickle_load(self.meta_path)
         if isinstance(loaded, tuple) and len(loaded) == 2:
             metadata, embedded_sig = loaded
             actual = hmac.new(SIGNING_KEY, pickle.dumps(metadata), hashlib.sha256).digest()

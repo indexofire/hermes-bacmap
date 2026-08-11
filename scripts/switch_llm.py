@@ -11,6 +11,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -63,6 +64,8 @@ def write_config(text: str) -> None:
     backup = HERMES_CONFIG.with_suffix(".yaml.bak")
     shutil.copy2(HERMES_CONFIG, backup)
     HERMES_CONFIG.write_text(text)
+    os.chmod(HERMES_CONFIG, 0o600)
+    os.chmod(backup, 0o600)
     print(f"  Backup saved: {backup}")
 
 
