@@ -33,11 +33,11 @@ If SISTR serotype is "N/A":
 
 ## gmlst Hangs
 
-gmlst requires Python 3.12+ in `.venv-gmlst`. If it hangs:
+gmlst runs in the pixi default env (no separate venv). If it hangs, first confirm the binary and version:
 ```bash
-.venv-gmlst/bin/gmlst --version
+.pixi/envs/default/bin/gmlst --version
 ```
-If missing: `uv venv .venv-gmlst --python 3.12 && uv pip install --python .venv-gmlst/bin/python gmlst`
+If missing: `pixi install` (gmlst is pinned to 0.1.1 in `pixi.toml`). The pixi default env ships Python 3.12.3, which satisfies gmlst's 3.12+ requirement.
 
 ## abricate Database Missing
 

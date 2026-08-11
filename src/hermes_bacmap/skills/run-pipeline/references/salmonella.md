@@ -16,7 +16,7 @@
 ## MLST
 
 - **Scheme**: salmonella_2 (PubMLST)
-- **Tool**: gmlst (Python 3.12 in `.venv-gmlst`)
+- **Tool**: gmlst via pixi env
 - **7 loci**: aroC, dnaN, hemD, hisD, purE, sucA, thrA
 
 ## SNP / Phylogenetics

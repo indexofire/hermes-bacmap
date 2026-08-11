@@ -105,7 +105,7 @@ python scripts/generate_report.py --cohort               # SNP tree report
 - **Shovill OOM**: reduce threads or `--ram 4G`
 - **Snakemake lock**: `snakemake --unlock` in workflow dir
 - **Snakemake v8**: lock to v7.32.x
-- **gmlst requires Python 3.12**: separate `.venv-gmlst`
+- **gmlst** runs in the pixi default env (Python 3.12.3 confirmed); no separate venv needed
 - For more, see `references/troubleshooting.md`
 
 ## Verification
