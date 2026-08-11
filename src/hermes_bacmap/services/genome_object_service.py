@@ -80,6 +80,38 @@ EventType = Literal[
 ]
 
 
+# cgMLST-only; every other analysis_type stays opaque (additive, no migration).
+_CGMLST_REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
+    "cgmlst_profile": ("scheme", "n_loci"),
+    "cgmlst_cohort": ("scheme", "n_loci", "allele_distances"),
+}
+
+
+def _validate_cgmlst_payload(payload: dict[str, Any]) -> None:
+    """Validate cgMLST ANALYSIS payloads; no-op for any other analysis_type.
+
+    Raises GOMValidationError when a cgMLST payload is missing a required
+    top-level field:
+      - ``cgmlst_profile`` requires ``scheme`` and ``n_loci``
+      - ``cgmlst_cohort`` requires ``scheme``, ``n_loci`` and ``allele_distances``
+
+    For every other ``analysis_type`` (including missing ``analysis_type``)
+    this function is a pass-through, preserving the existing opaque-payload
+    contract for SNP cohort / MLST / AMR / serotype analyses.
+    """
+    analysis_type = payload.get("analysis_type")
+    if not isinstance(analysis_type, str):
+        return
+    required = _CGMLST_REQUIRED_FIELDS.get(analysis_type)
+    if required is None:
+        return
+    missing = [field for field in required if field not in payload]
+    if missing:
+        raise GOMValidationError(
+            f"{analysis_type} ANALYSIS payload missing required field(s): {missing}"
+        )
+
+
 @dataclass(frozen=True)
 class GenomeObject:
     """Genome Object 标准实体（project.md §5.1）。frozen=True 强制 Immutable（§4.6）。"""
@@ -128,6 +160,7 @@ class GenomeObject:
                 raise GOMValidationError(
                     "ANALYSIS GenomeObject requires non-empty database_versions (project.md §4.5)"
                 )
+            _validate_cgmlst_payload(self.payload)
 
 
 @dataclass(frozen=True)
