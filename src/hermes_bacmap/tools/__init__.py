@@ -28,6 +28,7 @@ from .seq import fastq_qc, seq_convert, seq_ops, seq_stats
 from .services import (
     add_lab_result,
     add_metadata,
+    cgmlst_traceback,
     query_lab_results,
     query_metadata,
     search_samples,
@@ -41,6 +42,7 @@ __all__ = [
     "analyze_pathogen",
     "annotate_genome",
     "blast",
+    "cgmlst_traceback",
     "diagnose_failure",
     "fastq_qc",
     "gene_scan",

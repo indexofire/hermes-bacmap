@@ -548,6 +548,36 @@ SNP_TREE = {
 }
 
 
+CGLST_TRACEBACK = {
+    "name": "bio_cgmlst",
+    "description": (
+        "Trace a single sample's cgMLST allele profile against the local "
+        "reference library (EnteroBase HierCC convention, Hamming allele "
+        "distance, missing-on-either excluded). Returns the top-N nearest "
+        "references, the per-species verdict (outbreak/related/unrelated/"
+        "undetermined), the thresholds applied, and any caveats (e.g. "
+        "S. sonnei HC5/HC10 unreliable, V. parahaemolyticus UNVERIFIED). "
+        "Use this for high-resolution source attribution / 溯源 when the "
+        "user asks whether two isolates are part of the same outbreak "
+        "cluster, or to find the nearest reference strain for a sample. "
+        "Requires cgMLST typing to have been run and ingested "
+        "(bio_analyze_pathogen covers this); call bio_analyze_pathogen "
+        "first if no profile exists. For cgMLST threshold interpretation, "
+        "load skill: skill_view('hermes_bacmap:interpret-results')."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "sample_id": {
+                "type": "string",
+                "description": "Sample ID whose cgMLST profile should be traced back.",
+            },
+        },
+        "required": ["sample_id"],
+    },
+}
+
+
 SEARCH_SAMPLES = {
     "name": "bio_search_samples",
     "description": (

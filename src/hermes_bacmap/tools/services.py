@@ -1,24 +1,41 @@
 """Service-backed tool handlers.
 
 Covers bio_query_metadata, bio_add_metadata, bio_query_lab_results,
-bio_add_lab_result, bio_snp_tree, bio_search_samples. These talk to the
-SQLite GOM database via hermes_bacmap.services (lazy imports). All handlers
-return JSON strings. Errors are {"error": "..."}.
+bio_add_lab_result, bio_snp_tree, bio_search_samples, bio_cgmlst. These talk
+to the SQLite GOM database via hermes_bacmap.services (lazy imports). All
+handlers return JSON strings. Errors are {"error": "..."}.
 """
 
 from __future__ import annotations
 
 import json
+from dataclasses import asdict
 from typing import Any
 
-from ..utils import parse_mlst
-
+from ..analysis.cgmlst_projection import (
+    CgmlstThresholds,
+    load_thresholds_from_config,
+    project_sample,
+)
+from ..analysis.cgmlst_types import CgmlstProfile
+from ..utils import parse_cgmlst_profile, parse_cgmlst_profiles, parse_mlst
 from ._common import (
     _DEFAULT_DB_PATH,
+    _PROJECT_ROOT,
     _RESULTS_DIR,
     logger,
     tool_handler,
 )
+
+# Shigella shares the ecoli_2 scheme with E. coli and cannot be distinguished
+# by scheme alone; we resolve to "E.coli" so ecoli thresholds apply. The
+# project_sample S. sonnei caveat therefore only fires for samples whose
+# species is set to "Shigella" elsewhere (out of scheme-driven scope here).
+_CGMLST_SCHEME_SPECIES: dict[str, str] = {
+    "senterica_2": "Salmonella",
+    "ecoli_2": "E.coli",
+    "vparahaemolyticus_3": "V.parahaemolyticus",
+}
 
 
 @tool_handler
@@ -234,6 +251,178 @@ def snp_tree(args: dict[str, Any], **kwargs: Any) -> str:
     except Exception as e:
         logger.exception("snp_tree failed to read SNP summary")
         return json.dumps({"error": f"Failed to read SNP summary: {e}"})
+
+
+@tool_handler
+def cgmlst_traceback(args: dict[str, Any], **kwargs: Any) -> str:
+    """Project a sample's cgMLST profile against the local reference library."""
+    sample_id = args.get("sample_id", "")
+    if not sample_id:
+        return json.dumps({"error": "sample_id is required"})
+
+    profile_payload = _load_cgmlst_profile_payload(sample_id)
+    if profile_payload is None:
+        return json.dumps(
+            {
+                "error": (
+                    f"no cgmlst profile for {sample_id}, "
+                    "run bio_analyze_pathogen first"
+                )
+            }
+        )
+
+    scheme = profile_payload.get("scheme", "")
+    species = _CGMLST_SCHEME_SPECIES.get(scheme, "")
+    if not species:
+        return json.dumps(
+            {"error": f"unknown cgmlst scheme {scheme!r} for {sample_id}"}
+        )
+
+    query_profile = _payload_to_cgmlst_profile(profile_payload, sample_id)
+
+    reference = _load_reference_profiles(species)
+    if isinstance(reference, str):
+        return json.dumps({"error": reference})
+    if not reference:
+        return json.dumps(
+            {"error": f"cgmlst reference library is empty for species {species!r}"}
+        )
+
+    thresholds_or_err = _load_species_thresholds(species)
+    if isinstance(thresholds_or_err, str):
+        return json.dumps({"error": thresholds_or_err})
+    thresholds = thresholds_or_err
+
+    try:
+        result = project_sample(
+            query_profile, reference, thresholds, species=species
+        )
+    except ValueError as e:
+        return json.dumps({"error": f"projection failed: {e}"})
+
+    payload_dict = asdict(result)
+    payload_dict["source"] = "gom" if profile_payload.get("_from_gom") else "disk"
+    return json.dumps(payload_dict, ensure_ascii=False)
+
+
+def _load_cgmlst_profile_payload(sample_id: str) -> dict[str, Any] | None:
+    db_path = _DEFAULT_DB_PATH
+    if db_path.exists():
+        try:
+            from ..services.genome_object_service import (
+                GenomeObjectService,
+                ObjectType,
+            )
+
+            with GenomeObjectService(db_path) as gos:
+                objs = [
+                    o
+                    for o in gos.list_by_type(ObjectType.ANALYSIS)
+                    if o.strain_id == sample_id
+                    and o.payload.get("analysis_type") == "cgmlst_profile"
+                ]
+                if objs:
+                    latest = max(objs, key=lambda o: o.version)
+                    payload = dict(latest.payload)
+                    payload["_from_gom"] = True
+                    return payload
+        except Exception:
+            logger.exception(
+                "GOM cgmlst lookup failed for %s, falling back to disk",
+                sample_id,
+            )
+
+    tsv_path = _RESULTS_DIR / sample_id / "typing" / "cgmlst.tsv"
+    if not tsv_path.exists():
+        return None
+
+    try:
+        profile = parse_cgmlst_profile(tsv_path.read_text())
+    except (ValueError, OSError):
+        logger.exception("cgmlst.tsv parse failed for %s", sample_id)
+        return None
+
+    if not profile.scheme or profile.n_total == 0:
+        return None
+
+    return {
+        "analysis_type": "cgmlst_profile",
+        "sample_id": profile.sample_id,
+        "scheme": profile.scheme,
+        "st_raw": profile.st_raw,
+        "alleles": dict(profile.alleles),
+        "n_called": profile.n_called,
+        "n_total": profile.n_total,
+        "missing_loci": list(profile.missing_loci),
+        "novel_loci": list(profile.novel_loci),
+        "ambiguous_loci": list(profile.ambiguous_loci),
+        "_from_gom": False,
+    }
+
+
+def _payload_to_cgmlst_profile(
+    payload: dict[str, Any], fallback_sample_id: str
+) -> CgmlstProfile:
+    raw_alleles = payload.get("alleles", {})
+    alleles: dict[str, int | None] = {}
+    for locus, allele in raw_alleles.items():
+        if allele is None:
+            alleles[locus] = None
+        elif isinstance(allele, int):
+            alleles[locus] = allele
+        else:
+            try:
+                alleles[locus] = int(allele)
+            except (TypeError, ValueError):
+                alleles[locus] = None
+
+    n_total = payload.get("n_total", len(alleles))
+    n_called = payload.get(
+        "n_called", sum(1 for v in alleles.values() if v is not None)
+    )
+    return CgmlstProfile(
+        sample_id=payload.get("sample_id", fallback_sample_id),
+        scheme=payload.get("scheme", ""),
+        st_raw=payload.get("st_raw", "-"),
+        alleles=alleles,
+        n_called=int(n_called),
+        n_total=int(n_total),
+        missing_loci=list(payload.get("missing_loci", [])),
+        novel_loci=list(payload.get("novel_loci", [])),
+        ambiguous_loci=list(payload.get("ambiguous_loci", [])),
+    )
+
+
+def _load_reference_profiles(species: str) -> list[CgmlstProfile] | str:
+    species_key = species.lower().replace(".", "")
+    ref_path = (
+        _PROJECT_ROOT
+        / "data"
+        / "reference"
+        / "cgmlst"
+        / species_key
+        / "reference_profiles.tsv"
+    )
+    if not ref_path.exists():
+        return (
+            f"cgmlst reference library not found for species {species!r} "
+            f"(looked at {ref_path})"
+        )
+
+    try:
+        return parse_cgmlst_profiles(ref_path.read_text())
+    except (ValueError, OSError):
+        logger.exception("cgmlst reference parse failed for %s", species_key)
+        return f"failed to parse cgmlst reference library for species {species!r}"
+
+
+def _load_species_thresholds(species: str) -> CgmlstThresholds | str:
+    config_path = _PROJECT_ROOT / "workflows" / "bacmap" / "config" / "config.yaml"
+    try:
+        return load_thresholds_from_config(config_path, species)
+    except (ValueError, RuntimeError, OSError):
+        logger.exception("cgmlst threshold load failed for %s", species)
+        return f"failed to load cgmlst thresholds for species {species!r}"
 
 
 @tool_handler

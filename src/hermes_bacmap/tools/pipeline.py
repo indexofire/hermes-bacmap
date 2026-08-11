@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Any
 
 from ..utils import parse_mlst
-
 from ._common import (
     _PROJECT_ROOT,
     _RESULTS_DIR,

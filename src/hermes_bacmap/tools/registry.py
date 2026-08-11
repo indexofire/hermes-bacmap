@@ -31,6 +31,7 @@ _TOOL_REGISTRY: list[tuple[str, dict[str, Any], Handler]] = [
     ("bio_list_samples", schemas.LIST_SAMPLES, pipeline.list_samples),
     ("bio_gene_scan", schemas.GENE_SCAN, pipeline.gene_scan),
     ("bio_snp_tree", schemas.SNP_TREE, services.snp_tree),
+    ("bio_cgmlst", schemas.CGLST_TRACEBACK, services.cgmlst_traceback),
     ("bio_search_samples", schemas.SEARCH_SAMPLES, services.search_samples),
     ("bio_annotate", schemas.ANNOTATE, pipeline.annotate_genome),
     ("bio_validate_taxonomy", schemas.VALIDATE_TAXONOMY, pipeline.validate_taxonomy),
