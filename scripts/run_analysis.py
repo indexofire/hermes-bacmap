@@ -16,8 +16,10 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+from pathlib import Path
 
-from _common import ROOT
+from _common import ROOT, validate_all_sample_names
+
 from hermes_bacmap.services.sample_summary import (
     classify_samples,
     read_summary,
@@ -126,12 +128,54 @@ def interpret_summary(sample: str) -> None:
     print(f"\n  Full report: {summary_path(RESULTS_DIR, sample)}")
 
 
+# Deliberately duplicated from workflows/bacmap/rules/cgmlst.smk — the plan
+# (cgmlst-support.md §Must NOT have) forbids coupling between the snakemake
+# DAG and the orchestration scripts. Same convention as snp.smk.
+_CGMLST_SPECIES_GROUPS: dict[str, list[str]] = {
+    "salmonella": ["Salmonella"],
+    "ecoli": ["E.coli", "Shigella"],
+    "vpara": ["V.parahaemolyticus"],
+}
+
+
+def _cgmlst_cohort_targets(samples_tsv: Path) -> list[str]:
+    """Per-group ``cgmlst_summary.json`` targets for groups with ≥2 samples.
+
+    The ≥2 threshold mirrors the ``_CGMLST_GROUP_SAMPLES`` guard in
+    cgmlst.smk so targets match what the DAG can actually produce.
+    """
+    import csv
+
+    species_by_sample: dict[str, str] = {}
+    with samples_tsv.open() as f:
+        for row in csv.DictReader(f, delimiter="\t"):
+            species_by_sample[row["sample"]] = row.get("species", "")
+
+    targets: list[str] = []
+    for group, species_list in _CGMLST_SPECIES_GROUPS.items():
+        n_in_group = sum(1 for sp in species_by_sample.values() if sp in species_list)
+        if n_in_group >= 2:
+            targets.append(str(ROOT / "results" / "cgmlst" / group / "cgmlst_summary.json"))
+    return targets
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="病原菌自动分析编排器（4种病原通用）")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--sample", type=str, help="Sample ID to analyze")
     group.add_argument("--all", action="store_true", help="Analyze all samples")
     group.add_argument("--snp", action="store_true", help="Run SNP cohort analysis")
+    group.add_argument(
+        "--cgmlst",
+        action="store_true",
+        help="Run per-sample cgMLST typing (typing_cgmlst) for all samples",
+    )
+    group.add_argument(
+        "--cgmlst-cohort",
+        action="store_true",
+        dest="cgmlst_cohort",
+        help="Run cgMLST cohort analysis (distance matrix + MST + summary) per group",
+    )
     group.add_argument("--status", action="store_true", help="Check analysis status")
     parser.add_argument("--cores", type=int, default=8)
     args = parser.parse_args()
@@ -172,6 +216,11 @@ def main() -> int:
     if args.snp:
         target = str(ROOT / "results" / "snp" / "snp_summary.json")
         targets = [target]
+    elif args.cgmlst:
+        samples = validate_all_sample_names()
+        targets = [str(ROOT / "results" / s / "typing" / "cgmlst.tsv") for s in samples]
+    elif args.cgmlst_cohort:
+        targets = _cgmlst_cohort_targets(WORKFLOW_DIR / "config" / "samples.tsv")
     elif args.sample:
         validate_sample(args.sample)
         target = str(ROOT / "results" / args.sample / "report" / f"{args.sample}_summary.json")
@@ -181,6 +230,7 @@ def main() -> int:
     else:
         return 1
 
+    validate_all_sample_names()
     success = run_snakemake(targets, args.cores)
 
     if success:
@@ -190,6 +240,14 @@ def main() -> int:
             print(f"   Summary: {RESULTS_DIR / 'snp' / 'snp_summary.json'}")
             print("   Report: python scripts/generate_report.py --cohort")
             print("   Ingest: python scripts/ingest_results.py --snp")
+        elif args.cgmlst:
+            print("\n✅ cgMLST per-sample typing 完成。")
+            print(f"   Profiles: {RESULTS_DIR}/{{sample}}/typing/cgmlst.tsv")
+            print("   Ingest: python scripts/ingest_results.py --cgmlst")
+        elif args.cgmlst_cohort:
+            print("\n✅ cgMLST cohort analysis 完成。")
+            print(f"   Summaries: {RESULTS_DIR}/cgmlst/{{group}}/cgmlst_summary.json")
+            print("   Ingest: python scripts/ingest_results.py --cgmlst-cohort")
         elif args.sample:
             interpret_summary(args.sample)
         else:

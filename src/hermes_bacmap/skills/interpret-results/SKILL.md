@@ -4,13 +4,17 @@ description: >
   Pathogen genome result interpretation: serotype (Kauffmann-White), MLST ST
   clinical significance, AMR gene classification (ESBL/carbapenemase/AmpC),
   SNP distance outbreak thresholds (0-5=transmission chain, 6-15=possible),
+  cgMLST trace-back (溯源) allele-distance thresholds per species (Salmonella
+  HC5/HC10, E. coli serotype-specific, Shigella SNV-confirm, Vpara UNDETERMINED),
   virulence gene database. Load when user asks "what does ST19 mean", "is
-  this resistant", "are these related", or any result interpretation question.
-  Trigger words: 解读, interpret, 意味, resistant, 耐药, 关系, related, ST, serotype.
+  this resistant", "are these related", "what does 7 allele distance mean",
+  "溯源", or any result interpretation question. Trigger words: 解读, interpret,
+  意味, resistant, 耐药, 关系, related, ST, serotype, cgMLST, 溯源, trace-back,
+  allele distance.
 version: 0.1.0
 metadata:
   hermes:
-    tags: [bioinformatics, salmonella, ecoli, shigella, amr, serotype, mlst, snp, public-health]
+    tags: [bioinformatics, salmonella, ecoli, shigella, amr, serotype, mlst, snp, cgmlst, trace-back, public-health]
     category: bioinfo
 ---
 
@@ -172,3 +176,72 @@ When summarizing results for users:
 3. Flag unusual or concerning results (carbapenemase, STEC with stx2)
 4. Provide context (is this serotype common? is this ST associated with outbreaks?)
 5. Note limitations (in silico predictions need phenotypic confirmation)
+
+## cgMLST Trace-back Interpretation
+
+cgMLST (core-genome MLST) provides high-resolution typing via allele-by-allele
+comparison across ~2,000-3,000 core loci (EnteroBase schemes). The **allele
+distance (AD)** between two profiles counts loci with differing alleles
+(missing-on-either excluded, per EnteroBase HierCC convention; Zhou 2020).
+Thresholds are species- and sometimes lineage-specific — always cite the
+source when communicating a verdict. Numeric thresholds live in
+`workflows/bacmap/config/config.yaml` under `cgmlst.thresholds`; this skill
+quotes them. If the two disagree, config wins.
+
+### Per-Species Outbreak Thresholds
+
+| Species / lineage | Outbreak AD | Related AD | Source |
+|-------------------|-------------|------------|--------|
+| Salmonella (general) | ≤10 (HC5/HC10) | ≤50 (HC50) | Zhou 2020 Genome Res |
+| Salmonella ST11 / ST34 (clonal) | ≤3 | — | Ferrato 2023 Frontiers Microbiol |
+| E. coli / DEC (general screen) | ≤5 (HC5) | ≤50 (HC50) | Emerjean 2025 CDC EID |
+| Shigella (non-sonnei) | ≤5 (HC5) | ≤50 (HC50) | Hawkey 2021 Nat Commun |
+| Shigella sonnei | UNRELIABLE | — | Hawkey 2021; Weill 2022 |
+| V. parahaemolyticus | NONE (UNDETERMINED) | HC1090 only | Achtman 2022 bioRxiv |
+
+### E. coli Serotype-Specific Sub-Thresholds
+
+The general HC5 screen (≤5 AD) is a first-pass filter; serotype-specific
+thresholds refine the verdict (Emerjean 2025 CDC EID):
+
+| Serotype | Outbreak AD |
+|----------|-------------|
+| O26:H11 | ≤8 |
+| O157:H7 | ≤16 |
+| O103:H2 | ≤5 |
+| O80:H2 | ≤9 |
+
+### Interpretation Rubric
+
+When presenting a cgMLST projection (verdict + nearest references +
+min_allele_dist), phrase the result as follows:
+
+1. **OUTBREAK** (min AD ≤ `outbreak_allele_dist`): "Clusters within the
+   outbreak threshold for {species} (≤{N} AD, {citation}), consistent with
+   direct transmission or a common point source. Recommend epidemiological
+   correlation."
+2. **RELATED** (outbreak < min AD ≤ `related_allele_dist`): "Related to the
+   reference set but outside the outbreak threshold — same lineage/clone,
+   insufficient alone for direct transmission."
+3. **UNRELATED** (min AD > `related_allele_dist`): "Genetically distinct from
+   the reference set; different lineage within the species."
+4. **UNDETERMINED**: Used for V. parahaemolyticus (no published threshold) or
+   when <50% of loci are called. State explicitly: "no published cgMLST
+   outbreak threshold for this species; local calibration required."
+
+### Caveats and Low-Confidence Flags
+
+- **Shigella sonnei**: HC5/HC10 are unreliable due to extreme clonality
+  (Hawkey 2021; Weill 2022). Always append: "confirm cgMLST clustering with
+  SNV-based phylogeny for S. sonnei."
+- **V. parahaemolyticus**: Only the HC1090 species boundary is published
+  (Achtman 2022 bioRxiv); no within-species outbreak threshold exists. Ship
+  `verdict=UNDETERMINED` with the caveat "no published cgMLST outbreak
+  threshold, local calibration required."
+- **Low call rate**: If `n_called / n_total < 0.5`, downgrade confidence and
+  flag "low call rate ({pct}%), allele distances may be underestimated."
+- **Novel / ambiguous loci**: Novel (`~N`) and ambiguous (`N,M`) alleles are
+  excluded from distance — high counts reduce resolution; flag if >5%.
+- **Single source of truth**: All thresholds live in
+  `workflows/bacmap/config/config.yaml` (`cgmlst.thresholds`); this skill
+  quotes them. Config wins on disagreement.
