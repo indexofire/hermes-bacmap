@@ -64,3 +64,4 @@ __pycache__/
 # Logs
 logs/
 site/
+.omo/
