@@ -67,15 +67,15 @@ uv pip install -e ".[dev]"
 
 | 模块 | 行数 | 功能 |
 |---|---|---|
-| `tools/` | 2115 | 24 个 Hermes tool handler（seq / cli / pipeline / services 分包） |
+| `tools/` | 2115 | 25 个 Hermes tool handler（seq / cli / pipeline / services 分包） |
 | `genome_object_service.py` | 667 | GOM（SQLite + 版本管理 + 事件 + 文件产物 + FTS5 搜索） |
-| `schemas.py` | 844 | 24 个 tool JSON Schema 定义 |
+| `schemas.py` | 893 | 25 个 tool JSON Schema 定义 |
 | `genome_annotator.py` | 280 | 基因组注释（pyrodigal + Prokka DBs，Python 原生） |
 | `engine/` | 1121 | 算法抽象层（SequenceMatcher + ReadMapper + Hit） |
 | `gene_scanner.py` | 546 | 基因扫描引擎（委托 engine.SequenceMatcher） |
 | `shigella_serotyper.py` | 231 | Shigella 血清型（移植 ShigATyper） |
 | `deterministic_verifier.py` | 216 | 确定性规则校验（species/MLST/serotype/AMR） |
-| `species_identifier.py` | 122 | 物种鉴定（双模式：marker genes / GTDB-Tk） |
+| `species_identifier.py` | 122 | 物种鉴定（marker genes：invA/uidA/ipaH/toxR/tlh 五基因 1 次 BLAST；GTDB-Tk 标准模式在 `analysis/taxonomic_validator.py`） |
 | `ecoh_serotyper.py` | 134 | E. coli O:H 血清型（委托 gene_scanner） |
 
 ## 项目结构
@@ -83,7 +83,7 @@ uv pip install -e ".[dev]"
 ```
 hermes-bacmap/
 ├── src/hermes_bacmap/           Hermes 插件 Python 包
-│   ├── __init__.py             插件注册（24 tools + 4 skills）
+│   ├── __init__.py             插件注册（25 tools + 4 skills）
 │   ├── schemas.py              Tool JSON Schema 定义
 │   ├── tools/                  Tool handler 包（含 registry 表驱动注册）
 │   ├── genome_object_service.py  GOM（SQLite + 版本管理）
@@ -91,7 +91,7 @@ hermes-bacmap/
 ├── workflows/bacmap/        Snakemake 分析流程
 │   ├── Snakefile               主入口（per-sample + cohort DAG）
 │   ├── config/                 配置 + 样本表
-│   ├── rules/                  10 个 rule 文件（24 rules，+ Snakefile `rule all` 共 25）
+│   ├── rules/                  11 个 rule 文件（29 rules：25 常规 + 4 cgMLST cohort 门控，+ Snakefile `rule all` 共 30）
 │   └── scripts/                collect_summary + SNP matrix + pathotype
 ├── scripts/                     编排脚本
 │   ├── run_analysis.py         端到端编排器（--sample/--all/--snp/--status）
@@ -104,10 +104,10 @@ hermes-bacmap/
 │   ├── run-pipeline/           跨病原管线操作指南 + 5 个 references
 │   ├── bioinfo-analysis/       通用生信决策树
 │   └── interpret-results/      结果解读知识库 + 2 个 references
-├── tests/                       测试（1051 tests）
+├── tests/                       测试（1389 tests）
 │   ├── unit/                   GOM + Verifier + Cohort TDD
 │   ├── conftest.py             共享 fixtures
-│   └── fixtures/gold_standard/ 10 株验证数据集
+│   └── fixtures/gold_standard/ 12 株 gold standard 数据集（9 株经验证 harness）
 ├── data/reference/              参考数据库（15 个 FASTA）
 ├── docs/                        开发文档
 │   ├── features.md             ← 完整功能文档

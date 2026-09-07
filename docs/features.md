@@ -1,7 +1,9 @@
 # Hermes-bacmap 功能文档
 
-> **版本**: V0.6 (2026-07-11)
-> **状态**: 19 Hermes tools · 23 Snakemake rules · 120 tests · 4 skills · engine 抽象层 · GBrain 知识层 · 菌株元数据 + 湿实验结果 · 10 株验证数据集
+> **版本**: V0.7 (2026-09-07)
+> **状态**: 25 Hermes tools · 30 Snakemake rules（25 常规 + 4 cgMLST cohort 门控 + `rule all`）· 1389 tests · 4 skills · engine 抽象层 · GBrain 知识层
+> **数据集**: 菌株元数据 + 湿实验结果 · cgMLST 溯源 · 12 株数据集（11 株已分析，9 株经 §12.3 验证 harness）
+> 测试口径：1389 = V0.7 终态（含 P0 评审修复 +13：否定语义 7 / 归一共享 3 / 分母稀释 2 / 精确度子集口径 1）
 
 ---
 
@@ -9,8 +11,8 @@
 
 1. [系统架构](#1-系统架构)
 2. [核心 Python 模块](#2-核心-python-模块)
-3. [Hermes Tools（16 个）](#3-hermes-tools16-个)
-4. [Snakemake Pipeline（24 条规则）](#4-snakemake-pipeline24-条规则)
+3. [Hermes Tools（25 个）](#3-hermes-tools25-个)
+4. [Snakemake Pipeline（30 条规则）](#4-snakemake-pipeline30-条规则)
 5. [Genome Object Model (GOM)](#5-genome-object-model-gom)
 6. [物种鉴定系统](#6-物种鉴定系统)
 7. [血清型分析](#7-血清型分析)
@@ -44,7 +46,7 @@
 ┌────────▼───────┐ ┌───────▼────────┐ ┌──────▼─────────┐
 │  L1 固定管线    │ │  L2 确定性校验   │ │  L3 AI 解读     │
 │  Snakemake DAG │ │  Verifier       │ │  Skills + 搜索  │
-│  24 rules      │ │  21 tests       │ │  FTS5 + 知识库  │
+│  30 rules      │ │  21 tests       │ │  FTS5 + 知识库  │
 └────────┬───────┘ └───────┬────────┘ └──────┬─────────┘
          │                 │                  │
          └─────────────────┼──────────────────┘
@@ -75,21 +77,21 @@
 
 | 模块 | 行数 | 职责 |
 |---|---|---|
-| `tools/` | 2115 | 24 个 Hermes tool handler(7 文件包:seq / cli / pipeline / services + registry) |
+| `tools/` | 2115 | 25 个 Hermes tool handler(7 文件包:seq / cli / pipeline / services + registry) |
 | `genome_object_service.py` | 667 | GOM：SQLite CRUD + 版本管理 + 事件 + 文件产物 + FTS5 搜索 |
-| `schemas.py` | 844 | 24 个 tool 的 JSON Schema 定义 |
+| `schemas.py` | 893 | 25 个 tool 的 JSON Schema 定义 |
 | `genome_annotator.py` | 280 | Python 版基因组注释（pyrodigal + Prokka DBs，替代 Prokka CLI） |
 | `engine/` | 1121 | 算法抽象层：SequenceMatcher + ReadMapper + Hit + Registry |
 | `gene_scanner.py` | 546 | 通用基因扫描引擎（委托 engine.SequenceMatcher） |
 | `shigella_serotyper.py` | 231 | Shigella 血清型预测（移植 ShigATyper，58 种血清型） |
 | `deterministic_verifier.py` | 216 | 确定性规则校验（species/MLST/serotype/AMR 四层检查） |
-| `__init__.py` | 28 | 插件注册（表驱动，24 tools + 4 skills 自动发现） |
+| `__init__.py` | 28 | 插件注册（表驱动，25 tools + 4 skills 自动发现） |
 | `species_identifier.py` | 122 | 统一物种鉴定（invA/uidA/ipaH/toxR/tlh 五基因合并为 1 次 BLAST） |
 | `ecoh_serotyper.py` | 134 | E. coli O:H 血清型（委托 gene_scanner） |
 
 ---
 
-## 3. Hermes Tools（24 个）
+## 3. Hermes Tools（25 个）
 
 ### 3.1 底层生信工具（8 个）
 
@@ -104,7 +106,7 @@
 | `bio_samtools` | SAM/BAM 操作（9 个子命令：index/sort/flagstat/view/depth/faidx/mpileup/consensus/fixmate） | samtools |
 | `bio_variant` | 变异检测（mpileup_call/filter/query/annotate/consensus） | bcftools |
 
-### 3.2 高层分析工具（16 个）
+### 3.2 高层分析工具（17 个）
 
 | Tool | 功能 | 输入 | 输出 |
 |---|---|---|---|
@@ -115,6 +117,7 @@
 | `bio_list_samples` | 列出所有样本及分析状态 | 无 | 样本状态列表 |
 | `bio_gene_scan` | 多数据库基因扫描（CARD/VFDB/ecoh/plasmidfinder/resfinder 等 9 种） | contigs 路径 + 数据库名 | JSON (基因列表 + identity + coverage) |
 | `bio_snp_tree` | 获取 cohort-level 系统发育树 + 距离矩阵 | 无 | Newick + pairwise distances |
+| `bio_cgmlst` | cgMLST 溯源：最近参考株 + per-species 阈值判定（outbreak/related/unrelated） | sample_id | ProjectionResult JSON |
 | `bio_search_samples` | 自然语言样本检索（FTS5 + 字段加权） | 搜索词 | 匹配样本列表（含匹配字段 + 相关度分数） |
 | `bio_annotate` | 基因组注释（pyrodigal CDS + Prokka DBs blastp） | contigs 路径 | annotation JSON |
 | `bio_validate_taxonomy` | 物种鉴定（双模式：marker genes / GTDB-Tk） | sample_id, mode | completeness / contamination / gtdb_taxonomy |
@@ -140,7 +143,7 @@
 
 ---
 
-## 4. Snakemake Pipeline（24 条规则）
+## 4. Snakemake Pipeline（30 条规则）
 
 ### 4.1 DAG 概览
 
@@ -182,18 +185,29 @@ rule all
 | | `amr_abricate_vfdb` | 毒力基因扫描 |
 | | `amr_abricate_card` | AMR 耐药基因扫描 |
 | | `amr_abricate_plasmidfinder` | 质粒复制子检测 |
+| | `amr_amrfinderplus` | NCBI AMRFinderPlus（按物种映射 --organism） |
 | `dec_shigella.smk` | `dec_ecoh_serotype` | E. coli O:H 血清型 |
 | | `dec_pathotype` | DEC pathotype 判定 (STEC/EPEC/EIEC/ETEC/EAEC) |
 | | `shigella_serotype` | Shigella 血清型 |
 | `vpara.smk` | `vpara_targets` | V. parahaemolyticus 物种鉴定 (toxR + tlh) |
 | | `vpara_virulence` | 毒力基因检测 (tdh/trh/tlh) |
+| | `vpara_serotype` | V. parahaemolyticus O/K 血清型（Python 原生） |
+| `annotation.smk` | `genome_annotation` | pyrodigal CDS + Prokka DBs blastp 注释 |
+| `taxonomy.smk` | `taxonomy_validation` | GTDB-Tk 标准模式验证（不可用时优雅降级） |
+| `cgmlst.smk` | `typing_cgmlst` | cgMLST 分型（per-sample，EnteroBase schemes） |
+| | `cgmlst_cohort_profiles` ⭑ | cohort 多样本 profile 合并 |
+| | `cgmlst_distance_matrix` ⭑ | 等位基因距离矩阵（Hamming） |
+| | `cgmlst_mst` ⭑ | 最小生成树（MST） |
+| | `cgmlst_summary` ⭑ | cohort 汇总 JSON |
 | `snp.smk` | `snp_calling` | 每株 BWA 比对到参考基因组 |
 | | `joint_variant_calling` | 多样本联合变异检测 (bcftools mpileup + call) |
 | | `snp_matrix` | 全基因组 SNP 矩阵生成（FASTA，N 填充缺失） |
 | | `phylo_tree` | IQ-TREE 最大似然树 (GTR, UFBoot 1000) |
 | | `snp_summary` | 距离矩阵 + Newick 汇总 JSON |
 | `report.smk` | `report_summary` | collect_summary.py 聚合所有步骤 |
-| `Snakefile` | `all` | 主目标（per-sample summaries + cohort SNP） |
+| `Snakefile` | `all` | 主目标（per-sample summaries + cohort SNP + cgMLST cohort） |
+
+> ⭑ = cohort 门控规则，仅当 `config.yaml` 中 `cgmlst.run_cgmlst_cohort: true` 时进入 DAG。
 
 ---
 
@@ -306,6 +320,10 @@ contigs.fasta
 - 1 株 E. coli (K-12 MG1655) → uidA 阳性、invA 阴性 ✅
 - 1 株 Shigella → ipaH 阳性 ✅
 - 1 株 EIEC → ipaH 阳性 ✅
+
+> 2026-09 V0.7 扩充：新增 SAM-MCR-010（invA ✅）并补跑 SAM-ECO-011（uidA ✅）后，数据集达
+> **12 株**（11 株已分析），9 株经 §12.3 验证 harness 复核——最新指标见
+> docs/validation-report.md。
 
 ---
 
@@ -822,7 +840,9 @@ WHERE m.province = '北京';
 |---|---|---|
 | `run_analysis.py` | 255 | 端到端编排器（--sample / --all / --snp / --status） |
 | `ingest_results.py` | 385 | GOM 入库（--sample / --all / --snp，含去重+版本管理） |
-| `generate_report.py` | 336 | HTML 报告（--sample / --all / --cohort） |
+| `generate_report.py` | 336 | HTML 报告（--sample / --all / --cohort，`--pdf` 经 headless chromium 出 PDF） |
+| `validate_analytical.py` | 220 | 分析验证 harness（§12.3：gold standard vs 实际输出 → metrics.json + 报告） |
+| `benchmark_batch.py` | 200 | 96 株基准（prepare 下采样 / run 隔离跑批 / extrapolate 外推报告） |
 | `download_gold_standard.py` | 200 | ENA FASTQ 下载（aria2c 多线程 + MD5 校验） |
 | `generate_snp_matrix.py` | 179 | VCF → FASTA SNP 矩阵（whole-genome mode） |
 | `collect_summary.py` | 120 | Snakemake 脚本：聚合所有步骤结果为 summary.json |
@@ -918,7 +938,7 @@ ruff + mypy --strict + markdownlint + trailing-whitespace + detect-secrets
 
 ## 17. Gold Standard 验证数据集
 
-### 10 株菌株
+### 12 株菌株
 
 | 样本编号 | 物种 | 血清型 | MLST | 来源 | 用途 |
 |---|---|---|---|---|---|
@@ -932,6 +952,8 @@ ruff + mypy --strict + markdownlint + trailing-whitespace + detect-secrets
 | SAM-DEC-012 | E. coli | O153:H2 | — | ENA | DEC 阴性对照 |
 | SAM-SHI-013 | Shigella | S. flexneri 2a | — | ENA | ipaH 验证 |
 | SAM-EIEC-014 | E. coli (EIEC) | O152:H28 | — | ENA | ipaH + ecoh 双验证 |
+| SAM-ECO-011 | E. coli | K-12 MG1655 | — | DDBJ/ENA | 物种阴性对照（uidA+/invA−） |
+| SAM-MCR-010 | S. enterica | Typhimurium | — | ENA | mcr-1 耐药验证（V0.7 补跑） |
 
 ### 验证矩阵
 

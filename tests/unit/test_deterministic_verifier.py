@@ -187,3 +187,35 @@ class TestVerifyAll:
         }
         result = v.verify_all(summary)
         assert result.needs_human_review is True
+
+    def test_real_summary_species_key_shape(self):
+        """真实 summary 用 steps.species.species（统一 species.smk 输出），
+        非旧 fixtures 的 verdict 键——回归：修复前该形态 species 检查必失败。"""
+        v = DeterministicVerifier()
+        summary = {
+            "steps": {
+                "species": {"species": "Salmonella", "confidence": "high"},
+                "mlst": "FILE\tSCHEME\tST\taroC\tdnaN\themD\thisD\tpurE\tsucA\tthrA\n"
+                "sample\tsalmonella_2\t19\t10\t7\t12\t9\t5\t9\t2",
+                "serotype": {"sistr": "Typhimurium", "serogroup": "B"},
+                "amr": {"abricate_card": [{"GENE": "blaTEM-1"}]},
+            }
+        }
+        result = v.verify_all(summary)
+        assert result.passed is True
+        assert result.checks[0].name == "species"
+        assert result.checks[0].passed is True
+
+    def test_binomial_species_name_canonicalized(self):
+        v = DeterministicVerifier()
+        summary = {
+            "steps": {
+                "species": {"species": "Salmonella enterica"},
+                "mlst": "FILE\tSCHEME\tST\taroC\tdnaN\themD\thisD\tpurE\tsucA\tthrA\n"
+                "sample\tsalmonella_2\t19\t10\t7\t12\t9\t5\t9\t2",
+                "serotype": {"sistr": "Typhimurium", "serogroup": "B"},
+                "amr": {"abricate_card": []},
+            }
+        }
+        result = v.verify_all(summary)
+        assert result.checks[0].passed is True

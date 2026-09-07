@@ -1,7 +1,7 @@
 # 尚存问题清单
 
-> **最后更新**: 2026-07-18
-> **测试状态**: 1051 passed, 0 failed
+> **最后更新**: 2026-09-07
+> **测试状态**: 1389 passed, 0 failed
 > **来源**: 代码审计 Round 1-9（58 bugs 已修复）
 
 ---
@@ -105,8 +105,61 @@
 - **状态**: ✅ 2026-07-18 已加 `snakemake-dag` CI job(pip 装 snakemake 7.32 + dummy reads,`snakemake -n` 构建 179-job DAG)与 13 个 FastAPI TestClient 冒烟测试;`_vpa_genes` 有 RIMD O3:K6 端到端测试(5 个)
 - **剩余**: 无真实数据的全流程 Snakemake 执行测试(需 gold_standard FASTQ,体量大,暂不入 CI)
 
-### A5. Tool 重命名（可选）
+### A5. Tool 重命名（已关闭 — 无残留）
 
-- **状态**: `bio_analyze_pathogen` → `bio_analyze_pathogen`？名称暗示只支持 Salmonella，但实际支持 4 种病原
-- **风险**: 低（LLM 每次会话重新读 schema）
-- **优先级**: 低
+- **状态**: ✅ 2026-09-07 核查关闭。代码库中已无 `bio_analyze_salmonella` 残留（唯一命中为 CHANGELOG.md 历史条目，属正常历史记录）；现行名称 `bio_analyze_pathogen` 已在 `tools/registry.py` 注册，schema 同步。无需进一步改名。
+
+---
+
+## 🟠 B 系列 — V0.7 基准轮发现（2026-09-07）
+
+### B1. 基准全量计时在本机不稳定（低深度组装 × 并发超卖）
+
+- **位置**: `scripts/benchmark_batch.py run`（AMD Ryzen 7 5700G，8c/16t）
+- **问题**: 150k 读段下采样样本在 cores=15（4×fastp --thread 8 超卖）或低覆盖
+  pilon 纠错（coverage 7 < minDepth 5 边缘）下偶发 assembly/qc 失败，无法完成
+  单次干净全量计时；cores=8 增量重跑稳定。
+- **当前影响**: 基准外推基于分段保守合成计时（`bench_timing.json.timing_source`
+  有标注）；生产全读深数据不受影响（覆盖度远高于下采样）。
+- **修复方案**: 推荐档硬件复测；或 bench 样本提高至 ≥300k 读段 + rule 级
+  threads/资源声明（snakemake resources mem_mb 约束，project.md §11.3）。
+- **优先级**: 中（V0.8 候选）。
+
+### B2. .smk f-string params 路径空格 bug（✅ 已修复 2026-09-07）
+
+- **位置**: `species.smk` / `vpara.smk` / `dec_shigella.smk` / `annotation.smk`
+- **问题**: `params: out = lambda wc: str(WORKDIR) + f"/{wc.sample}/..."` 形式的
+  f-string lambda 在 snakemake 7.32 shell format 中展开为带空格路径
+  （`out / SAMPLE /x.json`），python -c 与 fallback 重定向双双失败——
+  该 bug 自规则重构引入后从未暴露（生产产物均为旧版规则生成，时间戳未变
+  不触发重跑）。
+- **修复**: 10 处 f-string lambda 全部改为静态模板串
+  `str(WORKDIR) + "/{sample}/..."`（format 语义已用 mini-Snakefile 验证）；
+  V0.7 基准强制全量重跑作为回归验证（修复前 7/68 连环失败 → 修复后 4/4 跑通）。
+- **教训**: 规则重构后应强制重跑（touch 输入或 bench 全量）做回归，仅靠
+  时间戳判断会掩盖 shell 层缺陷。
+
+### B3. species_markers BLAST 索引缺失 + fallback 写出无效 JSON（✅ 已修复 2026-09-07）
+
+- **位置**: `data/reference/species/` 索引；`species.smk`/`dec_shigella.smk`/`vpara.smk` fallback 参数
+- **问题**: (1) `species_markers` BLAST 索引不在库中（与 bench 轮发现的 shigella_ref/ecoh 同类），
+  导致 f-string 修复后的 `species_identify` python 首次真实执行即 FileNotFoundError；
+  (2) fallback 参数写作 `'{{...}}'`，经 snakemake 7.32 shell format 后**原样透传双花括号**，
+  落盘为无效 JSON（`{{"species":...}}`）——mini-Snakefile 实验证实单花括号才是正确形态，
+  原转义假设从引入之日起即错误。
+- **修复**: `gene_scanner.setup_db('species_markers')` 重建索引；4 处 fallback 改单花括号
+  （species ×1 / dec_shigella ×2 / vpara ×1）。ECO-011 重跑验证：uidA 100%/100% → DEC 路由正确。
+- **教训**: `|| echo fallback` 是错误兜底路径，自身也需要测试覆盖——无效 JSON 兜底比崩溃
+  更危险（下游静默降级）。索引类资源建议纳入 `rule all` 前置检查或 CI 校验。
+
+### B4. SAM-MCR-010 R2 FASTQ 损坏（✅ 已修复 2026-09-07）
+
+- **问题**: V0.2 时期下载的 R2 损坏（gzip unexpected EOF，60.8MB 截断）；CHANGELOG 曾标注
+  "R2 下载损坏待修复"。
+- **修复**: aria2c 8 线程断点续传重下（ENA ERR2594882_2），MD5 与 ENA 报告值一致
+  （`8f4dec3005a04f556a1f3ae7b6429ce6`），gzip -t 通过，537,706 records。
+- **附注**: 管线补跑完成（Salmonella/invA ✅、Typhimurium ✅、mcr-1 ✅）；MLST 判 ST19 与
+  gold 期望 ST34 不一致（gold alleles 为 PENDING 未验证值）——见 docs/validation-report.md
+  Strain-specific findings。2026-09-07 文献核实（Sia 2020 PMC7067213）：英格兰 mcr-1
+  Typhimurium = ST34×12 + **ST19×1** + ST36×6，且该株为双相血清型（契合 ST19）——证据链
+  倾向管线正确、gold 值属未验证推断；终局确认需 Table S1 / EnteroBase 注册访问。

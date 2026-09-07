@@ -50,10 +50,10 @@ rule vpara_serotype:
     params:
         python = str(PROJECT_ROOT / ".pixi/envs/default/bin/python"),
         src_path = str(PROJECT_ROOT / "src"),
-        contigs = lambda wc: str(WORKDIR) + f"/{wc.sample}/assembly/contigs.fasta",
+        contigs = str(WORKDIR) + "/{sample}/assembly/contigs.fasta",
         sample = lambda wc: wc.sample,
-        out = lambda wc: str(WORKDIR) + f"/{wc.sample}/vpa/vpa_serotype.json",
-        fallback = '{{"predicted_serotype":"N/A","o_locus":"None","k_locus":"None","o_confidence":"Unknown","k_confidence":"Unknown","interpretation":"not V. parahaemolyticus"}}'
+        out = str(WORKDIR) + "/{sample}/vpa/vpa_serotype.json",
+        fallback = '{"predicted_serotype":"N/A","o_locus":"None","k_locus":"None","o_confidence":"Unknown","k_confidence":"Unknown","interpretation":"not V. parahaemolyticus"}'
     shell:
         "mkdir -p $(dirname {params.out}) && "
         "{params.python} -c \""

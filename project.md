@@ -1,8 +1,14 @@
-# Hermes-bacmap 开发计划（V0.5）
+# Hermes-bacmap 开发计划（V0.7）
 
 项目代号：Hermes-bacmap
-文档版本：V0.5（2026-07-04，engine 抽象层 + 基因组注释 + Web UI + 本地 LLM + mkdocs 文档站）
+文档版本：V0.7（2026-09-07，V0.6 cgMLST 溯源 + V0.7 验证与防御闭环）
 
+> **V0.6 → V0.7 关键变更**：(1) 立项「验证与防御闭环」——补齐 §8.2 三层防御 Layer 3（NLI Reflector）、§12.3 分析验证 harness
+> （AMR 灵敏度/特异度、MLST/血清型准确率 vs gold standard）、§2.2 验收欠账（96 株 batch 基准、PDF 报告）；
+> (2) 文档对账：路线图与实际交付对齐，计数统一（25 tools / 30 rules / 1389 tests，V0.7 终态）。
+> **V0.5 → V0.6 关键变更**：cgMLST 溯源全量交付——4 病原 EnteroBase cgMLST scheme（senterica_2 / ecoli_2 / vparahaemolyticus_3）、
+> 本地参考库最近邻投影（Hamming 距离 + per-species 发表阈值判定 outbreak/related/unrelated）、cohort 等位基因距离矩阵 + MST、
+> `bio_cgmlst` tool（第 25 个）、per-sample 报告卡片 + cohort 树/热图；rules 25 → 30（+4 门控 cohort 规则）。
 > **V0.4 → V0.5 关键变更**：(1) engine/ 算法抽象层（800 行，SequenceMatcher + ReadMapper + Registry，移植自 bacmap engine/align.py）；
 > (2) Python 原生基因组注释 genome_annotator.py（pyrodigal + Prokka DBs，替代 Prokka CLI，CDS 预测 100% 等价 Prodigal，sprot 注释 100% 等价 blastp）；
 > (3) Web UI（FastAPI + React SPA，5 页面）；(4) 本地 LLM 支持（Ollama/vLLM/llama.cpp，switch_llm.py 一键切换）；(5) 失败诊断模块 failure_diagnostics.py（9 种错误模式自动识别）；
@@ -966,30 +972,52 @@ V0.4 引入 Web UI 后必须满足：
 │ Salmonella 端到端：Hermes + Snakemake + SQLite + GLM-5.2        │
 │ 6 株 Gold standard + 13 tools + 87 tests + HTML 报告            │
 └─────────────────────────────────────────────────────────────────┘
-│ 验收：96 株 ≤ 8h，AI 解读 + 报告                                  │
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ V0.2 — ✅ 完成                                                    │
+│ DEC（ecoh_serotyper + uidA + pathotype）+ Shigella（ipaH）       │
+│ + SNP 系统发育（bwa+bcftools+iqtree，替代 Snippy，提前交付）      │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│ V0.2 — ✅ 完成                                                     │
-│ 扩展 DEC（ecoh_serotyper + uidA + pathotype）+ Shigella（ipaH）— 10 株验证通过
-│ + Snippy SNP + iqtree 系统发育                                   │
+│ V0.3 — ✅ 完成（形态调整）                                         │
+│ 原计划的 Snippy SNP 已在 V0.2 提前交付；实际 V0.3 =               │
+│ 物种鉴定统一（4 rule → 1 BLAST）+ gene_scanner 通用引擎           │
+│ + 血清型分流 + shigella_serotyper（58 血清型）                    │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│ V0.3 (计划)                                                       │
-│ Snippy SNP + iqtree 系统发育                                      │
-│ + KG 引入（Apache AGE）+ 三层防御完善                             │
+│ V0.4 — ✅ 完成                                                    │
+│ V. parahaemolyticus（VpaSerotyper + tdh/trh/toxR）               │
+│ + engine/ 抽象层 + genome_annotator（pyrodigal）                 │
+│ + Web UI（FastAPI + 单页 + 9 API）+ failure_diagnostics          │
+│ RAG 未交付：GBrain 外采受阻 ollama（known-issues A2）             │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│ V0.4 (计划)                                                       │
-│ V. parahaemolyticus + RAG + 暴发聚类可视化                       │
-│ + 多用户支持（V1.0 准备）                                         │
+│ V0.5 — ✅ 完成                                                    │
+│ 本地 LLM 切换 + mkdocs 文档站 + 质量修复轮                        │
+│ （门禁全绿 coverage 92%+、结构重构、58 bugs、+750 测试）           │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│ V1.0 (计划)                                                       │
+│ V0.6 — ✅ 完成（2026-08）                                         │
+│ cgMLST 溯源：4 病原 scheme + 参考库最近邻投影（阈值判定）          │
+│ + cohort 距离矩阵/MST + bio_cgmlst tool + 报告卡片/树/热图        │
+│ 暴发聚类可视化随 cohort 树/热图一并交付                           │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ V0.7 — 🔄 进行中（2026-09 立项）                                  │
+│ 验证与防御闭环：Layer 3 NLI Reflector（§8.2 补全）                │
+│ + 分析验证 harness（§12.3 指标度量 + gold standard 扩充）          │
+│ + 96 株 batch 基准（§2.2）+ PDF 报告                             │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ V1.0 (计划 — 触发条件未满足，推迟)                                 │
 │ PostgreSQL 迁移 + 多用户 + 部署文档                               │
+│ KG（Apache AGE）待 V0.7 验证数据积累后重新评估                    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -1192,6 +1220,6 @@ Hermes-bacmap 不仅是一个生信分析平台，而是一个 **AI Native 病�
 
 ---
 
-**文档版本**：V0.2
-**最后更新**：2026-06-27
-**变更说明**：基于 4 轮架构调研（Hermes Agent 能力、Helix.AI production 模式、MCP 长任务适用性、RAG 幻觉控制、Snakemake 病原生态、本地 LLM 硬件）定稿。V0.1 → V0.2 主要收敛架构、明确 4 病原 MVP 范围、引入三层防御与分层信任。新增 §12 开发质量保证（TDD/分析验证/CI/CD/安全测试）。
+**文档版本**：V0.7
+**最后更新**：2026-09-07
+**变更说明**：V0.6 交付 cgMLST 溯源全链路（详见文档头部变更记录）。V0.7 立项「验证与防御闭环」：补齐三层防御 Layer 3（NLI Reflector）、分析验证 harness（§12.3）、96 株 batch 基准与 PDF 报告（§2.2 验收欠账）；本版同时完成文档对账（路线图框与实际交付对齐、计数统一）。

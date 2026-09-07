@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from ..config import DB_PATH as _REFLECTION_DB_PATH
 from ..utils import parse_mlst
 from ._common import (
     _PROJECT_ROOT,
@@ -105,8 +106,14 @@ def get_result(args: dict[str, Any], **kwargs: Any) -> str:
 
 @tool_handler
 def verify_result(args: dict[str, Any], **kwargs: Any) -> str:
-    """Run Deterministic Verifier on a sample's results."""
+    """Run Deterministic Verifier (Layer 2) on a sample's results.
+
+    With ``interpretation_text`` also runs the NLI Reflector (Layer 3):
+    atomic claims from the text are compared against the sample's
+    Source-of-Truth facts; contradiction rate above threshold flags
+    NEEDS_HUMAN_REVIEW (project.md §8.2)."""
     sample_id = args.get("sample_id", "")
+    interpretation_text = str(args.get("interpretation_text") or "")
     summary_path = _RESULTS_DIR / sample_id / "report" / f"{sample_id}_summary.json"
 
     if not summary_path.exists():
@@ -120,18 +127,42 @@ def verify_result(args: dict[str, Any], **kwargs: Any) -> str:
 
         v = DeterministicVerifier()
         result = v.verify_all(summary)
-        return json.dumps(
-            {
-                "passed": result.passed,
-                "failed_count": result.failed_count,
-                "needs_human_review": result.needs_human_review,
-                "checks": [
-                    {"name": c.name, "passed": c.passed, "message": c.message}
-                    for c in result.checks
+        response: dict[str, Any] = {
+            "passed": result.passed,
+            "failed_count": result.failed_count,
+            "needs_human_review": result.needs_human_review,
+            "checks": [
+                {"name": c.name, "passed": c.passed, "message": c.message} for c in result.checks
+            ],
+        }
+        if interpretation_text:
+            from ..analysis.nli_reflector import (
+                extract_facts,
+                record_reflection_event,
+                reflect,
+            )
+
+            facts = extract_facts(summary, sample_id)
+            reflection = reflect(interpretation_text, facts)
+            response["layer3"] = {
+                "verifiable_count": reflection.verifiable_count,
+                "contradicted_count": reflection.contradicted_count,
+                "contradiction_rate": reflection.contradiction_rate,
+                "needs_human_review": reflection.needs_human_review,
+                "corroborated_count": reflection.corroborated_count,
+                "verdicts": [
+                    {
+                        "claim_type": str(cv.claim.claim_type),
+                        "value": cv.claim.value,
+                        "verdict": str(cv.verdict),
+                        "evidence": cv.evidence,
+                    }
+                    for cv in reflection.verdicts
                 ],
-            },
-            ensure_ascii=False,
-        )
+            }
+            if reflection.needs_human_review:
+                record_reflection_event(_REFLECTION_DB_PATH, sample_id, reflection)
+        return json.dumps(response, ensure_ascii=False)
     except Exception as e:
         logger.exception("verify_result failed")
         return json.dumps({"error": f"Verifier failed: {e}"})

@@ -9,9 +9,9 @@ rule dec_ecoh_serotype:
     params:
         python = str(PROJECT_ROOT / ".pixi/envs/default/bin/python"),
         src_path = str(PROJECT_ROOT / "src"),
-        contigs = lambda wc: str(WORKDIR) + f"/{wc.sample}/assembly/contigs.fasta",
-        out = lambda wc: str(WORKDIR) + f"/{wc.sample}/dec/ecoh_serotype.json",
-        fallback = '{{"serotype":"-:-","o_type":"-","h_type":"-","o_antigen_hits":[],"h_antigen_hits":[],"interpretation":"ecoh_serotyper failed"}}'
+        contigs = str(WORKDIR) + "/{sample}/assembly/contigs.fasta",
+        out = str(WORKDIR) + "/{sample}/dec/ecoh_serotype.json",
+        fallback = '{"serotype":"-:-","o_type":"-","h_type":"-","o_antigen_hits":[],"h_antigen_hits":[],"interpretation":"ecoh_serotyper failed"}'
     shell:
         "mkdir -p $(dirname {params.out}) && "
         "{params.python} -c \""
@@ -43,9 +43,9 @@ rule shigella_serotype:
     params:
         python = str(PROJECT_ROOT / ".pixi/envs/default/bin/python"),
         src_path = str(PROJECT_ROOT / "src"),
-        contigs = lambda wc: str(WORKDIR) + f"/{wc.sample}/assembly/contigs.fasta",
-        out = lambda wc: str(WORKDIR) + f"/{wc.sample}/dec/shigella_serotype.json",
-        fallback = '{{"species":"N/A","serotype":"Undetermined","confidence":"low","detected_genes":[],"interpretation":"shigella_serotyper failed"}}'
+        contigs = str(WORKDIR) + "/{sample}/assembly/contigs.fasta",
+        out = str(WORKDIR) + "/{sample}/dec/shigella_serotype.json",
+        fallback = '{"species":"N/A","serotype":"Undetermined","confidence":"low","detected_genes":[],"interpretation":"shigella_serotyper failed"}'
     shell:
         "mkdir -p $(dirname {params.out}) && "
         "{params.python} -c \""

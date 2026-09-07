@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -136,9 +138,7 @@ def _load_top_n_from_config(config_path: Path) -> int:
     return int(value) if isinstance(value, int) and value > 0 else 10
 
 
-def _compute_projection(
-    profile: CgmlstProfile, species: str
-) -> ProjectionResult | None:
+def _compute_projection(profile: CgmlstProfile, species: str) -> ProjectionResult | None:
     # Best-effort: returns None on any failure (no reference library, unknown
     # species, missing thresholds, parse error) so the caller falls back to
     # profile-only rendering instead of crashing the report.
@@ -157,26 +157,21 @@ def _compute_projection(
     except (ValueError, RuntimeError, OSError):
         return None
     try:
-        return project_sample(
-            profile, reference, thresholds, species=species, top_n=top_n
-        )
+        return project_sample(profile, reference, thresholds, species=species, top_n=top_n)
     except ValueError:
         return None
 
 
 def _verdict_badge_html(verdict: Verdict) -> str:
     label = str(verdict).upper()
-    return (
-        f'<div class="cgmlst-verdict-badge cgmlst-verdict-{verdict}">{label}</div>'
-    )
+    return f'<div class="cgmlst-verdict-badge cgmlst-verdict-{verdict}">{label}</div>'
 
 
 def _cgmlst_nearest_table(projection: ProjectionResult) -> str:
     if not projection.nearest:
         return ""
     rows = "".join(
-        f"<tr><td>{i + 1}</td><td>{m.sample_id}</td>"
-        f'<td class="dist">{m.distance}</td></tr>'
+        f'<tr><td>{i + 1}</td><td>{m.sample_id}</td><td class="dist">{m.distance}</td></tr>'
         for i, m in enumerate(projection.nearest)
     )
     return f"""
@@ -190,10 +185,7 @@ def _cgmlst_caveats_html(caveats: list[str]) -> str:
     if not caveats:
         return ""
     items = "".join(f"<li>{c}</li>" for c in caveats)
-    return (
-        '<div class="cgmlst-caveats"><strong>⚠️ Caveats:</strong>'
-        f"<ul>{items}</ul></div>"
-    )
+    return f'<div class="cgmlst-caveats"><strong>⚠️ Caveats:</strong><ul>{items}</ul></div>'
 
 
 def _render_cgmlst_section(sample_id: str, summary: dict) -> str:
@@ -246,8 +238,7 @@ def _render_cgmlst_section(sample_id: str, summary: dict) -> str:
             )
         elif species:
             caveats.append(
-                f"no cgMLST thresholds configured for species {species!r}; "
-                "projection skipped"
+                f"no cgMLST thresholds configured for species {species!r}; projection skipped"
             )
         else:
             caveats.append("species undetermined; projection skipped")
@@ -434,10 +425,7 @@ def _distance_heatmap_html(samples: list[str], distances: dict[str, int]) -> str
             else:
                 d = distances.get(f"{s2}|{s1}", 0)
                 color = _distance_color(d, max_d)
-                cells += (
-                    f"<td style='background:{color};text-align:right;"
-                    f"opacity:0.5;'>{d}</td>"
-                )
+                cells += f"<td style='background:{color};text-align:right;opacity:0.5;'>{d}</td>"
         rows += f"<tr>{cells}</tr>\n"
     return f"<tr><th>样本</th>{header}</tr>\n{rows}"
 
@@ -567,10 +555,7 @@ def _thresholds_html(thresholds: dict[str, object]) -> str:
     if not thresholds:
         return ""
     items = "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in thresholds.items())
-    return (
-        '<div class="cgmlst-thresholds"><h3>Applied thresholds</h3>'
-        f"<dl>{items}</dl></div>"
-    )
+    return f'<div class="cgmlst-thresholds"><h3>Applied thresholds</h3><dl>{items}</dl></div>'
 
 
 def generate_cgmlst_cohort_html(cgmlst_summary: dict, output_path: Path) -> None:
@@ -690,9 +675,7 @@ def _render_cgmlst_cohort_groups(group: str) -> int:
             )
             return 1
         group_dirs = sorted(
-            d
-            for d in cgmlst_dir.iterdir()
-            if d.is_dir() and (d / "cgmlst_summary.json").exists()
+            d for d in cgmlst_dir.iterdir() if d.is_dir() and (d / "cgmlst_summary.json").exists()
         )
         if not group_dirs:
             print(f"  ✗ No cgMLST cohort summaries found in {cgmlst_dir}")
@@ -706,12 +689,56 @@ def _render_cgmlst_cohort_groups(group: str) -> int:
     return _render_one_cgmlst_cohort(group)
 
 
+def html_to_pdf(html_path: Path, pdf_path: Path) -> bool:
+    """HTML → PDF：headless chromium 打印（对 D3/phylotree 渲染保真），
+    weasyprint 兜底；均不可用或失败返回 False。"""
+    for name in ("chromium", "chromium-browser", "google-chrome", "chrome"):
+        exe = shutil.which(name)
+        if exe is None:
+            continue
+        try:
+            proc = subprocess.run(  # noqa: S603
+                [
+                    exe,
+                    "--headless",
+                    "--disable-gpu",
+                    "--no-sandbox",
+                    "--virtual-time-budget=15000",
+                    f"--print-to-pdf={pdf_path}",
+                    html_path.as_uri(),
+                ],
+                capture_output=True,
+                timeout=120,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            print(f"  ⚠ PDF: {name} timed out on {html_path.name}")
+            return False
+        if proc.returncode == 0 and pdf_path.exists():
+            return True
+    try:
+        from weasyprint import HTML
+    except ImportError:
+        return False
+    HTML(str(html_path)).write_pdf(str(pdf_path))
+    return pdf_path.exists()
+
+
 def main() -> int:
+    return main_args(sys.argv[1:])
+
+
+def main_args(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description="生成 HTML 分析报告")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--sample", type=str)
     group.add_argument("--all", action="store_true")
     group.add_argument("--cohort", action="store_true")
+    parser.add_argument(
+        "--pdf",
+        action="store_true",
+        help="同时生成 PDF（headless chromium 打印，weasyprint 兜底）",
+    )
     parser.add_argument(
         "--group",
         type=str,
@@ -722,7 +749,7 @@ def main() -> int:
             "Use '--group all' to iterate every group. Requires --cohort."
         ),
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if args.group is not None and not args.cohort:
         parser.error("--group requires --cohort")
@@ -739,6 +766,8 @@ def main() -> int:
         output = RESULTS_DIR / "snp" / "cohort_report.html"
         generate_cohort_html(snp_summary, output)
         print(f"  ✅ Cohort report: {output}")
+        if args.pdf:
+            _emit_pdf(output)
         return 0
 
     v = DeterministicVerifier()
@@ -765,8 +794,18 @@ def main() -> int:
         print(
             f"  {icon} {sid}: {output.name} ({'passed' if verification.passed else 'NEEDS REVIEW'})"
         )
+        if args.pdf:
+            _emit_pdf(output)
 
     return 0
+
+
+def _emit_pdf(html_output: Path) -> None:
+    pdf_path = html_output.with_suffix(".pdf")
+    if html_to_pdf(html_output, pdf_path):
+        print(f"  📄 PDF: {pdf_path}")
+    else:
+        print("  ⚠ PDF: 无可用转换器（chromium/weasyprint），跳过")
 
 
 if __name__ == "__main__":

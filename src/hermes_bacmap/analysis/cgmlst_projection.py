@@ -249,8 +249,7 @@ def project_sample(
     caveats: list[str] = []
 
     has_any_threshold = (
-        thresholds.outbreak_allele_dist is not None
-        or thresholds.related_allele_dist is not None
+        thresholds.outbreak_allele_dist is not None or thresholds.related_allele_dist is not None
     )
 
     if profile.n_called == 0:

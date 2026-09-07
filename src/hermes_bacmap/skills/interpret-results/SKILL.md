@@ -245,3 +245,31 @@ min_allele_dist), phrase the result as follows:
 - **Single source of truth**: All thresholds live in
   `workflows/bacmap/config/config.yaml` (`cgmlst.thresholds`); this skill
   quotes them. Config wins on disagreement.
+
+## Interpretation Self-Verification (Layer 3 NLI Reflector)
+
+Before presenting any interpretation to the user, reflect it against the
+sample's facts. Call `bio_verify_result` with your draft text:
+
+```
+bio_verify_result(sample_id="SAM-XXX", interpretation_text="<your draft>")
+```
+
+The Layer 3 NLI Reflector decomposes your text into atomic claims
+(species / MLST ST / serotype / AMR / virulence / plasmid genes), compares
+each against the pipeline's Source-of-Truth facts, and returns per-claim
+verdicts (`entailed` / `contradicted` / `unverifiable`) plus an aggregate
+`contradiction_rate` (default review threshold 0.1).
+
+Rules:
+
+1. **needs_human_review=true** → your text disagrees with the facts. Find the
+   `contradicted` claims, fix your text, and re-verify. Do NOT hand the user
+   an interpretation that failed reflection.
+2. **Contradicted claims are usually hallucinations**: a gene the sample does
+   not carry, a wrong ST, a wrong serotype. Check `evidence` for the actual
+   fact value.
+3. **Unverifiable claims** (facts missing) → state the limitation explicitly
+   instead of asserting the claim.
+4. Contradiction events are audit-logged to the GOM (`nli_reflected` event)
+   when review is flagged — human reviewers can trace what the AI said.

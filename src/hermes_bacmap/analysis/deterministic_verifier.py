@@ -81,6 +81,16 @@ class VerificationResult:
     needs_human_review: bool
 
 
+def _canonical_species_verdict(verdict: str) -> str:
+    """Salmonella enterica 等二名形 → verify_species 期望的属名 token。"""
+    v = verdict.strip()
+    if v.startswith("not_"):
+        return v
+    if "Salmonella" in v:
+        return "Salmonella"
+    return v
+
+
 class DeterministicVerifier:
     """project.md §8.2 Layer 2 确定性规则校验。"""
 
@@ -167,8 +177,13 @@ class DeterministicVerifier:
         steps = summary.get("steps", {})
 
         sp_raw = steps.get("species", {})
-        verdict = sp_raw.get("verdict", "") if isinstance(sp_raw, dict) else str(sp_raw)
-        species_check = self.verify_species(verdict)
+        # 真实 summary（species.smk 统一输出）用 "species" 键存判决；
+        # 旧 fixtures 用 "verdict"。两者都读（与 nli_reflector.extract_facts 一致）。
+        if isinstance(sp_raw, dict):
+            verdict = str(sp_raw.get("verdict") or sp_raw.get("species") or "")
+        else:
+            verdict = str(sp_raw)
+        species_check = self.verify_species(_canonical_species_verdict(verdict))
 
         mlst_raw = steps.get("mlst", "")
         st, alleles = self._parse_mlst(mlst_raw)

@@ -6,9 +6,9 @@ rule species_identify:
     params:
         python = str(PROJECT_ROOT / ".pixi/envs/default/bin/python"),
         src_path = str(PROJECT_ROOT / "src"),
-        contigs = lambda wc: str(WORKDIR) + f"/{wc.sample}/assembly/contigs.fasta",
-        out = lambda wc: str(WORKDIR) + f"/{wc.sample}/species/species_id.json",
-        fallback = '{{"species":"Unknown","confidence":"low","detected_markers":[],"interpretation":"species_identify failed"}}'
+        contigs = str(WORKDIR) + "/{sample}/assembly/contigs.fasta",
+        out = str(WORKDIR) + "/{sample}/species/species_id.json",
+        fallback = '{"species":"Unknown","confidence":"low","detected_markers":[],"interpretation":"species_identify failed"}'
     shell:
         "mkdir -p $(dirname {params.out}) && "
         "{params.python} -c \""

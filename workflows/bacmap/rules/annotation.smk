@@ -6,9 +6,9 @@ rule genome_annotation:
     params:
         python = str(PROJECT_ROOT / ".pixi/envs/default/bin/python"),
         src_path = str(PROJECT_ROOT / "src"),
-        contigs = lambda wc: str(WORKDIR) + f"/{wc.sample}/assembly/contigs.fasta",
+        contigs = str(WORKDIR) + "/{sample}/assembly/contigs.fasta",
         sample = lambda wc: wc.sample,
-        out = lambda wc: str(WORKDIR) + f"/{wc.sample}/annotation/annotation.json"
+        out = str(WORKDIR) + "/{sample}/annotation/annotation.json"
     shell:
         "mkdir -p $(dirname {params.out}) && "
         "{params.python} -c \""

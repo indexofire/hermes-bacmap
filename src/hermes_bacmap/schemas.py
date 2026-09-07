@@ -453,13 +453,24 @@ VERIFY_RESULT = {
     "description": (
         "Run deterministic verification on results. Checks species, MLST, "
         "serotype, AMR. Flags critical resistance (CTX-M/NDM/KPC/mcr-1) "
-        "for human review. For understanding verification rules, load skill: "
+        "for human review. Optionally pass interpretation_text (your own "
+        "draft interpretation of the sample) to also run the Layer 3 NLI "
+        "Reflector: claims in the text are checked against the sample's "
+        "facts, and a high contradiction rate flags NEEDS_HUMAN_REVIEW. "
+        "For understanding verification rules, load skill: "
         "skill_view('hermes_bacmap:interpret-results')."
     ),
     "parameters": {
         "type": "object",
         "properties": {
             "sample_id": {"type": "string", "description": "Sample ID."},
+            "interpretation_text": {
+                "type": "string",
+                "description": (
+                    "Optional LLM interpretation text to reflect against "
+                    "sample facts (Layer 3 NLI Reflector)."
+                ),
+            },
         },
         "required": ["sample_id"],
     },

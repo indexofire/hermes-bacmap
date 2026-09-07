@@ -65,3 +65,10 @@ __pycache__/
 logs/
 site/
 .omo/
+# setup_db derived BLAST source copies — rebuildable via gene_scanner.setup_db
+data/reference/*_sequences.fasta
+
+# V0.7 benchmark artifacts — regenerable via scripts/benchmark_batch.py prepare/run
+results-bench/
+data/benchmark/
+workflows/bacmap/config/samples_bench.tsv

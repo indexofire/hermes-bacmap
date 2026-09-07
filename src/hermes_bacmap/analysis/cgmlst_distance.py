@@ -102,9 +102,7 @@ def distance_matrix(profiles: list[CgmlstProfile]) -> DistanceMatrix:
 
     samples = [p.sample_id for p in profiles]
 
-    distances: dict[str, dict[str, int]] = {
-        s1: {s2: 0 for s2 in samples} for s1 in samples
-    }
+    distances: dict[str, dict[str, int]] = {s1: {s2: 0 for s2 in samples} for s1 in samples}
 
     for i, pi in enumerate(profiles):
         ai = pi.alleles

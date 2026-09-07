@@ -39,6 +39,7 @@ _VALID_EVENT_TYPES = frozenset(
         "report_generated",
         "analysis_failed",
         "version_created",
+        "nli_reflected",
     }
 )
 
@@ -77,6 +78,7 @@ EventType = Literal[
     "report_generated",
     "analysis_failed",
     "version_created",
+    "nli_reflected",
 ]
 
 

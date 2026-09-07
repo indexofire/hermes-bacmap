@@ -6,6 +6,96 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — 评审 P0 修复：NLI Reflector 语义缺陷 + 验证报告口径 + 文档门禁（2026-09-08）
+
+- **A1 否定盲区**：`decompose_claims` 增加否定窗口检测（中/英标记 + 间隙约束，防「非常罕见」类误报），
+  `AtomicClaim` 增 `negated` 字段，比对语义改为 ENTAILED iff (匹配 != negated)——「不是沙门菌，而是志贺菌」
+  在志贺株上不再误报人审；「未检出 X」在携带株上正确判 CONTRADICTED、阴性株判 ENTAILED；
+  佐证回填支持否定式提及（文本否认管线检出基因 → 矛盾 verdict，不进分母）
+- **A2 基因身份归一共享**：新建 `analysis/gene_identity.py`（`normalize_amr`：bla 前缀 + mcr 变体），
+  nli_reflector 与 validate_analytical 共用同一实现——「检出 blaCTX-M-15」vs facts `CTX-M-15`
+  不再假矛盾（原同一 PR 内两模块对基因身份判定不一致）
+- **A3 分母稀释**：`contradiction_rate` 只对 decomposed（文本提取）claims 计算；佐证回填单列
+  `corroborated_count`（layer3 响应同步输出）——单条矛盾 ST 不再被 ~15 条佐证基因淹没
+  （原 1/16 < 0.1 漏报路径修复）
+- **A4 验证报告口径**：`MetricsReport` 增 `amr_precision_tp/fp`，precision 行显示与 percentage 同口径的
+  子集值，合并 TP/FP 移至括注——§12.3 审计数字可复现
+- **B 文档门禁与计数**：CHANGELOG/features.md 两处 >200 字符行折行（原 pre-commit CI 必红）；
+  测试计数统一至 **1389**（README/docs/index/known-issues/project.md 此前停在 1316）；README 与 features
+  正文的 schemas 行（893 行/25 个）及图示 tools/rules 计数对齐
+- 测试 1376 → **1389**（+13：否定语义 7 / 归一共享 3 / 稀释回归 2 / 精确度口径 1）
+
+### Added — V0.7 Wave 3 扩充：ECO-011/MCR-010 补跑 + 三项数据/管线修复（2026-09-07）
+
+- **samples.tsv 10 → 12**：SAM-ECO-011（E. coli K-12 MG1655 阴性对照）与 SAM-MCR-010（mcr-1）登记并补跑全管线
+- **MCR-010 R2 FASTQ 修复**：aria2c 8 线程断点续传重下（ENA ERR2594882_2），MD5 与 ENA 报告值一致
+  （`8f4dec30...`），gzip -t 通过——关闭 V0.2 遗留的"R2 下载损坏待修复"
+- **修复 species_markers BLAST 索引缺失**（known-issues B3）：f-string 修复后的 species_identify
+  首次真实执行即 FileNotFoundError，重建索引后 ECO-011 uidA 100%/100% → DEC 路由正确
+- **修复 fallback 无效 JSON**（known-issues B3）：4 处 `'|| echo'` 兜底参数 `{{...}}` 改单花括号
+  ——mini-Snakefile 实证 snakemake 7.32 对 params 值原样透传，原双花括号转义假设自引入即错误
+- **harness 测量学完善**：N/A 期望 ST 跳过（"N/A (K-12 reference)" 无比较意义）；mcr 等位变异归一
+  （MCR-1.1 ≡ mcr-1，跨家族不归一）；FN/FP 清单按 170 字符预算截断（MD013 契约，完整数据在 metrics.json）
+- **9 株终测**：物种 **100%**（含 ECO-011 阴性对照正确分流）、血清型 **100%**、AMR 灵敏度 **100%**
+  （TP=92 FN=0）、MLST **85.7%**——MCR-010 判 ST19 vs gold 期望 ST34（gold alleles 为 PENDING 未验证值），
+  如实呈现（docs/validation-report.md Strain-specific findings）。后续文献核实（Sia 2020, PMC7067213）：
+  英格兰 mcr-1 Typhimurium 含 ST34×12 + **ST19×1** + ST36×6，且该株为双相血清型——证据链倾向管线判定正确、
+  gold 值属未验证推断；终局确认待论文 Table S1 / EnteroBase 注册访问
+- 测试 1373 → **1376**（+3：N/A ST 跳过 / mcr 归一 / 行长预算）
+
+### Fixed — V0.7 基准轮发现的管线存量 bug（2026-09-07）
+
+- **.smk f-string params 路径空格 bug（严重）**：`species.smk` / `vpara.smk` / `dec_shigella.smk` / `annotation.smk`
+  共 10 处 `lambda wc: str(WORKDIR) + f"/{wc.sample}/..."` 在 snakemake 7.32 shell format 中展开为带空格路径，
+  python 调用与 fallback 重定向双双失败；该 bug 自规则重构引入后从未暴露（生产产物为旧版规则生成，时间戳未变不触发重跑）。
+  修复为静态模板串 `str(WORKDIR) + "/{sample}/..."`；V0.7 基准强制全量重跑作为回归验证
+  （修复前 7/68 连环失败 → 修复后 4/4 全链路跑通）。详见 docs/known-issues.md B2
+- **`verify_all` 物种判决键兼容**（见 Wave 4 条目）
+
+### Added — V0.7 Wave 4：PDF 报告 + 96 株基准工具（project.md §2.2，2026-09-07）
+
+- **`generate_report.py --pdf`**：HTML → PDF via headless chromium 打印
+  （对 D3/phylotree.js 渲染保真，`--virtual-time-budget` 等 JS 完成），weasyprint 兜底，
+  均不可用时优雅跳过；`main_args(argv)` 可测入口；实测 SAM-TYP-001 产出 3 页 PDF（chromium 1.4）
+- **`scripts/benchmark_batch.py`**：三级子命令（prepare 下采样合成基准样本 / run 独立 workdir 跑批计时 /
+  extrapolate 线性外推 96 株 + 渲染 `docs/benchmark-report.md`）；完全隔离
+  （`samples_bench.tsv` + `results-bench/`，不触碰生产 results/）；seqkit `--two-pass` 同 seed 保配对
+- **修复 Layer 2 存量缺陷**：真实 summary 的物种判决存于 `steps.species.species`（统一 species.smk 输出）
+  而 `verify_all` 只读 `verdict` 键 → 全部真实样本 species 检查误报失败；现双键兼容 + 二名形归一
+  （Salmonella enterica → Salmonella）。DEC/Shigella 株仍失败属 Layer 2 仅支持 Salmonella 的存量范围限制（后续版本扩展）
+- 测试 1361 → **1373**（+12：PDF 转换 5 / 基准外推 5 / Layer 2 双键回归 2）
+
+### Added — V0.7 Wave 3：分析验证 harness（project.md §12.3，2026-09-07）
+
+- **`scripts/validate_analytical.py`**：gold_standard.jsonl 期望值 vs 管线实际输出（复用 Layer 3 的 `extract_facts`），产出 per-strain 明细 + §12.3 指标 + 目标判定，输出 `results/validation/metrics.json` 与 `validation-report.md`
+- **测量学设计**：AMR `bla` 前缀归一（blaCTX-M-15 ≡ CTX-M-15）；precision 仅对 `amr.list_complete: true` 的株计算（gold 清单多为管线自产且截断至 15 基因，FP 属清单不完整而非误报，进分母会系统性低估）——当前 0 株断言完整，precision 诚实输出 no-data
+- **首轮实测（7 株：6 Salmonella + CTX-008）**：物种 100%、MLST 100%、血清型 100%、AMR 灵敏度 100%（91/91）——4 项 §12.3 目标 PASS；precision 待 gold standard 扩充（Wave 3 后续）
+- **`docs/validation-report.md`**：验证报告快照入库；ECO-011（阴性对照）/MCR-010 待补跑管线后纳入
+- 测试 1347 → **1361**（+14：loader 2 / evaluate 7 / aggregate+render 5）
+
+### Added — V0.7 Wave 2：三层防御 Layer 3 NLI Reflector（2026-09-07）
+
+- **`analysis/nli_reflector.py` + `analysis/nli_types.py`**（project.md §8.2 Layer 3 补全）：
+  LLM 解读文本 → atomic claims 分解（species/ST/血清型/AMR/毒力/质粒六类，确定性正则，覆盖中英文表述）
+  → 与 Source of Truth 事实（summary.json）逐条比对（entailed/contradicted/unverifiable）
+  → contradiction rate 超阈值（默认 0.1）触发 `NEEDS_HUMAN_REVIEW`
+- **`bio_verify_result` 挂接 Layer 3**：新增可选 `interpretation_text` 参数（schema 同步），响应新增 `layer3` 段（verifiable/contradicted 计数、rate、逐 claim 判定）；`needs_human_review` 时自动落 GOM 审计事件
+- **GOM 新事件类型 `nli_reflected`**：记录 sample_id、contradiction_rate、review 标记，供人审回溯 AI 解读
+- **interpret-results SKILL.md 新增「Interpretation Self-Verification」章节**：要求 Agent 在向用户呈现解读前先经 Layer 3 反射，contradicted 即修正重验
+- **真实数据冒烟验证**：SAM-TYP-001（Salmonella ST19 Typhimurium）——正确解读 5/5 entailed；含虚假基因/错误 ST/错误血清型的"幻觉"文本 5/5 contradicted → review 正确触发
+- 测试 1316 → **1347**（+31：extract_facts 6 / decompose_claims 9 / reflect 9 / GOM 事件 3 / 工具集成 3 / 冻结性 1）
+
+### Changed — V0.7 立项「验证与防御闭环」+ Wave 1 文档对账（2026-09-07）
+
+- **project.md V0.5 → V0.7**：路线图框与实际交付对齐（V0.3 形态调整说明、V0.4/V0.5 实际交付内容、
+  新增 V0.6 cgMLST 溯源条目、V0.7 立项 Layer 3 NLI Reflector + 分析验证 harness + 96 株基准 + PDF 报告；
+  V1.0 项维持触发条件推迟）；文档头部新增 V0.5→V0.6 / V0.6→V0.7 变更记录；页脚版本同步
+- **计数统一（实测）**：tools 24 → **25**（bio_cgmlst）；Snakemake rules 24 → **30**（11 个 rule 文件：25 常规 + 4 cgMLST cohort 门控 + `rule all`）；tests 1051 → **1316**（README / docs/index.md / docs/features.md 头部）
+- **features.md V0.6 → V0.7**：§3.2 高层工具表补 `bio_cgmlst`（16 → 17）；§4 规则清单补 `amr_amrfinderplus`、`vpara_serotype`、`genome_annotation`、`taxonomy_validation`、cgmlst 5 条规则（含 cohort 门控标注）
+- **README species_identifier 表述修正**：「双模式：marker genes / GTDB-Tk」→ marker 五基因模式；GTDB-Tk 标准模式实际位于 `analysis/taxonomic_validator.py`（经 `taxonomy_validation` rule 接入）
+- **known-issues A5 关闭**：代码库无 `bio_analyze_salmonella` 残留（仅 CHANGELOG 历史条目），无需改名
+- **known-issues 测试状态刷新**：1316 passed, 0 failed
+
 ### Changed — 阶段 3 结构重构 + 质量改进（2026-07-18）
 
 - **ReadMapper 长读段路由（M2）**：新增 `read_type` 参数（short/long）+ FASTQ 内容嗅探（前 ~100 条记录 ≥1000bp 判长读段，支持 .gz）;`bio_align` schema 同步暴露
