@@ -1,9 +1,9 @@
 # Hermes-bacmap 功能文档
 
 > **版本**: V0.7 (2026-09-07)
-> **状态**: 26 Hermes tools · 30 Snakemake rules（25 常规 + 4 cgMLST cohort 门控 + `rule all`）· 1413 tests · 4 skills · engine 抽象层 · GBrain 知识层
+> **状态**: 26 Hermes tools · 30 Snakemake rules（25 常规 + 4 cgMLST cohort 门控 + `rule all`）· 1415 tests · 4 skills · engine 抽象层 · GBrain 知识层
 > **数据集**: 菌株元数据 + 湿实验结果 · cgMLST 溯源 · 12 株数据集（11 株已分析，9 株经 §12.3 验证 harness）
-> 测试口径：1413 = V0.7 终态（P0 +13 / P1 +16 / P2 +8：遍历防护 4、目标参数化 1、血清型形态 3；明细见 CHANGELOG）
+> 测试口径：1415 = V0.7 终态（P0 +13 / P1 +16 / P2 +8 / P3 +2：web events 端点；明细见 CHANGELOG）
 
 ---
 

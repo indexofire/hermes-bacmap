@@ -155,3 +155,53 @@ class TestIndex:
         r = client.get("/")
         assert r.status_code == 200
         assert "text/html" in r.headers["content-type"]
+
+
+class TestSampleEvents:
+    """P3-3：/api/samples/{id}/events —— Layer 3 审计事件 web 读回。"""
+
+    def test_events_empty_when_no_flag(self, client):
+        r = client.get("/api/samples/DONE/events")
+        assert r.status_code == 200
+        assert r.json() == {"sample_id": "DONE", "events": []}
+
+    def test_events_returns_flagged_reflection(self, client, tmp_path, monkeypatch):
+        from datetime import UTC, datetime
+
+        from hermes_bacmap.analysis.nli_reflector import (
+            StrainFacts,
+            record_reflection_event,
+            reflect,
+        )
+        from hermes_bacmap.services.genome_object_service import (
+            GenomeObject,
+            GenomeObjectService,
+            ObjectType,
+        )
+
+        db = tmp_path / "gom.sqlite"
+        gos = GenomeObjectService(db)
+        gos.create(
+            GenomeObject(
+                object_id="obj-done",
+                object_type=ObjectType.ANALYSIS,
+                version=1,
+                schema_version="0.1.0",
+                created_at=datetime.now(UTC),
+                created_by="test",
+                payload={"analysis_type": "summary"},
+                pipeline_version="p-v1",
+                database_versions={"card": "3.3.0"},
+                strain_id="DONE",
+            )
+        )
+        facts = StrainFacts("DONE", "Salmonella", "19", "Typhimurium", (), (), ())
+        r = reflect("该株为沙门菌，ST34。", facts)
+        assert record_reflection_event(db, "DONE", r) is True
+
+        monkeypatch.setattr(web_app, "_DB_PATH", db)
+        resp = client.get("/api/samples/DONE/events")
+        assert resp.status_code == 200
+        (event,) = resp.json()["events"]
+        assert event["needs_human_review"] is True
+        assert event["contradicted_claims"][0]["value"] == "34"

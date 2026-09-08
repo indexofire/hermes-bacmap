@@ -158,6 +158,7 @@ def verify_result(args: dict[str, Any], **kwargs: Any) -> str:
                 "contradiction_rate": reflection.contradiction_rate,
                 "needs_human_review": reflection.needs_human_review,
                 "corroborated_count": reflection.corroborated_count,
+                "threshold": reflection.threshold,
                 "verdicts": [
                     {
                         "claim_type": str(cv.claim.claim_type),

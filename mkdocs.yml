@@ -65,6 +65,8 @@ nav:
     - 参考数据库: reference/databases.md
     - 故障排查: reference/troubleshooting.md
     - 更新日志: reference/changelog.md
+    - 分析验证报告: validation-report.md
+    - 性能基准报告: benchmark-report.md
 
 markdown_extensions:
   - admonition

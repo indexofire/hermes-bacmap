@@ -104,7 +104,7 @@ hermes-bacmap/
 │   ├── run-pipeline/           跨病原管线操作指南 + 5 个 references
 │   ├── bioinfo-analysis/       通用生信决策树
 │   └── interpret-results/      结果解读知识库 + 2 个 references
-├── tests/                       测试（1413 tests）
+├── tests/                       测试（1415 tests）
 │   ├── unit/                   GOM + Verifier + Cohort TDD
 │   ├── conftest.py             共享 fixtures
 │   └── fixtures/gold_standard/ 12 株 gold standard 数据集（9 株经验证 harness）

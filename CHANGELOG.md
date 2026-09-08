@@ -6,6 +6,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — 评审 P3 收尾：审计确定性 + web 读回 + V0.7 终态（2026-09-08）
+
+- **P3-1 layer3 响应补 `threshold`**：调用方（LLM/报告）可见判定阈值（观测性，评审 NITPICK）
+- **P3-2 审计挂载确定性**：`record_reflection_event` 改挂该 strain **最新 created_at** 的
+  ANALYSIS 对象（原 first-match 在多对象时挂载目标不确定）
+- **P3-3 web events 端点**：`GET /api/samples/{id}/events` 返回 nli_reflected 审计事件
+  （人审闭环补齐 web 面；`latest_review_flag` 复用）+ 2 测试（空/有标记往返）
+- **P3-4 mkdocs nav**：分析验证报告 + 性能基准报告入「参考」导航（原为孤儿页）
+- **P3-5 边界类型**：`_gene_names(rows: object)`——isinstance 窄化替代 Any（mypy 严格化）
+- **P3-6 V0.7 终态对账**：project.md 路线图框 V0.7 → ✅ 完成（含遗留清单：gold standard
+  30+ 株扩充待排期、MCR-010 ST 终局确认需 EnteroBase token）
+- 测试 1413 → **1415**（+2：web events 端点）
+
 ### Fixed/Added — 评审 P2 修复：安全加固 + 边角项（2026-09-08）
 
 - **P2-1 HTML 注入面收敛 + chromium 沙箱优先（安全 MEDIUM）**：`generate_report.py` 的

@@ -119,6 +119,17 @@ def get_annotation(sample_id: str) -> dict:
     return ann
 
 
+@app.get("/api/samples/{sample_id}/events")
+def get_sample_events(sample_id: str) -> dict:
+    """Layer 3 审计事件读回（nli_reflected，人审闭环 web 面）。"""
+    from hermes_bacmap.analysis.nli_reflector import latest_review_flag
+
+    flag = latest_review_flag(_DB_PATH, sample_id)
+    if flag is None:
+        return {"sample_id": sample_id, "events": []}
+    return {"sample_id": sample_id, "events": [flag]}
+
+
 @app.get("/api/snp")
 def get_snp_tree() -> dict:
     p = _RESULTS_DIR / "snp" / "snp_summary.json"
