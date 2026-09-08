@@ -263,20 +263,13 @@ def cgmlst_traceback(args: dict[str, Any], **kwargs: Any) -> str:
     profile_payload = _load_cgmlst_profile_payload(sample_id)
     if profile_payload is None:
         return json.dumps(
-            {
-                "error": (
-                    f"no cgmlst profile for {sample_id}, "
-                    "run bio_analyze_pathogen first"
-                )
-            }
+            {"error": (f"no cgmlst profile for {sample_id}, run bio_analyze_pathogen first")}
         )
 
     scheme = profile_payload.get("scheme", "")
     species = _CGMLST_SCHEME_SPECIES.get(scheme, "")
     if not species:
-        return json.dumps(
-            {"error": f"unknown cgmlst scheme {scheme!r} for {sample_id}"}
-        )
+        return json.dumps({"error": f"unknown cgmlst scheme {scheme!r} for {sample_id}"})
 
     query_profile = _payload_to_cgmlst_profile(profile_payload, sample_id)
 
@@ -284,9 +277,7 @@ def cgmlst_traceback(args: dict[str, Any], **kwargs: Any) -> str:
     if isinstance(reference, str):
         return json.dumps({"error": reference})
     if not reference:
-        return json.dumps(
-            {"error": f"cgmlst reference library is empty for species {species!r}"}
-        )
+        return json.dumps({"error": f"cgmlst reference library is empty for species {species!r}"})
 
     thresholds_or_err = _load_species_thresholds(species)
     if isinstance(thresholds_or_err, str):
@@ -294,9 +285,7 @@ def cgmlst_traceback(args: dict[str, Any], **kwargs: Any) -> str:
     thresholds = thresholds_or_err
 
     try:
-        result = project_sample(
-            query_profile, reference, thresholds, species=species
-        )
+        result = project_sample(query_profile, reference, thresholds, species=species)
     except ValueError as e:
         return json.dumps({"error": f"projection failed: {e}"})
 
@@ -360,9 +349,7 @@ def _load_cgmlst_profile_payload(sample_id: str) -> dict[str, Any] | None:
     }
 
 
-def _payload_to_cgmlst_profile(
-    payload: dict[str, Any], fallback_sample_id: str
-) -> CgmlstProfile:
+def _payload_to_cgmlst_profile(payload: dict[str, Any], fallback_sample_id: str) -> CgmlstProfile:
     raw_alleles = payload.get("alleles", {})
     alleles: dict[str, int | None] = {}
     for locus, allele in raw_alleles.items():
@@ -377,9 +364,7 @@ def _payload_to_cgmlst_profile(
                 alleles[locus] = None
 
     n_total = payload.get("n_total", len(alleles))
-    n_called = payload.get(
-        "n_called", sum(1 for v in alleles.values() if v is not None)
-    )
+    n_called = payload.get("n_called", sum(1 for v in alleles.values() if v is not None))
     return CgmlstProfile(
         sample_id=payload.get("sample_id", fallback_sample_id),
         scheme=payload.get("scheme", ""),
@@ -396,18 +381,10 @@ def _payload_to_cgmlst_profile(
 def _load_reference_profiles(species: str) -> list[CgmlstProfile] | str:
     species_key = species.lower().replace(".", "")
     ref_path = (
-        _PROJECT_ROOT
-        / "data"
-        / "reference"
-        / "cgmlst"
-        / species_key
-        / "reference_profiles.tsv"
+        _PROJECT_ROOT / "data" / "reference" / "cgmlst" / species_key / "reference_profiles.tsv"
     )
     if not ref_path.exists():
-        return (
-            f"cgmlst reference library not found for species {species!r} "
-            f"(looked at {ref_path})"
-        )
+        return f"cgmlst reference library not found for species {species!r} (looked at {ref_path})"
 
     try:
         return parse_cgmlst_profiles(ref_path.read_text())
@@ -561,3 +538,34 @@ def search_samples(args: dict[str, Any], **kwargs: Any) -> str:
     except Exception as e:
         logger.exception("search_samples failed")
         return json.dumps({"error": f"Search failed: {e}"})
+
+
+@tool_handler
+def review_flags(args: dict[str, Any], **kwargs: Any) -> str:
+    """List Layer 3 NLI Reflector audit events (nli_reflected) from the GOM.
+
+    Human-review loop read-back: which samples were flagged by the AI
+    interpretation self-check (contradiction rate, contradicted claims)."""
+    db_path = _DEFAULT_DB_PATH
+    if not db_path.exists():
+        return json.dumps(
+            {"events": [], "note": f"GOM DB not found at {db_path}"}, ensure_ascii=False
+        )
+
+    from ..services.genome_object_service import GenomeObjectService, ObjectType
+
+    gos = GenomeObjectService(db_path)
+    limit = int(args.get("limit", 50))
+    events = []
+    for obj in gos.list_by_type(ObjectType.ANALYSIS):
+        for ev in gos.list_events(obj.object_id):
+            if ev.event_type == "nli_reflected":
+                events.append(
+                    {
+                        "timestamp": ev.timestamp.isoformat(),
+                        "object_id": obj.object_id,
+                        **ev.event_payload,
+                    }
+                )
+    events.sort(key=lambda e: e["timestamp"], reverse=True)
+    return json.dumps({"events": events[:limit], "total": len(events)}, ensure_ascii=False)

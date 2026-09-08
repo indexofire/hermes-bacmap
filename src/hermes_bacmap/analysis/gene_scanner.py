@@ -163,11 +163,16 @@ def _find_db(db_name: str) -> Path:
                 return p
             if (base / f"{pattern}.phr").exists():
                 return p
-    raise FileNotFoundError(
-        f"Database '{db_name}' not found (no BLAST index). Searched: "
-        f"{[str(p) for p in _DB_SEARCH_PATHS]}. "
-        f"Run gene_scanner.setup_db('{db_name}') to create it."
-    )
+    # B3 复发路径关闭：索引缺失时按源 FASTA 懒重建，而非直接抛错
+    # （fresh clone 首跑 species_identify/ecoh/shigella 不再 FileNotFoundError）
+    try:
+        return setup_db(db_name)
+    except (FileNotFoundError, RuntimeError, OSError):
+        raise FileNotFoundError(
+            f"Database '{db_name}' not found (no BLAST index and auto-rebuild failed). "
+            f"Searched: {[str(p) for p in _DB_SEARCH_PATHS]}. "
+            f"Run gene_scanner.setup_db('{db_name}') to create it."
+        ) from None
 
 
 def _parse_db_header(sseqid: str) -> tuple[str, str, str, str]:

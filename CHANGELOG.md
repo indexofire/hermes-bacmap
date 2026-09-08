@@ -6,6 +6,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — 评审 P1 修复：索引自愈 + 规范化收敛 + 人审闭环（2026-09-08）
+
+- **P1-2 索引懒重建（B3 复发路径关闭）**：`gene_scanner._find_db` 索引缺失时自动调用
+  `setup_db` 重建（源 FASTA 也不存在才抛增强错误）——fresh clone 首跑 species_identify/
+  ecoh/shigella 不再 FileNotFoundError；+2 单测（mock makeblastdb）
+- **P1-1 物种规范化收敛（评审 A5）**：新建 `analysis/species_canon.py`（规范名常量 +
+  `canonical_from_verdict` 含 ipaH 分流 + `collapse_binomial`），nli_reflector/
+  deterministic_verifier/validate_analytical 三处表收敛于此——新增病原只改一处；
+  行为等价由既有测试 + 新增 11 个 species_canon 测试锁定
+- **P1-3 人审读回面**：新工具 `bio_review_flags`（第 26 个）——GOM `list_events` 读回
+  `nli_reflected` 审计事件（矛盾率/阈值/矛盾 claims 明细，按时间倒序 + limit）；
+  SKILL.md 同步指引——"reviewers can trace" 终于有承载面
+- **P1-4 Layer 3 入报告**：`nli_reflected` payload 扩充完整矛盾明细（contradicted_claims +
+  verifiable/corroborated/threshold）；`generate_report.py` 新增「AI 解读自检」章节
+  （latest_review_flag 读回最近一次人审标记，渲染矛盾清单与事实依据；无标记则章节缺省），
+  `--pdf` 自动继承；低噪声约定：干净反射只留在工具响应层，仅人审标记入审计与报告
+- **计数同步**: tools 25 → **26**（README/features/index/docs/README/project.md + 注册锚定测试）；
+  测试 1389 → **1405**（+16：species_canon 11 / 懒重建 2 / 读回与报告 3）
+- tools/services.py `review_flags` + schemas `REVIEW_FLAGS` + registry 注册
+
 ### Fixed — 评审 P0 修复：NLI Reflector 语义缺陷 + 验证报告口径 + 文档门禁（2026-09-08）
 
 - **A1 否定盲区**：`decompose_claims` 增加否定窗口检测（中/英标记 + 间隙约束，防「非常罕见」类误报），

@@ -30,6 +30,7 @@ from hermes_bacmap.analysis.cgmlst_projection import (  # noqa: E402
 )
 from hermes_bacmap.analysis.cgmlst_types import CgmlstProfile  # noqa: E402
 from hermes_bacmap.analysis.deterministic_verifier import DeterministicVerifier  # noqa: E402
+from hermes_bacmap.config import DB_PATH as _NLI_DB_PATH  # noqa: E402
 from hermes_bacmap.utils import (  # noqa: E402
     parse_abricate_tsv,
     parse_cgmlst_profile,
@@ -267,6 +268,41 @@ def _render_cgmlst_section(sample_id: str, summary: dict) -> str:
     {_cgmlst_caveats_html(caveats)}"""
 
 
+def _render_nli_section(sample_id: str) -> str:
+    """P1-4：读回最近一次 nli_reflected 审计事件，渲染「AI 解读自检」章节。
+
+    无事件（未触发人审）/ 无 DB / 读失败 → 空串（章节缺省，报告不受影响）。
+    """
+    from hermes_bacmap.analysis.nli_reflector import latest_review_flag
+
+    flag = latest_review_flag(_NLI_DB_PATH, sample_id)
+    if not flag or not flag.get("needs_human_review"):
+        return ""
+
+    claims = flag.get("contradicted_claims", [])
+    claim_rows = "".join(
+        f"<tr><td>{c.get('claim_type', '')}</td><td>{c.get('value', '')}"
+        f"{'（否定式）' if c.get('negated') else ''}</td><td>{c.get('evidence', '')}</td></tr>"
+        for c in claims
+    )
+    return f"""
+<h2>⚠️ AI 解读自检（Layer 3 NLI Reflector）</h2>
+<table>
+<tr><th>指标</th><th>值</th></tr>
+{_row("人审标记", "NEEDS HUMAN REVIEW")}
+{_row("矛盾率", f"{flag.get('contradiction_rate', 0):.2f}（阈值 {flag.get('threshold', '—')}）")}
+{_row("可验证 claims", flag.get("verifiable_count", "—"))}
+{_row("佐证 claims", flag.get("corroborated_count", "—"))}
+{_row("审计时间", flag.get("timestamp", "—"))}
+</table>
+<p>以下 AI 解读中的 claims 与管线事实矛盾（人审请核对）：</p>
+<table>
+<tr><th>Claim 类型</th><th>内容</th><th>事实依据</th></tr>
+{claim_rows}
+</table>
+"""
+
+
 def generate_html(sample_id: str, summary: dict, verification, output_path: Path):
     steps = summary.get("steps", {})
 
@@ -365,6 +401,8 @@ td.label {{ font-weight: bold; width: 180px; background: #f8f9fa; }}
 <tr><th>检查项</th><th>结果</th></tr>
 {check_rows}
 </table>
+
+{_render_nli_section(sample_id)}
 
 <h2>💊 AMR 耐药基因 (CARD)</h2>
 {_gene_table(card_genes, "CARD AMR Genes")}

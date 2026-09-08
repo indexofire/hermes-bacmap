@@ -559,6 +559,28 @@ SNP_TREE = {
 }
 
 
+REVIEW_FLAGS = {
+    "name": "bio_review_flags",
+    "description": (
+        "List Layer 3 NLI Reflector audit events (nli_reflected) from the "
+        "GOM: which samples were flagged by the AI interpretation "
+        "self-check, with contradiction rate, threshold, and the "
+        "contradicted claims. This is the human-review read-back surface — "
+        "use it when the user asks which samples need review, what the AI "
+        "got wrong, or to trace a flagged sample's audit trail."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "limit": {
+                "type": "integer",
+                "description": "Max events to return (default 50, newest first).",
+            },
+        },
+        "required": [],
+    },
+}
+
 CGLST_TRACEBACK = {
     "name": "bio_cgmlst",
     "description": (

@@ -1,9 +1,9 @@
 # Hermes-bacmap 功能文档
 
 > **版本**: V0.7 (2026-09-07)
-> **状态**: 25 Hermes tools · 30 Snakemake rules（25 常规 + 4 cgMLST cohort 门控 + `rule all`）· 1389 tests · 4 skills · engine 抽象层 · GBrain 知识层
+> **状态**: 26 Hermes tools · 30 Snakemake rules（25 常规 + 4 cgMLST cohort 门控 + `rule all`）· 1405 tests · 4 skills · engine 抽象层 · GBrain 知识层
 > **数据集**: 菌株元数据 + 湿实验结果 · cgMLST 溯源 · 12 株数据集（11 株已分析，9 株经 §12.3 验证 harness）
-> 测试口径：1389 = V0.7 终态（含 P0 评审修复 +13：否定语义 7 / 归一共享 3 / 分母稀释 2 / 精确度子集口径 1）
+> 测试口径：1405 = V0.7 终态（P0 +13，P1 +16：物种收敛 11 / 索引懒重建 2 / 读回与报告 3... 实际见 CHANGELOG）
 
 ---
 
@@ -77,21 +77,21 @@
 
 | 模块 | 行数 | 职责 |
 |---|---|---|
-| `tools/` | 2115 | 25 个 Hermes tool handler(7 文件包:seq / cli / pipeline / services + registry) |
+| `tools/` | 2115 | 26 个 Hermes tool handler(7 文件包:seq / cli / pipeline / services + registry) |
 | `genome_object_service.py` | 667 | GOM：SQLite CRUD + 版本管理 + 事件 + 文件产物 + FTS5 搜索 |
-| `schemas.py` | 893 | 25 个 tool 的 JSON Schema 定义 |
+| `schemas.py` | 893 | 26 个 tool 的 JSON Schema 定义 |
 | `genome_annotator.py` | 280 | Python 版基因组注释（pyrodigal + Prokka DBs，替代 Prokka CLI） |
 | `engine/` | 1121 | 算法抽象层：SequenceMatcher + ReadMapper + Hit + Registry |
 | `gene_scanner.py` | 546 | 通用基因扫描引擎（委托 engine.SequenceMatcher） |
 | `shigella_serotyper.py` | 231 | Shigella 血清型预测（移植 ShigATyper，58 种血清型） |
 | `deterministic_verifier.py` | 216 | 确定性规则校验（species/MLST/serotype/AMR 四层检查） |
-| `__init__.py` | 28 | 插件注册（表驱动，25 tools + 4 skills 自动发现） |
+| `__init__.py` | 28 | 插件注册（表驱动，26 tools + 4 skills 自动发现） |
 | `species_identifier.py` | 122 | 统一物种鉴定（invA/uidA/ipaH/toxR/tlh 五基因合并为 1 次 BLAST） |
 | `ecoh_serotyper.py` | 134 | E. coli O:H 血清型（委托 gene_scanner） |
 
 ---
 
-## 3. Hermes Tools（25 个）
+# 3. Hermes Tools（26 个）
 
 ### 3.1 底层生信工具（8 个）
 
@@ -106,7 +106,7 @@
 | `bio_samtools` | SAM/BAM 操作（9 个子命令：index/sort/flagstat/view/depth/faidx/mpileup/consensus/fixmate） | samtools |
 | `bio_variant` | 变异检测（mpileup_call/filter/query/annotate/consensus） | bcftools |
 
-### 3.2 高层分析工具（17 个）
+### 3.2 高层分析工具（18 个）
 
 | Tool | 功能 | 输入 | 输出 |
 |---|---|---|---|
@@ -119,6 +119,7 @@
 | `bio_snp_tree` | 获取 cohort-level 系统发育树 + 距离矩阵 | 无 | Newick + pairwise distances |
 | `bio_cgmlst` | cgMLST 溯源：最近参考株 + per-species 阈值判定（outbreak/related/unrelated） | sample_id | ProjectionResult JSON |
 | `bio_search_samples` | 自然语言样本检索（FTS5 + 字段加权） | 搜索词 | 匹配样本列表（含匹配字段 + 相关度分数） |
+| `bio_review_flags` | Layer 3 人审标记读回（nli_reflected 审计事件列表） | limit | 标记样本 + 矛盾率 + 矛盾 claims 明细 |
 | `bio_annotate` | 基因组注释（pyrodigal CDS + Prokka DBs blastp） | contigs 路径 | annotation JSON |
 | `bio_validate_taxonomy` | 物种鉴定（双模式：marker genes / GTDB-Tk） | sample_id, mode | completeness / contamination / gtdb_taxonomy |
 | `bio_diagnose` | 诊断管线失败（解析 Snakemake 日志） | log_path 或 stderr_text | 错误类型 / 根因 / 修复命令 |

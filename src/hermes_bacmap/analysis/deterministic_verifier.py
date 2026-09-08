@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ..utils import parse_mlst
+from .species_canon import collapse_binomial
 
 _KNOWN_SEROGROUPS = frozenset(
     {
@@ -79,16 +80,6 @@ class VerificationResult:
     checks: list[CheckResult]
     failed_count: int
     needs_human_review: bool
-
-
-def _canonical_species_verdict(verdict: str) -> str:
-    """Salmonella enterica 等二名形 → verify_species 期望的属名 token。"""
-    v = verdict.strip()
-    if v.startswith("not_"):
-        return v
-    if "Salmonella" in v:
-        return "Salmonella"
-    return v
 
 
 class DeterministicVerifier:
@@ -183,7 +174,7 @@ class DeterministicVerifier:
             verdict = str(sp_raw.get("verdict") or sp_raw.get("species") or "")
         else:
             verdict = str(sp_raw)
-        species_check = self.verify_species(_canonical_species_verdict(verdict))
+        species_check = self.verify_species(collapse_binomial(verdict))
 
         mlst_raw = steps.get("mlst", "")
         st, alleles = self._parse_mlst(mlst_raw)

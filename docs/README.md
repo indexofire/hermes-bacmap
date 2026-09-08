@@ -6,7 +6,7 @@
 
 | 文件 | 内容 |
 |------|------|
-| [**features.md**](features.md) | **完整功能文档**（25 tools + 30 rules + GOM + SNP + 检索 + 验证 + 数据库） |
+| [**features.md**](features.md) | **完整功能文档**（26 tools + 30 rules + GOM + SNP + 检索 + 验证 + 数据库） |
 | [installation/quick-start.md](installation/quick-start.md) | 从零搭建开发环境 (uv + pixi) |
 | [architecture/gom.md](architecture/gom.md) | Genome Object Model 架构设计 |
 | [usage/hermes-agent.md](usage/hermes-agent.md) | Hermes Agent 交互指南 |

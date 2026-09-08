@@ -7,6 +7,14 @@ from .gene_scanner import GeneHit, ScanResult, scan, scan_multi
 from .genome_annotator import AnnotationResult, Feature, annotate
 from .nli_reflector import extract_facts, reflect
 from .nli_types import AtomicClaim, ClaimType, ClaimVerdict, ReflectionResult, StrainFacts, Verdict
+from .species_canon import (
+    ECOLI,
+    SALMONELLA,
+    SHIGELLA,
+    VPARA,
+    canonical_from_verdict,
+    collapse_binomial,
+)
 from .species_identifier import SpeciesIdResult, identify
 from .taxonomic_validator import TaxonomyResult, validate_genome
 
@@ -18,16 +26,22 @@ __all__ = [
     "ClaimVerdict",
     "DeterministicVerifier",
     "Diagnosis",
+    "ECOLI",
     "Feature",
     "GeneHit",
     "ReflectionResult",
+    "SALMONELLA",
     "ScanResult",
+    "SHIGELLA",
     "SpeciesIdResult",
     "StrainFacts",
     "TaxonomyResult",
     "VerificationResult",
     "Verdict",
+    "VPARA",
     "annotate",
+    "canonical_from_verdict",
+    "collapse_binomial",
     "diagnose",
     "diagnose_from_log",
     "extract_facts",

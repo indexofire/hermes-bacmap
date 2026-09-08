@@ -272,4 +272,6 @@ Rules:
 3. **Unverifiable claims** (facts missing) → state the limitation explicitly
    instead of asserting the claim.
 4. Contradiction events are audit-logged to the GOM (`nli_reflected` event)
-   when review is flagged — human reviewers can trace what the AI said.
+   when review is flagged — human reviewers can trace what the AI said via
+   `bio_review_flags` (lists flagged samples with contradiction details) or the
+   report's "AI 解读自检" section.

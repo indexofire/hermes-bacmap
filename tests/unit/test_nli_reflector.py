@@ -399,6 +399,46 @@ class TestReflectionGomEvent:
         r = reflect("该株为沙门菌", _salmonella_facts())
         assert record_reflection_event(tmp_path / "missing.sqlite", "SAM-001", r) is False
 
+    def test_payload_roundtrip_with_contradicted_claims(self, tmp_path):
+        """P1-3/P1-4：事件 payload 含完整矛盾明细，latest_review_flag 可读回。"""
+        from hermes_bacmap.analysis.nli_reflector import latest_review_flag, record_reflection_event
+
+        gos = GenomeObjectService(tmp_path / "gom.sqlite")
+        gos.create(
+            GenomeObject(
+                object_id="obj-1",
+                object_type=ObjectType.ANALYSIS,
+                version=1,
+                schema_version="0.1.0",
+                created_at=datetime.now(UTC),
+                created_by="test",
+                payload={"analysis_type": "summary"},
+                pipeline_version="p-v1",
+                database_versions={"card": "3.3.0"},
+                strain_id="SAM-001",
+            )
+        )
+        r = reflect("该株为沙门菌，ST34。", _salmonella_facts())
+        assert record_reflection_event(tmp_path / "gom.sqlite", "SAM-001", r) is True
+
+        flag = latest_review_flag(tmp_path / "gom.sqlite", "SAM-001")
+        assert flag is not None
+        assert flag["needs_human_review"] is True
+        assert flag["contradiction_rate"] == pytest.approx(0.5)
+        assert flag["verifiable_count"] == 2
+        assert flag["corroborated_count"] == 0
+        assert len(flag["contradicted_claims"]) == 1
+        assert flag["contradicted_claims"][0]["value"] == "34"
+        assert flag["contradicted_claims"][0]["claim_type"] == "mlst_st"
+        assert "timestamp" in flag
+
+    def test_latest_review_flag_no_events_or_missing_db(self, tmp_path):
+        from hermes_bacmap.analysis.nli_reflector import latest_review_flag
+
+        assert latest_review_flag(tmp_path / "missing.sqlite", "SAM-001") is None
+        GenomeObjectService(tmp_path / "gom.sqlite")
+        assert latest_review_flag(tmp_path / "gom.sqlite", "SAM-404") is None
+
 
 # ===========================================================================
 # bio_verify_result 集成（Layer 3 挂接）

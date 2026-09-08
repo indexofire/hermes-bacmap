@@ -2,7 +2,7 @@
 
 > **AI Native 病原微生物基因组智能分析平台** — 面向中小型疾控实验室的自然语言驱动 WGS 分析系统。
 
-Hermes-bacmap 以 [Hermes Agent](https://github.com/NousResearch/hermes-agent) 为编排核心，将 Snakemake 工作流、25 个生信工具、SQLite 数据模型与本地 LLM 推理整合为统一平台。用户用中文或英文自然语言即可完成从 FASTQ 上传到暴发溯源的全流程。
+Hermes-bacmap 以 [Hermes Agent](https://github.com/NousResearch/hermes-agent) 为编排核心，将 Snakemake 工作流、26 个生信工具、SQLite 数据模型与本地 LLM 推理整合为统一平台。用户用中文或英文自然语言即可完成从 FASTQ 上传到暴发溯源的全流程。
 
 ## 核心特性
 
@@ -20,7 +20,7 @@ Hermes-bacmap 以 [Hermes Agent](https://github.com/NousResearch/hermes-agent) �
                            │
                 ┌──────────▼──────────┐
                  │   Hermes Agent      │   GLM-5.2 via Z.AI API
-                 │   (LLM 编排层)       │   25 tools + 4 skills
+                 │   (LLM 编排层)       │   26 tools + 4 skills
                 └──────────┬──────────┘
                            │
          ┌─────────────────┼─────────────────┐
@@ -49,7 +49,7 @@ Hermes-bacmap 以 [Hermes Agent](https://github.com/NousResearch/hermes-agent) �
 |---|---|---|
 | Hermes Tools | **24** | 8 个生信原语 + 16 个高层分析工具 |
 | Snakemake Rules | **25** | per-sample DAG + cohort SNP DAG（3 物种组） |
-| 测试用例 | **1389** | GOM + 溯源索引 + Verifier + Engine + Utils，全绿 |
+| 测试用例 | **1405** | GOM + 溯源索引 + Verifier + Engine + Utils，全绿 |
 | 支持病原 | **4** | Salmonella / DEC / Shigella / V. parahaemolyticus |
 | Skills | **4** | bio-router / run-pipeline / interpret-results / bioinfo-analysis |
 | 参考数据库 | **15** | 物种鉴定 + AMR + 毒力 + 血清型 + SNP 参考 + Prokka 注释 |
@@ -70,7 +70,7 @@ hermes plugins enable hermes_bacmap
 
 # 4. 验证安装
 pixi run snakemake --version    # 应输出 7.32.x
-uv run pytest -q                # 1389 tests 全过
+uv run pytest -q                # 1405 tests 全过
 
 # 5. 启动 Hermes Agent
 hermes chat

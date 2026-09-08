@@ -787,3 +787,28 @@ class TestMain:
         assert "Total hits: 1" in out
         assert "GENE\t%IDENTITY" in out
         assert "a\t99.0\t100.0\tctg1\t10\t200\tACC1" in out
+
+
+class TestFindDbLazyRebuild:
+    """P1-2（评审 B3 教训落地）：索引缺失时 _find_db 懒重建而非抛错。"""
+
+    def test_missing_index_triggers_rebuild(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(gene_scanner, "_DB_SEARCH_PATHS", [tmp_path])
+
+        def fake_setup(db_name: str) -> Path:
+            prefix = tmp_path / f"{db_name}_blastdb"
+            (tmp_path / f"{db_name}_blastdb.nhr").write_text("")
+            return prefix
+
+        monkeypatch.setattr(gene_scanner, "setup_db", fake_setup)
+        assert gene_scanner._find_db("species_markers") == (tmp_path / "species_markers_blastdb")
+
+    def test_rebuild_failure_raises_enriched_error(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(gene_scanner, "_DB_SEARCH_PATHS", [tmp_path])
+
+        def fake_setup(db_name: str) -> Path:
+            raise FileNotFoundError("no source FASTA")
+
+        monkeypatch.setattr(gene_scanner, "setup_db", fake_setup)
+        with pytest.raises(FileNotFoundError, match="auto-rebuild failed"):
+            gene_scanner._find_db("whatever")

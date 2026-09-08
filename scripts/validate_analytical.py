@@ -24,6 +24,7 @@ sys.path.insert(0, str(_ROOT / "src"))
 from hermes_bacmap.analysis.gene_identity import normalize_amr  # noqa: E402
 from hermes_bacmap.analysis.nli_reflector import extract_facts  # noqa: E402
 from hermes_bacmap.analysis.nli_types import StrainFacts  # noqa: E402
+from hermes_bacmap.analysis.species_canon import ECOLI, SALMONELLA, SHIGELLA, VPARA  # noqa: E402
 
 # project.md §12.3 验证指标门槛。
 SPECIES_TARGET = 0.99
@@ -32,11 +33,12 @@ SEROTYPE_TARGET = 0.95
 AMR_SENSITIVITY_TARGET = 0.95
 AMR_PRECISION_TARGET = 0.98
 
+# gold 物种拉丁名前缀 → species_canon 规范名常量（新增病原只改 species_canon）
 _EXPECTED_SPECIES_CANONICAL: tuple[tuple[str, str], ...] = (
-    ("salmonella", "Salmonella"),
-    ("escherichia coli", "E. coli"),
-    ("shigella", "Shigella"),
-    ("vibrio parahaemolyticus", "V. parahaemolyticus"),
+    ("salmonella", SALMONELLA),
+    ("escherichia coli", ECOLI),
+    ("shigella", SHIGELLA),
+    ("vibrio parahaemolyticus", VPARA),
 )
 
 

@@ -34,25 +34,22 @@ from .nli_types import (
     StrainFacts,
     Verdict,
 )
+from .species_canon import (
+    ECOLI,
+    SALMONELLA,
+    SHIGELLA,
+    VPARA,
+    canonical_from_verdict,
+)
 
 logger = logging.getLogger(__name__)
 
 
-# 物种规范名（与 tools.pipeline.get_result 的分流逻辑一致）。
-_SPECIES_VERDICT_MAP: tuple[tuple[str, str], ...] = (
-    ("Salmonella", "Salmonella"),
-    ("parahaemolyticus", "V. parahaemolyticus"),
-    ("Shigella", "Shigella"),
-    ("E. coli", "E. coli"),
-    ("E.coli", "E. coli"),
-    ("DEC", "E. coli"),
-)
-
 _SPECIES_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
-    (re.compile(r"Salmonella|沙门氏?菌"), "Salmonella"),
-    (re.compile(r"V\.?\s*parahaemolyticus|副溶血性弧菌"), "V. parahaemolyticus"),
-    (re.compile(r"Shigella|志贺氏?菌"), "Shigella"),
-    (re.compile(r"E\.?\s*coli|大肠埃希菌|大肠杆菌"), "E. coli"),
+    (re.compile(r"Salmonella|沙门氏?菌"), SALMONELLA),
+    (re.compile(r"V\.?\s*parahaemolyticus|副溶血性弧菌"), VPARA),
+    (re.compile(r"Shigella|志贺氏?菌"), SHIGELLA),
+    (re.compile(r"E\.?\s*coli|大肠埃希菌|大肠杆菌"), ECOLI),
 )
 
 _ST_PATTERNS: tuple[re.Pattern[str], ...] = (
@@ -109,16 +106,8 @@ _AMR_FAMILY_RE = re.compile(
 
 
 def _canonical_species(verdict: str, ipah: str) -> str:
-    """verdict → 规范物种名；not_X 按 ipaH 分流（mirrors get_result）。"""
-    v = verdict.strip()
-    if not v:
-        return "unknown"
-    if v.startswith("not_"):
-        return "Shigella" if "positive" in ipah.lower() else "E. coli"
-    for needle, canonical in _SPECIES_VERDICT_MAP:
-        if needle in v:
-            return canonical
-    return "unknown"
+    """verdict → 规范物种名（共享 species_canon，not_X 按 ipaH 分流）。"""
+    return canonical_from_verdict(verdict, ipah)
 
 
 def _gene_names(rows: Any) -> tuple[str, ...]:
@@ -308,6 +297,8 @@ def reflect(
 def record_reflection_event(db_path: Path, sample_id: str, reflection: ReflectionResult) -> bool:
     """把 reflection 结果落 GOM 审计事件（needs_human_review 时调用）。
 
+    payload 含完整矛盾明细（contradicted claims），供 bio_review_flags 工具
+    与报告「AI 解读自检」章节读回（P1-3/P1-4 人审闭环出口）。
     GOM 不可用（DB 缺失/无对应样本对象/写失败）→ False，静默降级——
     审计失败不得阻断 Layer 2 校验的返回。
     """
@@ -331,6 +322,19 @@ def record_reflection_event(db_path: Path, sample_id: str, reflection: Reflectio
                         "contradiction_rate": reflection.contradiction_rate,
                         "contradicted_count": reflection.contradicted_count,
                         "needs_human_review": reflection.needs_human_review,
+                        "verifiable_count": reflection.verifiable_count,
+                        "corroborated_count": reflection.corroborated_count,
+                        "threshold": reflection.threshold,
+                        "contradicted_claims": [
+                            {
+                                "claim_type": str(cv.claim.claim_type),
+                                "value": cv.claim.value,
+                                "negated": cv.claim.negated,
+                                "evidence": cv.evidence,
+                            }
+                            for cv in reflection.verdicts
+                            if cv.verdict is Verdict.CONTRADICTED
+                        ],
                     },
                 )
                 return True
@@ -338,3 +342,35 @@ def record_reflection_event(db_path: Path, sample_id: str, reflection: Reflectio
     except (GOMValidationError, sqlite3.Error, OSError):
         logger.exception("record_reflection_event failed for %s", sample_id)
         return False
+
+
+def latest_review_flag(db_path: Path, sample_id: str) -> dict[str, Any] | None:
+    """读回某样本最近一次 nli_reflected 审计事件（工具/报告共用读回面）。
+
+    无 DB / 无匹配样本 / 无事件 / 读失败 → None（调用方按"无自检记录"降级）。
+    """
+    if not db_path.exists():
+        return None
+    from ..services.genome_object_service import (
+        GenomeObjectService,
+        GOMValidationError,
+        ObjectType,
+    )
+
+    try:
+        gos = GenomeObjectService(db_path)
+        latest = None
+        for obj in gos.list_by_type(ObjectType.ANALYSIS):
+            if obj.strain_id != sample_id:
+                continue
+            for ev in gos.list_events(obj.object_id):
+                if ev.event_type == "nli_reflected" and (
+                    latest is None or ev.timestamp > latest.timestamp
+                ):
+                    latest = ev
+        if latest is None:
+            return None
+        return {"timestamp": latest.timestamp.isoformat(), **latest.event_payload}
+    except (GOMValidationError, sqlite3.Error, OSError):
+        logger.exception("latest_review_flag failed for %s", sample_id)
+        return None
