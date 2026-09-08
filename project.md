@@ -5,7 +5,7 @@
 
 > **V0.6 → V0.7 关键变更**：(1) 立项「验证与防御闭环」——补齐 §8.2 三层防御 Layer 3（NLI Reflector）、§12.3 分析验证 harness
 > （AMR 灵敏度/特异度、MLST/血清型准确率 vs gold standard）、§2.2 验收欠账（96 株 batch 基准、PDF 报告）；
-> (2) 文档对账：路线图与实际交付对齐，计数统一（26 tools / 30 rules / 1405 tests，V0.7 终态）。
+> (2) 文档对账：路线图与实际交付对齐，计数统一（26 tools / 30 rules / 1413 tests，V0.7 终态）。
 > **V0.5 → V0.6 关键变更**：cgMLST 溯源全量交付——4 病原 EnteroBase cgMLST scheme（senterica_2 / ecoli_2 / vparahaemolyticus_3）、
 > 本地参考库最近邻投影（Hamming 距离 + per-species 发表阈值判定 outbreak/related/unrelated）、cohort 等位基因距离矩阵 + MST、
 > `bio_cgmlst` tool（第 25 个）、per-sample 报告卡片 + cohort 树/热图；rules 25 → 30（+4 门控 cohort 规则）。

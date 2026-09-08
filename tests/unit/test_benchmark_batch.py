@@ -73,8 +73,27 @@ class TestRenderReport:
             cores=15,
             measured_seconds=600.0,
             estimate=est,
+            target_strains=96,
+            target_reads=1_000_000,
         )
         assert "## Benchmark setup" in md
         assert "## Extrapolation to 96 strains" in md
         assert "96000.0s" in md or "26.7" in md  # hours 或秒呈现其一
         assert "≤8h" in md
+
+    def test_target_params_rendered_not_hardcoded(self):
+        """P2-5：目标株数/读段数来自参数而非硬编码文本。"""
+        est = benchmark_batch.extrapolate(600.0, 4, 150_000, 48, 500_000)
+        md = benchmark_batch.render_benchmark_md(
+            bench_strains=4,
+            bench_reads=150_000,
+            cores=8,
+            measured_seconds=600.0,
+            estimate=est,
+            target_strains=48,
+            target_reads=500_000,
+            timing_source="synthetic_conservative",
+        )
+        assert "48 株 × 500,000" in md
+        assert "96 株" not in md
+        assert "`synthetic_conservative`" in md

@@ -253,6 +253,24 @@ class TestReflect:
         sero = [v for v in r.verdicts if v.claim.claim_type == ClaimType.SEROTYPE]
         assert sero and sero[0].verdict == Verdict.ENTAILED
 
+    def test_serotype_dotted_abbreviation_entailed(self):
+        """P2-8（QA 发现）：「S. Typhimurium」整体捕获并归一，不再截断为 "S" 假矛盾。"""
+        r = reflect("血清型为 S. Typhimurium", _salmonella_facts())
+        sero = [v for v in r.verdicts if v.claim.claim_type == ClaimType.SEROTYPE]
+        assert sero and sero[0].claim.value == "S. Typhimurium"
+        assert sero[0].verdict == Verdict.ENTAILED
+        assert r.contradicted_count == 0
+
+    def test_serotype_english_serovar_dotted(self):
+        r = reflect("serovar S. Enteritidis", _salmonella_facts())
+        sero = [v for v in r.verdicts if v.claim.claim_type == ClaimType.SEROTYPE]
+        assert sero and sero[0].verdict == Verdict.CONTRADICTED  # 确为不同血清型
+
+    def test_serotype_antigen_formula_not_captured(self):
+        """抗原式（数字开头）按设计不构成 claim——安全缺省，防假矛盾。"""
+        claims = decompose_claims("血清型为 1,4,[5],12:i:1,2")
+        assert not any(c.claim_type == ClaimType.SEROTYPE for c in claims)
+
     def test_result_is_frozen(self):
         r = reflect("该株为沙门菌", _salmonella_facts())
         with pytest.raises(AttributeError):

@@ -2,6 +2,12 @@
 
 类型与阈值常量独立成模块，与 ``cgmlst_types.py`` 同一先例——
 ``nli_reflector.py`` 只保留分解/比对/汇总逻辑。
+
+阈值为何是模块常量而非 config.yaml：0.1 是防御层默认值而非分析阈值，
+与 Layer 2 的 ``_CRITICAL_AMR_PATTERNS``（deterministic_verifier 内置
+关键耐药模式表）同一先例——防御参数应随代码评审变更而非运行时配置；
+调用方可经 ``reflect(text, facts, threshold=...)`` 按次覆盖（工具层
+如需暴露再上移 config，届时引用本常量为默认值）。
 """
 
 from __future__ import annotations

@@ -18,6 +18,7 @@ from ._common import (
     _PROJECT_ROOT,
     _RESULTS_DIR,
     _run_project_script,
+    _validate_sample_id,
     logger,
     tool_handler,
 )
@@ -30,6 +31,9 @@ def analyze_pathogen(args: dict[str, Any], **kwargs: Any) -> str:
     via three-gene identification (invA/uidA/ipaH)."""
     sample_id = args.get("sample_id", "")
     cores = args.get("cores", 8)
+
+    if not _validate_sample_id(sample_id):
+        return json.dumps({"error": f"invalid sample_id: {sample_id!r}"})
 
     _run_project_script("run_analysis.py", ["--sample", sample_id, "--cores", str(cores)])
 
@@ -44,8 +48,10 @@ def analyze_pathogen(args: dict[str, Any], **kwargs: Any) -> str:
 def get_result(args: dict[str, Any], **kwargs: Any) -> str:
     """Retrieve analysis summary for a completed sample."""
     sample_id = args.get("sample_id", "")
-    summary_path = _RESULTS_DIR / sample_id / "report" / f"{sample_id}_summary.json"
+    if not _validate_sample_id(sample_id):
+        return json.dumps({"error": f"invalid sample_id: {sample_id!r}"})
 
+    summary_path = _RESULTS_DIR / sample_id / "report" / f"{sample_id}_summary.json"
     if not summary_path.exists():
         return json.dumps(
             {"error": f"No results found for {sample_id}. Run bio_analyze_pathogen first."}
@@ -114,8 +120,10 @@ def verify_result(args: dict[str, Any], **kwargs: Any) -> str:
     NEEDS_HUMAN_REVIEW (project.md §8.2)."""
     sample_id = args.get("sample_id", "")
     interpretation_text = str(args.get("interpretation_text") or "")
-    summary_path = _RESULTS_DIR / sample_id / "report" / f"{sample_id}_summary.json"
+    if not _validate_sample_id(sample_id):
+        return json.dumps({"error": f"invalid sample_id: {sample_id!r}"})
 
+    summary_path = _RESULTS_DIR / sample_id / "report" / f"{sample_id}_summary.json"
     if not summary_path.exists():
         return json.dumps({"error": f"No results for {sample_id}"})
 

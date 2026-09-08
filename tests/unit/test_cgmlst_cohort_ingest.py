@@ -109,9 +109,7 @@ class TestCohortCgmlstIngest:
         with GenomeObjectService(tmp_db_path) as gos:
             _create_cohort_object(gos, cgmlst_data)
             cohort_objs = [
-                o
-                for o in gos.list_by_type(ObjectType.ANALYSIS)
-                if o.strain_id == COHORT_STRAIN_ID
+                o for o in gos.list_by_type(ObjectType.ANALYSIS) if o.strain_id == COHORT_STRAIN_ID
             ]
             assert len(cohort_objs) == 1
 

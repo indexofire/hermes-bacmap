@@ -30,7 +30,7 @@ _ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_ROOT / "src"))
 sys.path.insert(0, str(_ROOT / "scripts"))
 
-from _common import ROOT  # noqa: E402
+from _common import ROOT, validate_sample_name  # noqa: E402
 
 PIXI_BIN = ROOT / ".pixi/envs/default/bin"
 WORKFLOW_DIR = ROOT / "workflows/bacmap"
@@ -80,6 +80,13 @@ def cmd_prepare(args: argparse.Namespace) -> int:
         print("no gold standard FASTQ dirs found", file=sys.stderr)
         return 1
     picked = sources[: args.n_strains]
+    # P2-3：请求株数不足时显式告警（静默缩量会让外推口径失真）
+    if len(picked) < args.n_strains:
+        print(
+            f"⚠ only {len(picked)} source strains available "
+            f"(requested {args.n_strains}); extrapolation must use {len(picked)}",
+            file=sys.stderr,
+        )
 
     rows: list[tuple[str, str, str, str]] = []
     for i, src in enumerate(picked, 1):
@@ -87,7 +94,10 @@ def cmd_prepare(args: argparse.Namespace) -> int:
         dst = BENCH_DATA / bench_id
         dst.mkdir(parents=True, exist_ok=True)
         for mate in ("R1", "R2"):
-            src_fq = next(src.glob(f"*_{mate}.fastq.gz"))
+            src_fq = next(iter(src.glob(f"*_{mate}.fastq.gz")), None)
+            if src_fq is None:
+                print(f"missing {mate} FASTQ for {src.name}", file=sys.stderr)
+                return 1
             out_fq = dst / f"{bench_id}_{mate}.fastq.gz"
             cmd = [
                 str(seqkit),
@@ -124,6 +134,14 @@ def cmd_run(args: argparse.Namespace) -> int:
         return 1
     with BENCH_SAMPLES_TSV.open() as f:
         samples = [r["sample"] for r in csv.DictReader(f, delimiter="\t")]
+    # P2-3（安全，沿袭 1a7026e 决策）：bench 样本名经 snakemake 插值进 shell，
+    # 必须过白名单（samples_bench.tsv 若被手编，此处兜底）
+    try:
+        for s in samples:
+            validate_sample_name(s)
+    except ValueError as e:
+        print(f"unsafe sample name in samples_bench.tsv: {e}", file=sys.stderr)
+        return 1
 
     env = dict(os.environ)
     env["PATH"] = f"{PIXI_BIN}:{env['PATH']}"
@@ -155,6 +173,8 @@ def cmd_run(args: argparse.Namespace) -> int:
                 "cores": args.cores,
                 "measured_seconds": round(elapsed, 1),
                 "snakemake_returncode": proc.returncode,
+                # P2-5：计时口径出处（单次全量实测；外推报告引用此字段）
+                "timing_source": "single_full_run_wall_clock",
             },
             indent=2,
         )
@@ -169,6 +189,9 @@ def render_benchmark_md(
     cores: int,
     measured_seconds: float,
     estimate: Extrapolation,
+    target_strains: int,
+    target_reads: int,
+    timing_source: str = "single_full_run_wall_clock",
 ) -> str:
     verdict = "✅ 满足" if estimate.meets_8h_target else "❌ 不满足"
     return "\n".join(
@@ -183,12 +206,13 @@ def render_benchmark_md(
             "",
             f"- bench strains: **{bench_strains}** × {bench_reads:,} read pairs"
             f"（seqkit 下采样自 gold standard）",
-            f"- cores: **{cores}**（AMD Ryzen 7 5700G，8c/16t）",
+            f"- cores: **{cores}**（计时机；跨机复跑请以 bench_timing.json 为准）",
             f"- measured wall time: **{measured_seconds:.1f}s**（{measured_seconds / 3600:.2f}h）",
+            f"- timing source: `{timing_source}`",
             "",
             "## Extrapolation to 96 strains",
             "",
-            f"- 96 株 × 1,000,000 read pairs @ {cores} cores："
+            f"- {target_strains:,} 株 × {target_reads:,} read pairs @ {cores} cores："
             f"**{estimate.target_seconds:.0f}s ≈ {estimate.target_hours:.1f}h**",
             f"- vs 目标 ≤8h（推荐档 24c/48t）：{verdict}",
             "",
@@ -220,6 +244,9 @@ def cmd_extrapolate(args: argparse.Namespace) -> int:
         cores=timing["cores"],
         measured_seconds=timing["measured_seconds"],
         estimate=est,
+        target_strains=args.target_strains,
+        target_reads=args.target_reads,
+        timing_source=str(timing.get("timing_source", "unspecified")),
     )
     out = ROOT / "docs/benchmark-report.md"
     out.write_text(md)

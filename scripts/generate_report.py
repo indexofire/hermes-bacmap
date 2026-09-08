@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import shutil
 import subprocess
@@ -56,21 +57,27 @@ _CGMLST_SPECIES_DIRS: dict[str, str] = {
 
 
 def _row(label: str, value: str, ok: bool = True) -> str:
+    # P2-1：值域含样本衍生字符串（基因名/血清型/verdict），统一转义防 HTML 注入
     cls = "ok" if ok else "fail"
-    return f'<tr><td class="label">{label}</td><td class="{cls}">{value}</td></tr>'
+    return (
+        f'<tr><td class="label">{html.escape(str(label))}</td>'
+        f'<td class="{cls}">{html.escape(str(value))}</td></tr>'
+    )
 
 
 def _gene_table(genes: list[dict], title: str) -> str:
     if not genes:
-        return f"<h3>{title}</h3><p>未检出</p>"
+        return f"<h3>{html.escape(title)}</h3><p>未检出</p>"
     rows = "".join(
-        f"<tr><td>{g.get('GENE', '?')}</td><td>{g.get('%IDENTITY', '?')}</td>"
-        f"<td>{g.get('%COVERAGE', '?')}</td><td>{g.get('RESISTANCE', '')}</td></tr>"
+        f"<tr><td>{html.escape(str(g.get('GENE', '?')))}</td>"
+        f"<td>{html.escape(str(g.get('%IDENTITY', '?')))}</td>"
+        f"<td>{html.escape(str(g.get('%COVERAGE', '?')))}</td>"
+        f"<td>{html.escape(str(g.get('RESISTANCE', '')))}</td></tr>"
         for g in genes[:20]
     )
     extra = f"<p><em>显示前 20 个，共 {len(genes)} 个</em></p>" if len(genes) > 20 else ""
     return f"""
-    <h3>{title} ({len(genes)} genes)</h3>
+    <h3>{html.escape(title)} ({len(genes)} genes)</h3>
     <table><tr><th>Gene</th><th>%Identity</th><th>%Coverage</th><th>Resistance</th></tr>
     {rows}</table>{extra}"""
 
@@ -281,8 +288,10 @@ def _render_nli_section(sample_id: str) -> str:
 
     claims = flag.get("contradicted_claims", [])
     claim_rows = "".join(
-        f"<tr><td>{c.get('claim_type', '')}</td><td>{c.get('value', '')}"
-        f"{'（否定式）' if c.get('negated') else ''}</td><td>{c.get('evidence', '')}</td></tr>"
+        f"<tr><td>{html.escape(str(c.get('claim_type', '')))}</td>"
+        f"<td>{html.escape(str(c.get('value', '')))}"
+        f"{'（否定式）' if c.get('negated') else ''}</td>"
+        f"<td>{html.escape(str(c.get('evidence', '')))}</td></tr>"
         for c in claims
     )
     return f"""
@@ -682,7 +691,7 @@ td.label {{ font-weight: bold; background: #f8f9fa; }}
     output_path.write_text(html, encoding="utf-8")
 
 
-def _render_one_cgmlst_cohort(group: str) -> int:
+def _render_one_cgmlst_cohort(group: str, emit_pdf: bool = False) -> int:
     """Render a single cgMLST cohort report. Returns 0 ok / 1 if summary missing."""
     summary_path = RESULTS_DIR / "cgmlst" / group / "cgmlst_summary.json"
     if not summary_path.exists():
@@ -695,10 +704,12 @@ def _render_one_cgmlst_cohort(group: str) -> int:
     output = RESULTS_DIR / "cgmlst" / group / "cohort_report.html"
     generate_cgmlst_cohort_html(cgmlst_summary, output)
     print(f"  ✅ cgMLST cohort report [{group}]: {output}")
+    if emit_pdf:
+        _emit_pdf(output)
     return 0
 
 
-def _render_cgmlst_cohort_groups(group: str) -> int:
+def _render_cgmlst_cohort_groups(group: str, emit_pdf: bool = False) -> int:
     """Render one cgMLST cohort group, or all of them when ``group == "all"``.
 
     Mirrors the per-group iteration in ``ingest_results.py:248-268``
@@ -720,40 +731,45 @@ def _render_cgmlst_cohort_groups(group: str) -> int:
             return 1
         rendered = 0
         for group_dir in group_dirs:
-            if _render_one_cgmlst_cohort(group_dir.name) == 0:
+            if _render_one_cgmlst_cohort(group_dir.name, emit_pdf=emit_pdf) == 0:
                 rendered += 1
         return 0 if rendered > 0 else 1
 
-    return _render_one_cgmlst_cohort(group)
+    return _render_one_cgmlst_cohort(group, emit_pdf=emit_pdf)
 
 
 def html_to_pdf(html_path: Path, pdf_path: Path) -> bool:
     """HTML → PDF：headless chromium 打印（对 D3/phylotree 渲染保真），
-    weasyprint 兜底；均不可用或失败返回 False。"""
+    weasyprint 兜底；均不可用或失败返回 False。
+
+    P2-1（安全）：默认启用 chromium 沙箱；仅在沙箱化运行失败（容器/无
+    user-ns 环境）时降级 --no-sandbox 重试一次并告警。
+    """
     for name in ("chromium", "chromium-browser", "google-chrome", "chrome"):
         exe = shutil.which(name)
         if exe is None:
             continue
-        try:
-            proc = subprocess.run(  # noqa: S603
-                [
-                    exe,
-                    "--headless",
-                    "--disable-gpu",
-                    "--no-sandbox",
-                    "--virtual-time-budget=15000",
-                    f"--print-to-pdf={pdf_path}",
-                    html_path.as_uri(),
-                ],
-                capture_output=True,
-                timeout=120,
-                check=False,
-            )
-        except subprocess.TimeoutExpired:
-            print(f"  ⚠ PDF: {name} timed out on {html_path.name}")
-            return False
-        if proc.returncode == 0 and pdf_path.exists():
-            return True
+        base_cmd = [
+            exe,
+            "--headless",
+            "--disable-gpu",
+            "--virtual-time-budget=15000",
+            f"--print-to-pdf={pdf_path}",
+            html_path.as_uri(),
+        ]
+        for sandbox in (True, False):
+            cmd = base_cmd if sandbox else [*base_cmd[:3], "--no-sandbox", *base_cmd[3:]]
+            try:
+                proc = subprocess.run(  # noqa: S603
+                    cmd, capture_output=True, timeout=120, check=False
+                )
+            except subprocess.TimeoutExpired:
+                print(f"  ⚠ PDF: {name} timed out on {html_path.name}")
+                return False
+            if proc.returncode == 0 and pdf_path.exists():
+                return True
+            if not sandbox:
+                print(f"  ⚠ PDF: {name} failed even with --no-sandbox")
     try:
         from weasyprint import HTML
     except ImportError:
@@ -794,7 +810,7 @@ def main_args(argv: list[str]) -> int:
 
     if args.cohort:
         if args.group is not None:
-            return _render_cgmlst_cohort_groups(args.group)
+            return _render_cgmlst_cohort_groups(args.group, emit_pdf=args.pdf)
 
         snp_path = RESULTS_DIR / "snp" / "snp_summary.json"
         if not snp_path.exists():

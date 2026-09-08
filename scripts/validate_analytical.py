@@ -106,12 +106,15 @@ def _canonical_expected_species(species: str) -> str | None:
 def load_gold_standard(path: Path) -> list[GoldExpectation]:
     """读取 gold_standard.jsonl；整体 PENDING（无物种/无 FASTQ）的 GAP 行跳过。"""
     expectations = []
+    skipped_unmapped: list[str] = []
     for line in path.read_text().splitlines():
         if not line.strip():
             continue
         row = json.loads(line)
         canonical = _canonical_expected_species(str(row.get("species", "")))
         if canonical is None:
+            # P2：未映射物种行显式记录（静默丢弃会虚增 species accuracy 分母口径）
+            skipped_unmapped.append(str(row.get("strain_id", "?")))
             continue
         mlst = row.get("mlst", {})
         st = mlst.get("st") if isinstance(mlst, dict) else None
@@ -133,7 +136,7 @@ def load_gold_standard(path: Path) -> list[GoldExpectation]:
                 amr_list_complete=list_complete,
             )
         )
-    return expectations
+    return expectations, skipped_unmapped
 
 
 def _cf_set(values: tuple[str, ...]) -> frozenset[str]:
@@ -332,7 +335,12 @@ def main() -> int:
     parser.add_argument("--out-dir", type=Path, default=_ROOT / "results/validation")
     args = parser.parse_args()
 
-    expectations = load_gold_standard(args.gold)
+    expectations, skipped_unmapped = load_gold_standard(args.gold)
+    if skipped_unmapped:
+        print(
+            f"⚠ gold rows with unmapped species skipped: {skipped_unmapped}",
+            file=sys.stderr,
+        )
     evals: list[StrainEvaluation] = []
     skipped: list[str] = []
     for exp in expectations:
@@ -356,6 +364,7 @@ def main() -> int:
                 **{k: getattr(report, k) for k in report.__dataclass_fields__},
                 "per_strain": [{k: getattr(e, k) for k in e.__dataclass_fields__} for e in evals],
                 "skipped_no_results": skipped,
+                "skipped_unmapped_species": skipped_unmapped,
             },
             ensure_ascii=False,
             indent=2,

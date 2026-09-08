@@ -159,9 +159,7 @@ class TestGoldenDistances:
             a = by_id[a_id]
             b = by_id[b_id]
             got = _hamming(a, b)
-            assert got == expected, (
-                f"d({a_id},{b_id}) = {got}, golden says {expected}"
-            )
+            assert got == expected, f"d({a_id},{b_id}) = {got}, golden says {expected}"
 
     def test_ref001_ref002_near_identical(self, profiles):
         # The design intent: samples 1+2 differ at exactly one locus.

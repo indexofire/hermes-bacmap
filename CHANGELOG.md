@@ -6,6 +6,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed/Added — 评审 P2 修复：安全加固 + 边角项（2026-09-08）
+
+- **P2-1 HTML 注入面收敛 + chromium 沙箱优先（安全 MEDIUM）**：`generate_report.py` 的
+  `_row`/`_gene_table`/NLI 章节对全部样本衍生值 `html.escape`（原全脚本零转义）；
+  `html_to_pdf` 默认沙箱运行，失败才降级 `--no-sandbox` 重试并告警（原无条件 --no-sandbox）
+- **P2-2 sample_id 白名单（安全 LOW）**：`tools/_common._validate_sample_id`
+  （`^[A-Za-z0-9._-]+$`，沿袭 1a7026e 决策）接入 analyze_pathogen/get_result/verify_result
+  三个 summary 读取 handler——LLM 可控的路径遍历/绝对路径 sample_id 不再可达文件系统
+  （路径仍由 handler 模块拼接，保持测试沙箱注入模式）+4 测试
+- **P2-3 benchmark 加固**：`cmd_run` 对 samples_bench.tsv 样本名过 `validate_sample_name`
+  （snakemake shell 插值前置防线）；`cmd_prepare` 的 `next(glob)` 加 None 守卫（缺 R1/R2
+  显式报错）；请求株数不足时 stderr 告警（防静默缩量污染外推口径）
+- **P2-4 `--pdf` 补 cgMLST cohort 路径**：`_render_one_cgmlst_cohort/_render_cgmlst_cohort_groups`
+  穿透 `emit_pdf`——`--cohort --group` 不再静默忽略 `--pdf`
+- **P2-5 计时出处与参数化渲染**：`cmd_run` 写入 `timing_source` 字段（重跑不丢口径出处）；
+  `render_benchmark_md` 接收 `target_strains/target_reads/timing_source` 参数——报告文本
+  与计算值不再可能矛盾（原硬编码「96 株 × 1,000,000」+ CPU 型号）
+- **P2-6 阈值书面理由**：`nli_types` 模块 docstring 记录 0.1 为防御层常量而非分析阈值的
+  设计依据（Layer 2 `_CRITICAL_AMR_PATTERNS` 先例 + `reflect(threshold=...)` 按次覆盖）；
+  features.md §12 新增 Layer 3 小节（工具用法/比对语义/阈值理由/读回闭环）
+- **P2-7 行数实测刷新**：features §14（validate 382/benchmark 283/report 866/ingest 909/
+  run_analysis 295/download 211）+ README 模块表（schemas 915）
+- **P2-8 血清型形态**：「S. Typhimurium」多词点式整体捕获 + `_normalize_serotype` 归一
+  （剥属名前缀/尾点）——QA 发现的截断为 "S" 假矛盾修复；抗原式（"1,4,[5],12:i:1,2"）
+  按设计不捕获（formula↔name 需查表，安全缺省防假矛盾）+3 测试；
+  `validate_analytical` 未映射物种 gold 行显式记录（stderr + metrics.json，不再静默丢弃）
+- 测试 1405 → **1413**（+8：遍历防护 4 / 目标参数化 1 / 血清型形态 3）
+
 ### Added — 评审 P1 修复：索引自愈 + 规范化收敛 + 人审闭环（2026-09-08）
 
 - **P1-2 索引懒重建（B3 复发路径关闭）**：`gene_scanner._find_db` 索引缺失时自动调用

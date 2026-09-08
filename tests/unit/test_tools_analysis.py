@@ -883,3 +883,25 @@ class TestDiagnoseFailure:
         monkeypatch.setattr(failure_diagnostics, "_PROJECT_ROOT", tmp_path)
         r = _parse(tools.diagnose_failure({}))
         assert r["error_type"] == "no_log"
+
+
+class TestSampleIdWhitelist:
+    """P2-2（安全）：LLM 可控 sample_id 白名单——路径遍历/绝对路径拒绝。"""
+
+    def test_verify_result_rejects_traversal(self, tmp_results):
+        r = _parse(tools.verify_result({"sample_id": "../../etc/passwd"}))
+        assert "invalid sample_id" in r["error"]
+
+    def test_get_result_rejects_absolute_path(self, tmp_results):
+        r = _parse(tools.get_result({"sample_id": "/etc/shadow"}))
+        assert "invalid sample_id" in r["error"]
+
+    def test_analyze_pathogen_rejects_traversal(self, tmp_results, monkeypatch):
+        monkeypatch.setattr(tools_pipeline, "_run_project_script", lambda *a, **k: "ok")
+        r = _parse(tools.analyze_pathogen({"sample_id": "../x/y"}))
+        assert "invalid sample_id" in r["error"]
+
+    def test_valid_id_still_passes(self, tmp_results):
+        _write_summary(tmp_results, "SAM-OK-1", _salmonella_steps())
+        r = _parse(tools.get_result({"sample_id": "SAM-OK-1"}))
+        assert "error" not in r

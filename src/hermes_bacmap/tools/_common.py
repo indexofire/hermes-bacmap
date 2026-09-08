@@ -11,6 +11,7 @@ import functools
 import json
 import logging
 import os
+import re
 import shutil
 import subprocess
 from collections.abc import Callable
@@ -37,6 +38,7 @@ __all__ = [
     "_detect_format",
     "_ensure_biopython",
     "_resolve_path",
+    "_validate_sample_id",
     "_run_cmd",
     "_run_project_script",
     "_which_or_error",
@@ -154,3 +156,15 @@ def tool_handler[F: Callable[..., str]](func: F) -> F:
             return json.dumps({"error": f"{func.__name__} failed: {e}"}, ensure_ascii=False)
 
     return cast(F, wrapper)
+
+
+# P2-2（安全，沿袭 scripts/_common.validate_sample_name 决策）：LLM 可控的
+# sample_id 直接进路径拼接，绝对路径/遍历串可读取任意 *_summary.json 形文件。
+# 白名单 ^[A-Za-z0-9._-]+$ 在单一入口收敛全部 summary 读取 handler；
+# 路径仍由各 handler 用本模块 _RESULTS_DIR 拼接（保持测试沙箱可注入）。
+_SAMPLE_ID_RE = re.compile(r"^[A-Za-z0-9._-]+$")
+
+
+def _validate_sample_id(sample_id: str) -> bool:
+    """summary 读取前的 sample_id 白名单校验（不过 → handler 返回错误 JSON）。"""
+    return bool(sample_id) and _SAMPLE_ID_RE.match(sample_id) is not None

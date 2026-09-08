@@ -66,7 +66,8 @@ def _gold(tmp_path: Path, row: dict):
     """dict 期望行 → 经真实 loader 转成 GoldExpectation。"""
     path = tmp_path / "gold.jsonl"
     path.write_text(json.dumps(row))
-    (exp,) = validate_analytical.load_gold_standard(path)
+    (loaded, _sk) = validate_analytical.load_gold_standard(path)
+    (exp,) = loaded
     return exp
 
 
@@ -103,14 +104,16 @@ class TestLoadGoldStandard:
         ]
         path = tmp_path / "gold.jsonl"
         path.write_text("\n".join(json.dumps(r) for r in rows))
-        loaded = validate_analytical.load_gold_standard(path)
-        # 完全 PENDING 的株被跳过；st=PENDING 的株保留（字段级跳过）
+        loaded, skipped_unmapped = validate_analytical.load_gold_standard(path)
+        # 完全 PENDING 的株被跳过（并显式记录）；st=PENDING 的株保留（字段级跳过）
         assert [e.strain_id for e in loaded] == ["SAM-A", "SAM-B"]
+        assert skipped_unmapped == ["SAM-GAP"]
 
     def test_expected_species_canonicalized(self, tmp_path: Path):
         path = tmp_path / "gold.jsonl"
         path.write_text(json.dumps(_exp("SAM-ECO", species="Escherichia coli")))
-        (e,) = validate_analytical.load_gold_standard(path)
+        (loaded, _sk) = validate_analytical.load_gold_standard(path)
+        (e,) = loaded
         assert e.species_canonical == "E. coli"
 
 

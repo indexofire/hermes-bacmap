@@ -98,13 +98,9 @@ class TestCgmlstTracebackHappyPath:
         monkeypatch.setattr(
             tools_services,
             "_load_species_thresholds",
-            lambda species: CgmlstThresholds(
-                outbreak_allele_dist=10, related_allele_dist=50
-            ),
+            lambda species: CgmlstThresholds(outbreak_allele_dist=10, related_allele_dist=50),
         )
-        monkeypatch.setattr(
-            tools_services, "project_sample", lambda *a, **kw: HAPPY_RESULT
-        )
+        monkeypatch.setattr(tools_services, "project_sample", lambda *a, **kw: HAPPY_RESULT)
 
     def test_returns_json_with_verdict_and_nearest(self):
         r = _parse(tools.cgmlst_traceback({"sample_id": "SAM-TEST-001"}))
@@ -153,9 +149,7 @@ class TestCgmlstTracebackMissingSample:
     def test_no_db_no_tsv_returns_error_with_hint(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ):
-        monkeypatch.setattr(
-            tools_services, "_DEFAULT_DB_PATH", tmp_path / "missing.sqlite"
-        )
+        monkeypatch.setattr(tools_services, "_DEFAULT_DB_PATH", tmp_path / "missing.sqlite")
         monkeypatch.setattr(tools_services, "_RESULTS_DIR", tmp_path / "no_results")
 
         r = _parse(tools.cgmlst_traceback({"sample_id": "SAM-GHOST"}))
@@ -164,9 +158,7 @@ class TestCgmlstTracebackMissingSample:
         assert "no cgmlst profile for SAM-GHOST" in r["error"]
         assert "bio_analyze_pathogen" in r["error"]
 
-    def test_unknown_scheme_returns_error(
-        self, monkeypatch: pytest.MonkeyPatch
-    ):
+    def test_unknown_scheme_returns_error(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setattr(
             tools_services,
             "_load_cgmlst_profile_payload",

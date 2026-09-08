@@ -44,9 +44,7 @@ CONFIG = _PROJECT_ROOT / "workflows" / "bacmap" / "config" / "config.yaml"
 
 # Salmonella thresholds (mirrors config.yaml cgmlst.thresholds.salmonella;
 # restated here so the verdict tests do not depend on disk I/O).
-SALMONELLA = CgmlstThresholds(
-    outbreak_allele_dist=10, related_allele_dist=50, clonal_allele_dist=3
-)
+SALMONELLA = CgmlstThresholds(outbreak_allele_dist=10, related_allele_dist=50, clonal_allele_dist=3)
 
 
 def _profile(sample_id: str, alleles: dict[str, int | None]) -> CgmlstProfile:
@@ -168,9 +166,7 @@ class TestVerdictTiers:
     def test_outbreak_when_min_dist_le_outbreak_threshold(self, refs):
         # min_dist=1 <= outbreak=10 -> OUTBREAK.
         query = _by_id(refs)["REF-001"]
-        result = project_sample(
-            query, refs[1:], SALMONELLA, species="Salmonella"
-        )
+        result = project_sample(query, refs[1:], SALMONELLA, species="Salmonella")
         assert result.verdict is Verdict.OUTBREAK
 
     def test_outbreak_boundary_is_inclusive(self, refs):
@@ -210,12 +206,8 @@ class TestVerdictTiers:
     def test_undetermined_when_all_thresholds_none(self, refs):
         # V. parahaemolyticus case: no published numeric threshold.
         query = _by_id(refs)["REF-001"]
-        none_thresholds = CgmlstThresholds(
-            outbreak_allele_dist=None, related_allele_dist=None
-        )
-        result = project_sample(
-            query, refs[1:], none_thresholds, species="V.parahaemolyticus"
-        )
+        none_thresholds = CgmlstThresholds(outbreak_allele_dist=None, related_allele_dist=None)
+        result = project_sample(query, refs[1:], none_thresholds, species="V.parahaemolyticus")
         assert result.verdict is Verdict.UNDETERMINED
         # The nearest list is still populated -- projection is independent of
         # the verdict tier.
@@ -236,9 +228,7 @@ class TestVerdictTiers:
 class TestCaveats:
     def test_s_sonnei_caveat_present(self, refs):
         query = _by_id(refs)["REF-001"]
-        result = project_sample(
-            query, refs[1:], SALMONELLA, species="Shigella sonnei"
-        )
+        result = project_sample(query, refs[1:], SALMONELLA, species="Shigella sonnei")
         assert any("S. sonnei" in c and "SNV" in c for c in result.caveats)
 
     def test_s_sonnei_caveat_present_for_short_form(self, refs):
@@ -254,12 +244,8 @@ class TestCaveats:
     def test_vpara_no_threshold_caveat(self, refs):
         # Thresholds both None -> UNDETERMINED + the Vpara no-threshold caveat.
         query = _by_id(refs)["REF-001"]
-        none_thresholds = CgmlstThresholds(
-            outbreak_allele_dist=None, related_allele_dist=None
-        )
-        result = project_sample(
-            query, refs[1:], none_thresholds, species="V.parahaemolyticus"
-        )
+        none_thresholds = CgmlstThresholds(outbreak_allele_dist=None, related_allele_dist=None)
+        result = project_sample(query, refs[1:], none_thresholds, species="V.parahaemolyticus")
         assert result.verdict is Verdict.UNDETERMINED
         assert any("no published cgMLST outbreak threshold" in c for c in result.caveats)
 

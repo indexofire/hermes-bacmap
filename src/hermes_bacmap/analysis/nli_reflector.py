@@ -58,10 +58,37 @@ _ST_PATTERNS: tuple[re.Pattern[str], ...] = (
 )
 
 _SEROTYPE_PATTERNS: tuple[re.Pattern[str], ...] = (
-    re.compile(r"血清型\s*(?:为|是|:|：)?\s*([A-Za-z][A-Za-z0-9\[\]'-]*)"),
-    re.compile(r"\bserovar\s+([A-Za-z][A-Za-z0-9\[\]'-]*)", re.IGNORECASE),
-    re.compile(r"\bserotype\s+([A-Za-z][A-Za-z0-9\[\]'-]*)", re.IGNORECASE),
+    # 值捕获支持「词(. 词)*」多词形态（"S. Typhimurium" 整体捕获），归一见
+    # _normalize_serotype；抗原式（"1,4,[5],12:i:1,2"，数字开头）按设计不
+    # 捕获——formula↔name 映射需查表，未映射文本不构成可比较 claim（防假矛盾）
+    re.compile(
+        r"血清型\s*(?:为|是|:|：)?\s*"
+        r"([A-Za-z][A-Za-z0-9\[\]'\-]*(?:\.\s*[A-Za-z][A-Za-z0-9\[\]'\-]*)*)"
+    ),
+    re.compile(
+        r"\bserovar\s+"
+        r"([A-Za-z][A-Za-z0-9\[\]'\-]*(?:\.\s*[A-Za-z][A-Za-z0-9\[\]'\-]*)*)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\bserotype\s+"
+        r"([A-Za-z][A-Za-z0-9\[\]'\-]*(?:\.\s*[A-Za-z][A-Za-z0-9\[\]'\-]*)*)",
+        re.IGNORECASE,
+    ),
 )
+
+
+def _normalize_serotype(value: str) -> str:
+    """血清型值归一：casefold + 剥离 "S."/"s"/"salmonella" 属名前缀与尾点。
+
+    "S. Typhimurium" → "typhimurium"，与 facts 的 sistr serovar 名可比较。
+    """
+    v = value.casefold().strip().rstrip(".")
+    for prefix in ("salmonella ", "s. ", "s "):
+        if v.startswith(prefix):
+            v = v[len(prefix) :]
+    return v.strip()
+
 
 # 基因符号 token（覆盖 blaCTX-M-15 / AAC(6')-Iaa / tet(A) 等形态）。
 _GENE_TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z0-9_'()\-]{1,30}")
@@ -212,7 +239,7 @@ def _compare(claim: AtomicClaim, facts: StrainFacts) -> Verdict:
         case ClaimType.SEROTYPE:
             if not facts.serotype:
                 return Verdict.UNVERIFIABLE
-            matches = claim.value.casefold() == facts.serotype.casefold()
+            matches = _normalize_serotype(claim.value) == _normalize_serotype(facts.serotype)
         case ClaimType.AMR_GENE:
             matches = normalize_amr(claim.value) in _amr_norm_set(facts.amr_genes)
         case ClaimType.VIRULENCE_GENE:

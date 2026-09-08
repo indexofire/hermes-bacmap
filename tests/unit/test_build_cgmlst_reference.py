@@ -68,9 +68,7 @@ class TestMergeProfiles:
     def test_merges_into_multi_sample_tsv(self, tmp_path):
         per_sample = self._three_samples(tmp_path)
         out_tsv = tmp_path / "ref" / "reference_profiles.tsv"
-        n_loci, merged, failures = build_cgmlst_reference.merge_profiles(
-            per_sample, out_tsv
-        )
+        n_loci, merged, failures = build_cgmlst_reference.merge_profiles(per_sample, out_tsv)
         assert n_loci == 3
         assert merged == ["S1", "S2", "S3"]
         assert failures == []
@@ -223,9 +221,7 @@ class TestDiscoverReferenceAssemblies:
         orig = build_cgmlst_reference.SAMPLES_TSV
         build_cgmlst_reference.SAMPLES_TSV = samples_tsv
         try:
-            pairs = build_cgmlst_reference.discover_reference_assemblies(
-                "salmonella", tmp_path
-            )
+            pairs = build_cgmlst_reference.discover_reference_assemblies("salmonella", tmp_path)
         finally:
             build_cgmlst_reference.SAMPLES_TSV = orig
 
@@ -243,33 +239,26 @@ class TestDiscoverReferenceAssemblies:
         build_cgmlst_reference.SAMPLES_TSV = samples_tsv
         try:
             # Lowercase query must still match the mixed-case species column.
-            assert len(
-                build_cgmlst_reference.discover_reference_assemblies(
-                    "SALMONELLA", tmp_path
-                )
-            ) == 1
-            assert len(
-                build_cgmlst_reference.discover_reference_assemblies(
-                    "salmonella", tmp_path
-                )
-            ) == 1
+            assert (
+                len(build_cgmlst_reference.discover_reference_assemblies("SALMONELLA", tmp_path))
+                == 1
+            )
+            assert (
+                len(build_cgmlst_reference.discover_reference_assemblies("salmonella", tmp_path))
+                == 1
+            )
         finally:
             build_cgmlst_reference.SAMPLES_TSV = orig
 
     def test_missing_assembly_dir_skipped(self, tmp_path):
         # samples.tsv lists a Salmonella sample, but no assembly dir on disk.
         samples_tsv = tmp_path / "samples.tsv"
-        samples_tsv.write_text(
-            "sample\tspecies\tR1\tR2\nSAM-GHOST\tSalmonella\ta\tb\n"
-        )
+        samples_tsv.write_text("sample\tspecies\tR1\tR2\nSAM-GHOST\tSalmonella\ta\tb\n")
         orig = build_cgmlst_reference.SAMPLES_TSV
         build_cgmlst_reference.SAMPLES_TSV = samples_tsv
         try:
             assert (
-                build_cgmlst_reference.discover_reference_assemblies(
-                    "salmonella", tmp_path
-                )
-                == []
+                build_cgmlst_reference.discover_reference_assemblies("salmonella", tmp_path) == []
             )
         finally:
             build_cgmlst_reference.SAMPLES_TSV = orig
@@ -279,18 +268,13 @@ class TestDiscoverReferenceAssemblies:
         d.mkdir()
         (d / "contigs.fasta").write_text("x")
         samples_tsv = tmp_path / "samples.tsv"
-        samples_tsv.write_text(
-            "sample\tspecies\tR1\tR2\nSAM-DEC\tE.coli\ta\tb\n"
-        )
+        samples_tsv.write_text("sample\tspecies\tR1\tR2\nSAM-DEC\tE.coli\ta\tb\n")
         orig = build_cgmlst_reference.SAMPLES_TSV
         build_cgmlst_reference.SAMPLES_TSV = samples_tsv
         try:
             # Querying salmonella must NOT pick up the E.coli sample.
             assert (
-                build_cgmlst_reference.discover_reference_assemblies(
-                    "salmonella", tmp_path
-                )
-                == []
+                build_cgmlst_reference.discover_reference_assemblies("salmonella", tmp_path) == []
             )
         finally:
             build_cgmlst_reference.SAMPLES_TSV = orig
@@ -324,9 +308,7 @@ class TestBuildReferenceStubbed:
             _make_per_sample_tsv(out_tsv, sample_id, scheme, ["1", "2", "3"])
             return (True, "")
 
-        monkeypatch.setattr(
-            build_cgmlst_reference, "_run_one_sample", fake_run
-        )
+        monkeypatch.setattr(build_cgmlst_reference, "_run_one_sample", fake_run)
         monkeypatch.setattr(
             build_cgmlst_reference,
             "_gmlst_version",
@@ -334,9 +316,7 @@ class TestBuildReferenceStubbed:
         )
 
         # Point SAMPLES_TSV at our fixture so discovery reads it.
-        monkeypatch.setattr(
-            build_cgmlst_reference, "SAMPLES_TSV", tmp_path / "samples.tsv"
-        )
+        monkeypatch.setattr(build_cgmlst_reference, "SAMPLES_TSV", tmp_path / "samples.tsv")
 
         rc = build_cgmlst_reference.build_reference(
             species="salmonella",
@@ -378,12 +358,8 @@ class TestBuildReferenceStubbed:
             return (True, "")
 
         monkeypatch.setattr(build_cgmlst_reference, "_run_one_sample", fake_run)
-        monkeypatch.setattr(
-            build_cgmlst_reference, "_gmlst_version", lambda bin: "0.1.1"
-        )
-        monkeypatch.setattr(
-            build_cgmlst_reference, "SAMPLES_TSV", tmp_path / "samples.tsv"
-        )
+        monkeypatch.setattr(build_cgmlst_reference, "_gmlst_version", lambda bin: "0.1.1")
+        monkeypatch.setattr(build_cgmlst_reference, "SAMPLES_TSV", tmp_path / "samples.tsv")
 
         rc = build_cgmlst_reference.build_reference(
             species="salmonella",
@@ -400,9 +376,7 @@ class TestBuildReferenceStubbed:
         meta = json.loads((output_dir / "reference_meta.json").read_text())
         assert meta["status"] == "partial"
         assert meta["source_genomes"] == ["SAM-A"]
-        assert meta["failures"] == [
-            {"sample": "SAM-B", "reason": "simulated gmlst failure"}
-        ]
+        assert meta["failures"] == [{"sample": "SAM-B", "reason": "simulated gmlst failure"}]
         # The one successful profile is still written.
         lines = (output_dir / "reference_profiles.tsv").read_text().strip().split("\n")
         assert len(lines) == 2  # header + SAM-A
@@ -412,12 +386,8 @@ class TestBuildReferenceStubbed:
         (tmp_path / "samples.tsv").write_text(
             "sample\tspecies\tR1\tR2\nSAM-GHOST\tSalmonella\ta\tb\n"
         )
-        monkeypatch.setattr(
-            build_cgmlst_reference, "SAMPLES_TSV", tmp_path / "samples.tsv"
-        )
-        monkeypatch.setattr(
-            build_cgmlst_reference, "_gmlst_version", lambda bin: "0.1.1"
-        )
+        monkeypatch.setattr(build_cgmlst_reference, "SAMPLES_TSV", tmp_path / "samples.tsv")
+        monkeypatch.setattr(build_cgmlst_reference, "_gmlst_version", lambda bin: "0.1.1")
         output_dir = tmp_path / "ref"
 
         rc = build_cgmlst_reference.build_reference(
@@ -442,12 +412,8 @@ class TestBuildReferenceStubbed:
             "_run_one_sample",
             lambda *a, **kw: (False, "boom"),
         )
-        monkeypatch.setattr(
-            build_cgmlst_reference, "_gmlst_version", lambda bin: "0.1.1"
-        )
-        monkeypatch.setattr(
-            build_cgmlst_reference, "SAMPLES_TSV", tmp_path / "samples.tsv"
-        )
+        monkeypatch.setattr(build_cgmlst_reference, "_gmlst_version", lambda bin: "0.1.1")
+        monkeypatch.setattr(build_cgmlst_reference, "SAMPLES_TSV", tmp_path / "samples.tsv")
 
         rc = build_cgmlst_reference.build_reference(
             species="salmonella",
@@ -503,13 +469,9 @@ class TestArgparseContract:
             lambda explicit: "/fake/gmlst",
         )
 
-        rc = build_cgmlst_reference.main(
-            ["--species", "salmonella", "--scheme", "senterica_2"]
-        )
+        rc = build_cgmlst_reference.main(["--species", "salmonella", "--scheme", "senterica_2"])
         assert rc == 0
-        expected = (
-            build_cgmlst_reference.DEFAULT_REFERENCE_ROOT / "salmonella"
-        )
+        expected = build_cgmlst_reference.DEFAULT_REFERENCE_ROOT / "salmonella"
         assert captured["output_dir"] == expected
         assert captured["species"] == "salmonella"
         assert captured["scheme"] == "senterica_2"

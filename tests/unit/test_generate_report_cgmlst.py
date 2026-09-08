@@ -24,9 +24,7 @@ import generate_report as gr  # noqa: E402
 from hermes_bacmap.analysis.cgmlst_projection import Verdict  # noqa: E402
 from hermes_bacmap.analysis.cgmlst_types import CgmlstProfile  # noqa: E402
 
-SYNTHETIC_FIXTURE = (
-    _PROJECT_ROOT / "tests" / "fixtures" / "cgmlst_reference" / "synthetic_5.tsv"
-)
+SYNTHETIC_FIXTURE = _PROJECT_ROOT / "tests" / "fixtures" / "cgmlst_reference" / "synthetic_5.tsv"
 REAL_CONFIG = _PROJECT_ROOT / "workflows" / "bacmap" / "config" / "config.yaml"
 
 SAMPLE_TSV_TEMPLATE = (
@@ -45,17 +43,11 @@ def _setup_sandbox(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     return ref_root
 
 
-def _write_cgmlst_tsv(
-    results_dir: Path, sample_id: str, alleles: list[str]
-) -> Path:
-    fields = {
-        f"a{i}": alleles[i - 1] for i in range(1, 11)
-    }
+def _write_cgmlst_tsv(results_dir: Path, sample_id: str, alleles: list[str]) -> Path:
+    fields = {f"a{i}": alleles[i - 1] for i in range(1, 11)}
     cgmlst_path = results_dir / sample_id / "typing" / "cgmlst.tsv"
     cgmlst_path.parent.mkdir(parents=True, exist_ok=True)
-    cgmlst_path.write_text(
-        SAMPLE_TSV_TEMPLATE.format(sample=sample_id, **fields)
-    )
+    cgmlst_path.write_text(SAMPLE_TSV_TEMPLATE.format(sample=sample_id, **fields))
     return cgmlst_path
 
 
@@ -76,20 +68,14 @@ SALMONELLA_SUMMARY: dict[str, Any] = {
 class TestExtractSpecies:
     def test_modern_shape_species_key(self):
         assert (
-            gr._extract_species({"steps": {"species": {"species": "Salmonella"}}})
-            == "Salmonella"
+            gr._extract_species({"steps": {"species": {"species": "Salmonella"}}}) == "Salmonella"
         )
 
     def test_legacy_shape_verdict_key(self):
-        assert (
-            gr._extract_species({"steps": {"species": {"verdict": "E.coli"}}})
-            == "E.coli"
-        )
+        assert gr._extract_species({"steps": {"species": {"verdict": "E.coli"}}}) == "E.coli"
 
     def test_species_key_preferred_over_verdict(self):
-        summary = {
-            "steps": {"species": {"species": "Salmonella", "verdict": "Other"}}
-        }
+        summary = {"steps": {"species": {"species": "Salmonella", "verdict": "Other"}}}
         assert gr._extract_species(summary) == "Salmonella"
 
     def test_string_species_step(self):
@@ -123,16 +109,12 @@ class TestSpeciesDirName:
 
 
 class TestLoadReferenceProfiles:
-    def test_missing_dir_returns_empty(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ):
+    def test_missing_dir_returns_empty(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         ref_root = _setup_sandbox(monkeypatch, tmp_path)
         assert gr._load_reference_profiles("Salmonella") == []
         assert not (ref_root / "salmonella").exists()
 
-    def test_present_library_loads_profiles(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ):
+    def test_present_library_loads_profiles(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         ref_root = _setup_sandbox(monkeypatch, tmp_path)
         _write_salmonella_reference(ref_root)
         profiles = gr._load_reference_profiles("Salmonella")
@@ -148,9 +130,7 @@ class TestLoadReferenceProfiles:
     def test_empty_species_returns_empty(self):
         assert gr._load_reference_profiles("") == []
 
-    def test_malformed_tsv_returns_empty(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ):
+    def test_malformed_tsv_returns_empty(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         ref_root = _setup_sandbox(monkeypatch, tmp_path)
         salmonella_dir = ref_root / "salmonella"
         salmonella_dir.mkdir(parents=True)
@@ -221,7 +201,8 @@ class TestRenderCgmlstSectionGracefulDegradation:
     ):
         _setup_sandbox(monkeypatch, tmp_path)
         _write_cgmlst_tsv(
-            gr.RESULTS_DIR, "SAM-NOSPECIES",
+            gr.RESULTS_DIR,
+            "SAM-NOSPECIES",
             ["1", "1", "1", "1", "1", "1", "1", "1", "1", "1"],
         )
 
@@ -240,7 +221,8 @@ class TestRenderCgmlstSectionFullProjection:
         # Query identical to REF-001 -> nearest is REF-001 at distance 0,
         # next is REF-002 at distance 1 (golden), under outbreak=10 -> OUTBREAK.
         _write_cgmlst_tsv(
-            gr.RESULTS_DIR, "SAM-OUT",
+            gr.RESULTS_DIR,
+            "SAM-OUT",
             ["1", "1", "1", "1", "1", "1", "1", "1", "1", "1"],
         )
 
@@ -278,7 +260,8 @@ class TestRenderCgmlstSectionFullProjection:
         # to REF-003 = 5; etc. min_dist=3: 3 > outbreak=2 and 3 <= related=5
         # -> RELATED.
         _write_cgmlst_tsv(
-            gr.RESULTS_DIR, "SAM-REL",
+            gr.RESULTS_DIR,
+            "SAM-REL",
             ["4", "4", "4", "1", "1", "1", "1", "1", "1", "1"],
         )
 
@@ -304,7 +287,8 @@ class TestRenderCgmlstSectionFullProjection:
         # Genuine outlier not in the reference set: distance >= 3 to every
         # reference -> min_dist > related=2 -> UNRELATED.
         _write_cgmlst_tsv(
-            gr.RESULTS_DIR, "SAM-UNREL",
+            gr.RESULTS_DIR,
+            "SAM-UNREL",
             ["50", "50", "50", "50", "50", "50", "50", "50", "50", "50"],
         )
 
@@ -321,7 +305,8 @@ class TestRenderCgmlstSectionFullProjection:
         monkeypatch.setattr(gr, "CONFIG_PATH", REAL_CONFIG)
         summary = {"steps": {"species": {"species": "V.parahaemolyticus"}}}
         _write_cgmlst_tsv(
-            gr.RESULTS_DIR, "SAM-VP",
+            gr.RESULTS_DIR,
+            "SAM-VP",
             ["1", "1", "1", "1", "1", "1", "1", "1", "1", "1"],
         )
 
@@ -332,20 +317,17 @@ class TestRenderCgmlstSectionFullProjection:
         # so we actually hit the "no reference library" path. Verify either way:
         assert "cgmlst-verdict-undetermined" in section
 
-    def test_s_sonnei_caveat_present(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ):
+    def test_s_sonnei_caveat_present(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         ref_root = _setup_sandbox(monkeypatch, tmp_path)
         # Shigella thresholds from real config.
         monkeypatch.setattr(gr, "CONFIG_PATH", REAL_CONFIG)
         # Need a Shigella reference library to project against.
         shigella_dir = ref_root / "shigella"
         shigella_dir.mkdir(parents=True)
-        (shigella_dir / "reference_profiles.tsv").write_text(
-            SYNTHETIC_FIXTURE.read_text()
-        )
+        (shigella_dir / "reference_profiles.tsv").write_text(SYNTHETIC_FIXTURE.read_text())
         _write_cgmlst_tsv(
-            gr.RESULTS_DIR, "SAM-SON",
+            gr.RESULTS_DIR,
+            "SAM-SON",
             ["1", "1", "1", "1", "1", "1", "1", "1", "1", "1"],
         )
         summary = {"steps": {"species": {"species": "Shigella sonnei"}}}
@@ -362,7 +344,8 @@ class TestRenderCgmlstSectionFullProjection:
         _write_salmonella_reference(ref_root)
         # Query with 2 missing loci (L1 and L5 = "-").
         _write_cgmlst_tsv(
-            gr.RESULTS_DIR, "SAM-MISS",
+            gr.RESULTS_DIR,
+            "SAM-MISS",
             ["-", "1", "1", "1", "-", "1", "1", "1", "1", "1"],
         )
 
@@ -373,9 +356,7 @@ class TestRenderCgmlstSectionFullProjection:
         assert "20.00%" in section
         assert "Missing loci" in section
 
-    def test_top_n_truncation(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ):
+    def test_top_n_truncation(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         ref_root = _setup_sandbox(monkeypatch, tmp_path)
         custom_cfg = tmp_path / "config.yaml"
         custom_cfg.write_text(
@@ -389,7 +370,8 @@ class TestRenderCgmlstSectionFullProjection:
         monkeypatch.setattr(gr, "CONFIG_PATH", custom_cfg)
         _write_salmonella_reference(ref_root)
         _write_cgmlst_tsv(
-            gr.RESULTS_DIR, "SAM-TOPN",
+            gr.RESULTS_DIR,
+            "SAM-TOPN",
             ["1", "1", "1", "1", "1", "1", "1", "1", "1", "1"],
         )
 
@@ -421,24 +403,28 @@ class TestComputeProjection:
     ):
         _setup_sandbox(monkeypatch, tmp_path)
         profile = CgmlstProfile(
-            sample_id="X", scheme="senterica_2", st_raw="-",
-            alleles={"L1": 1}, n_called=1, n_total=1,
+            sample_id="X",
+            scheme="senterica_2",
+            st_raw="-",
+            alleles={"L1": 1},
+            n_called=1,
+            n_total=1,
         )
         assert gr._compute_projection(profile, "Salmonella") is None
 
-    def test_returns_none_when_species_empty(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ):
+    def test_returns_none_when_species_empty(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         _setup_sandbox(monkeypatch, tmp_path)
         profile = CgmlstProfile(
-            sample_id="X", scheme="senterica_2", st_raw="-",
-            alleles={"L1": 1}, n_called=1, n_total=1,
+            sample_id="X",
+            scheme="senterica_2",
+            st_raw="-",
+            alleles={"L1": 1},
+            n_called=1,
+            n_total=1,
         )
         assert gr._compute_projection(profile, "") is None
 
-    def test_returns_none_when_profile_empty(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ):
+    def test_returns_none_when_profile_empty(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         ref_root = _setup_sandbox(monkeypatch, tmp_path)
         _write_salmonella_reference(ref_root)
         profile = CgmlstProfile(sample_id="X", scheme="senterica_2", st_raw="-")
@@ -450,9 +436,12 @@ class TestComputeProjection:
         ref_root = _setup_sandbox(monkeypatch, tmp_path)
         _write_salmonella_reference(ref_root)
         profile = CgmlstProfile(
-            sample_id="QUERY", scheme="senterica_2", st_raw="-",
+            sample_id="QUERY",
+            scheme="senterica_2",
+            st_raw="-",
             alleles={f"L{i}": 1 for i in range(1, 11)},
-            n_called=10, n_total=10,
+            n_called=10,
+            n_total=10,
         )
 
         result = gr._compute_projection(profile, "Salmonella")
@@ -471,16 +460,12 @@ class TestLoadTopNFromConfig:
 
     def test_invalid_value_returns_default(self, tmp_path: Path):
         cfg = tmp_path / "c.yaml"
-        cfg.write_text(
-            "cgmlst:\n  projection:\n    top_n: 0\n"
-        )
+        cfg.write_text("cgmlst:\n  projection:\n    top_n: 0\n")
         assert gr._load_top_n_from_config(cfg) == 10
 
     def test_valid_value_returned(self, tmp_path: Path):
         cfg = tmp_path / "c.yaml"
-        cfg.write_text(
-            "cgmlst:\n  projection:\n    top_n: 5\n"
-        )
+        cfg.write_text("cgmlst:\n  projection:\n    top_n: 5\n")
         assert gr._load_top_n_from_config(cfg) == 5
 
 
@@ -512,14 +497,13 @@ class TestGenerateHtmlIntegration:
         ref_root = _setup_sandbox(monkeypatch, tmp_path)
         _write_salmonella_reference(ref_root)
         _write_cgmlst_tsv(
-            gr.RESULTS_DIR, "SAM-HTML",
+            gr.RESULTS_DIR,
+            "SAM-HTML",
             ["1", "1", "1", "1", "1", "1", "1", "1", "1", "1"],
         )
 
         output = gr.RESULTS_DIR / "SAM-HTML" / "report" / "SAM-HTML_report.html"
-        gr.generate_html(
-            "SAM-HTML", SALMONELLA_SUMMARY, self._fake_verification(), output
-        )
+        gr.generate_html("SAM-HTML", SALMONELLA_SUMMARY, self._fake_verification(), output)
 
         html = output.read_text()
         assert "cgMLST 溯源" in html
@@ -534,9 +518,7 @@ class TestGenerateHtmlIntegration:
         # No cgmlst.tsv on disk for this sample.
 
         output = gr.RESULTS_DIR / "SAM-NOHTML" / "report" / "SAM-NOHTML_report.html"
-        gr.generate_html(
-            "SAM-NOHTML", SALMONELLA_SUMMARY, self._fake_verification(), output
-        )
+        gr.generate_html("SAM-NOHTML", SALMONELLA_SUMMARY, self._fake_verification(), output)
 
         html = output.read_text()
         # The visible cgMLST heading must not appear (the CSS rules in <style>

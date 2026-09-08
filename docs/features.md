@@ -1,9 +1,9 @@
 # Hermes-bacmap 功能文档
 
 > **版本**: V0.7 (2026-09-07)
-> **状态**: 26 Hermes tools · 30 Snakemake rules（25 常规 + 4 cgMLST cohort 门控 + `rule all`）· 1405 tests · 4 skills · engine 抽象层 · GBrain 知识层
+> **状态**: 26 Hermes tools · 30 Snakemake rules（25 常规 + 4 cgMLST cohort 门控 + `rule all`）· 1413 tests · 4 skills · engine 抽象层 · GBrain 知识层
 > **数据集**: 菌株元数据 + 湿实验结果 · cgMLST 溯源 · 12 株数据集（11 株已分析，9 株经 §12.3 验证 harness）
-> 测试口径：1405 = V0.7 终态（P0 +13，P1 +16：物种收敛 11 / 索引懒重建 2 / 读回与报告 3... 实际见 CHANGELOG）
+> 测试口径：1413 = V0.7 终态（P0 +13 / P1 +16 / P2 +8：遍历防护 4、目标参数化 1、血清型形态 3；明细见 CHANGELOG）
 
 ---
 
@@ -549,6 +549,21 @@ LLM 生成结果 → Layer 1: JSON Schema 校验 → Layer 2: 确定性规则校
                                   Deterministic Verifier
 ```
 
+### Layer 3 NLI Reflector（AI 解读自检，V0.7）
+
+`bio_verify_result` 传入 `interpretation_text`（LLM 解读草稿）触发：文本分解为 atomic
+claims（物种/ST/血清型/AMR/毒力/质粒，中英文 + 否定式），与 Source of Truth 事实逐条比对
+（entailed/contradicted/unverifiable），contradiction rate 超阈值触发 NEEDS_HUMAN_REVIEW。
+矛盾明细落 GOM `nli_reflected` 审计事件；`bio_review_flags` 读回（人审闭环），报告含
+「AI 解读自检」章节（PDF 继承）。
+
+- 比对语义：ENTAILED iff (claim 匹配事实 != 否定式)；基因身份经 `gene_identity.normalize_amr`
+  归一（blaCTX-M-15 ≡ CTX-M-15，MCR-1.1 ≡ mcr-1）；rate 分母只计文本提取 claims
+  （佐证回填单列 `corroborated_count`，防稀释）
+- **阈值 0.1 为模块常量**（`nli_types.DEFAULT_CONTRADICTION_THRESHOLD`）：防御层默认值而非
+  分析阈值，与 Layer 2 的 `_CRITICAL_AMR_PATTERNS` 同一先例（防御参数随代码评审变更）；
+  可经 `reflect(threshold=...)` 按次覆盖
+
 ### 校验规则（4 类）
 
 | 检查类别 | 规则 | 失败处理 |
@@ -839,12 +854,12 @@ WHERE m.province = '北京';
 
 | 脚本 | 行数 | 功能 |
 |---|---|---|
-| `run_analysis.py` | 255 | 端到端编排器（--sample / --all / --snp / --status） |
-| `ingest_results.py` | 385 | GOM 入库（--sample / --all / --snp，含去重+版本管理） |
-| `generate_report.py` | 336 | HTML 报告（--sample / --all / --cohort，`--pdf` 经 headless chromium 出 PDF） |
-| `validate_analytical.py` | 220 | 分析验证 harness（§12.3：gold standard vs 实际输出 → metrics.json + 报告） |
-| `benchmark_batch.py` | 200 | 96 株基准（prepare 下采样 / run 隔离跑批 / extrapolate 外推报告） |
-| `download_gold_standard.py` | 200 | ENA FASTQ 下载（aria2c 多线程 + MD5 校验） |
+| `run_analysis.py` | 295 | 端到端编排器（--sample / --all / --snp / --status） |
+| `ingest_results.py` | 909 | GOM 入库（--sample / --all / --snp，含去重+版本管理） |
+| `generate_report.py` | 866 | HTML 报告（--sample / --all / --cohort，`--pdf` 经 headless chromium 出 PDF） |
+| `validate_analytical.py` | 382 | 分析验证 harness（§12.3：gold standard vs 实际输出 → metrics.json + 报告） |
+| `benchmark_batch.py` | 283 | 96 株基准（prepare 下采样 / run 隔离跑批 / extrapolate 外推报告） |
+| `download_gold_standard.py` | 211 | ENA FASTQ 下载（aria2c 多线程 + MD5 校验） |
 | `generate_snp_matrix.py` | 179 | VCF → FASTA SNP 矩阵（whole-genome mode） |
 | `collect_summary.py` | 120 | Snakemake 脚本：聚合所有步骤结果为 summary.json |
 | `generate_snp_summary.py` | 107 | treefile + FASTA → snp_summary.json |

@@ -87,10 +87,7 @@ class TestIngestSampleCgmlstHappyPath:
             assert obj.payload["ambiguous_loci"] == ["SE-5"]
             assert sorted(obj.payload["missing_loci"]) == ["SE-4", "SE-6"]
             assert obj.database_versions["gmlst"] == "0.1.1"
-            assert (
-                obj.database_versions["cgmlst_scheme"]
-                == "senterica_2@unversioned"
-            )
+            assert obj.database_versions["cgmlst_scheme"] == "senterica_2@unversioned"
 
     def test_rerun_same_content_skips_no_duplicate(
         self, tmp_db_path: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -195,9 +192,7 @@ class TestIngestSampleCgmlstMalformed:
         monkeypatch.setattr(ingest_results, "RESULTS_DIR", tmp_path)
         monkeypatch.setattr(ingest_results, "CGMLST_REFERENCE_DIR", tmp_path / "ref")
         multisample = (
-            "File\tScheme\tST\tSE-1\tSE-2\n"
-            "SAM-A\tsenterica_2\t-\t1\t2\n"
-            "SAM-B\tsenterica_2\t-\t3\t4"
+            "File\tScheme\tST\tSE-1\tSE-2\nSAM-A\tsenterica_2\t-\t1\t2\nSAM-B\tsenterica_2\t-\t3\t4"
         )
         _write_cgmlst_tsv(tmp_path, "SAM-TYP-001", multisample)
 

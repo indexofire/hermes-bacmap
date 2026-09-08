@@ -69,7 +69,7 @@ uv pip install -e ".[dev]"
 |---|---|---|
 | `tools/` | 2115 | 26 个 Hermes tool handler（seq / cli / pipeline / services 分包） |
 | `genome_object_service.py` | 667 | GOM（SQLite + 版本管理 + 事件 + 文件产物 + FTS5 搜索） |
-| `schemas.py` | 893 | 26 个 tool JSON Schema 定义 |
+| `schemas.py` | 915 | 26 个 tool JSON Schema 定义 |
 | `genome_annotator.py` | 280 | 基因组注释（pyrodigal + Prokka DBs，Python 原生） |
 | `engine/` | 1121 | 算法抽象层（SequenceMatcher + ReadMapper + Hit） |
 | `gene_scanner.py` | 546 | 基因扫描引擎（委托 engine.SequenceMatcher） |
@@ -104,7 +104,7 @@ hermes-bacmap/
 │   ├── run-pipeline/           跨病原管线操作指南 + 5 个 references
 │   ├── bioinfo-analysis/       通用生信决策树
 │   └── interpret-results/      结果解读知识库 + 2 个 references
-├── tests/                       测试（1405 tests）
+├── tests/                       测试（1413 tests）
 │   ├── unit/                   GOM + Verifier + Cohort TDD
 │   ├── conftest.py             共享 fixtures
 │   └── fixtures/gold_standard/ 12 株 gold standard 数据集（9 株经验证 harness）

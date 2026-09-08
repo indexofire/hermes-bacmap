@@ -28,9 +28,7 @@ _HAPPY_HEADER = (
     "File\tScheme\tST\tlocus_exact\tlocus_star\tlocus_novel\t"
     "locus_partial\tlocus_ambig\tlocus_missing"
 )
-_HAPPY_ROW = (
-    "SAM-001\tsenterica_2\t-\t23\t23*\t~23\t15?\t1,2\t-"
-)
+_HAPPY_ROW = "SAM-001\tsenterica_2\t-\t23\t23*\t~23\t15?\t1,2\t-"
 _HAPPY_TSV = f"{_HAPPY_HEADER}\n{_HAPPY_ROW}"
 
 
@@ -58,38 +56,28 @@ class TestClassifyAlleleHappyPath:
         assert p.missing_loci == ["locus_partial", "locus_missing"]
 
     def test_star_strips_trailing_marker(self):
-        p = parse_cgmlst_profile(
-            "File\tScheme\tST\tlocusA\nSAM\tsenterica_2\t-\t99*\n"
-        )
+        p = parse_cgmlst_profile("File\tScheme\tST\tlocusA\nSAM\tsenterica_2\t-\t99*\n")
         assert p.alleles == {"locusA": 99}
         assert p.n_called == 1
 
     def test_novel_marker_adds_to_novel_list(self):
-        p = parse_cgmlst_profile(
-            "File\tScheme\tST\tlocusC\nSAM\tsenterica_2\t-\t~5\n"
-        )
+        p = parse_cgmlst_profile("File\tScheme\tST\tlocusC\nSAM\tsenterica_2\t-\t~5\n")
         assert p.alleles == {"locusC": None}
         assert p.novel_loci == ["locusC"]
         assert p.n_called == 0
 
     def test_partial_marker_adds_to_missing_list(self):
-        p = parse_cgmlst_profile(
-            "File\tScheme\tST\tlocusX\nSAM\tsenterica_2\t-\t15?\n"
-        )
+        p = parse_cgmlst_profile("File\tScheme\tST\tlocusX\nSAM\tsenterica_2\t-\t15?\n")
         assert p.alleles == {"locusX": None}
         assert p.missing_loci == ["locusX"]
 
     def test_ambiguous_marker_adds_to_ambiguous_list(self):
-        p = parse_cgmlst_profile(
-            "File\tScheme\tST\tlocusD\nSAM\tsenterica_2\t-\t1,2\n"
-        )
+        p = parse_cgmlst_profile("File\tScheme\tST\tlocusD\nSAM\tsenterica_2\t-\t1,2\n")
         assert p.alleles == {"locusD": None}
         assert p.ambiguous_loci == ["locusD"]
 
     def test_dash_marker_adds_to_missing_list(self):
-        p = parse_cgmlst_profile(
-            "File\tScheme\tST\tlocusB\nS1\tsenterica_2\t-\t-\n"
-        )
+        p = parse_cgmlst_profile("File\tScheme\tST\tlocusB\nS1\tsenterica_2\t-\t-\n")
         assert p.alleles == {"locusB": None}
         assert p.missing_loci == ["locusB"]
         assert p.n_called == 0
@@ -100,9 +88,7 @@ class TestAcceptanceCriterionExample:
     """The exact example from the plan's acceptance criteria."""
 
     def test_acceptance_example(self):
-        p = parse_cgmlst_profile(
-            "File\tScheme\tST\tlocusA\tlocusB\nS1\tsenterica_2\t-\t12\t-"
-        )
+        p = parse_cgmlst_profile("File\tScheme\tST\tlocusA\tlocusB\nS1\tsenterica_2\t-\t12\t-")
         assert p.alleles == {"locusA": 12, "locusB": None}
         assert p.n_called == 1
         assert p.n_total == 2
@@ -139,10 +125,7 @@ class TestParseCgmlstProfilesMultiSample:
         assert profiles[2].n_called == 0
 
     def test_shared_header_locus_order_preserved(self):
-        tsv = (
-            "File\tScheme\tST\tL1\tL2\tL3\n"
-            "S1\tsch\t-\t1\t2\t3\n"
-        )
+        tsv = "File\tScheme\tST\tL1\tL2\tL3\nS1\tsch\t-\t1\t2\t3\n"
         profiles = parse_cgmlst_profiles(tsv)
         assert list(profiles[0].alleles.keys()) == ["L1", "L2", "L3"]
 
@@ -157,21 +140,12 @@ class TestParseCgmlstProfileMultiRowContract:
     multi-sample helper."""
 
     def test_two_rows_raises(self):
-        tsv = (
-            "File\tScheme\tST\tlocusA\n"
-            "S1\tsch\t-\t1\n"
-            "S2\tsch\t-\t2\n"
-        )
+        tsv = "File\tScheme\tST\tlocusA\nS1\tsch\t-\t1\nS2\tsch\t-\t2\n"
         with pytest.raises(ValueError, match="parse_cgmlst_profiles"):
             parse_cgmlst_profile(tsv)
 
     def test_three_rows_raises(self):
-        tsv = (
-            "File\tScheme\tST\tlocusA\n"
-            "S1\tsch\t-\t1\n"
-            "S2\tsch\t-\t2\n"
-            "S3\tsch\t-\t3\n"
-        )
+        tsv = "File\tScheme\tST\tlocusA\nS1\tsch\t-\t1\nS2\tsch\t-\t2\nS3\tsch\t-\t3\n"
         with pytest.raises(ValueError, match="2 data rows|3 data rows"):
             parse_cgmlst_profile(tsv)
 
