@@ -487,7 +487,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/02/c3/253a89ee03fc9b9682f1541728eb66db7db22148cd94f89ab22528cd1e1b/deprecation-2.1.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7f/9c/34f6962f9b9e9c71f6e5ed806e0d0ff03c9d1b0b2340088a0cf4bce09b18/flask-3.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/77/c7/2342da9830e3e9d4870305ca5d2091d2a83284f2953079b7bdd3b5e029d8/fonttools-4.63.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/ee/fb/7ab6fa048e51b34d42adc1423abdc379f76828516f9858da572cb0894f65/gmlst-0.1.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/52/07/c9312e5ff826a9c658f8e9e989691ea02ee8161e52fab513c7135ecb8a90/gmlst-0.1.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/96/92447566d16df59b2a776c0fb82dbc4d9e07cd95062562af01e408583fc4/itsdangerous-2.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c4/13/680c54afe3e65767bed7ec1a15571e1a2f1257128733851ade24abcefbcc/kiwisolver-1.5.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/33/d2/8b283f6fc644260bb1fd44add72695bfa036b99d9cf050a53b3b27eba774/mappy-2.31.tar.gz
@@ -1680,10 +1680,10 @@ packages:
   - pkg:pypi/gitpython?source=hash-mapping
   size: 162193
   timestamp: 1778065820061
-- pypi: https://files.pythonhosted.org/packages/ee/fb/7ab6fa048e51b34d42adc1423abdc379f76828516f9858da572cb0894f65/gmlst-0.1.1-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/52/07/c9312e5ff826a9c658f8e9e989691ea02ee8161e52fab513c7135ecb8a90/gmlst-0.1.4-py3-none-any.whl
   name: gmlst
-  version: 0.1.1
-  sha256: 12b68aa9d3f7754ac8957f077749bdd319d5c8eb694da3af517c0e3f71fb05c9
+  version: 0.1.4
+  sha256: e43383afb027ff22bd8c061fc163b3f46e6554f39bad614af76f5aedf65e4a4f
   requires_dist:
   - click>=8.1
   - flask>=3.0

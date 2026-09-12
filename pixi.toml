@@ -31,7 +31,7 @@ kma = ">=1.4"
 ncbi-datasets-cli = ">=16"
 
 [pypi-dependencies]
-gmlst = "0.1.1"
+gmlst = ">=0.1.4"
 biopython = ">=1.83"
 pydantic = ">=2.0"
 pyrodigal = ">=3.0"
