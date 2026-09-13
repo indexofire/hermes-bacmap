@@ -3,31 +3,19 @@
 # Each group uses its own reference genome and produces independent tree
 
 import os as _os
+import sys as _sys
+
+_sys.path.insert(0, str(PROJECT_ROOT / "src"))
+from hermes_bacmap.pathogen_registry import get_workflow_tables  # noqa: E402
 
 _PIXI = str(PROJECT_ROOT / ".pixi/envs/default/bin")
 _WD = str(WORKDIR)
 
 # ──────────────────────────────────────────────────────────────
-# Species → reference genome mapping
-# E.coli + Shigella share K-12 MG1655 (same species taxonomically)
+# Species → reference genome mapping (E.coli + Shigella share K-12
+# MG1655 — same species taxonomically; groups come from pathogens.yaml)
 # ──────────────────────────────────────────────────────────────
-_SPECIES_GROUPS = {
-    "salmonella": {
-        "ref": str(PROJECT_ROOT / "data/reference/genomes/salmonella_LT2.fasta"),
-        "species": ["Salmonella"],
-        "organism": "Salmonella enterica",
-    },
-    "ecoli": {
-        "ref": str(PROJECT_ROOT / "data/reference/genomes/ecoli_k12.fasta"),
-        "species": ["E.coli", "Shigella"],
-        "organism": "Escherichia coli / Shigella",
-    },
-    "vpara": {
-        "ref": str(PROJECT_ROOT / "data/reference/genomes/vpara_rimd.fasta"),
-        "species": ["V.parahaemolyticus"],
-        "organism": "Vibrio parahaemolyticus",
-    },
-}
+_SPECIES_GROUPS = get_workflow_tables().snp_groups
 
 # Derive per-group sample lists (≥2 samples required for joint calling)
 _GROUP_SAMPLES = {}

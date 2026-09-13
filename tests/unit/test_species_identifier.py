@@ -227,6 +227,120 @@ class TestThresholdsPassedToScan:
         assert captured["db_name"] == "species_markers"
 
 
+class TestMethodDatabaseMetadata:
+    def test_defaults_mark_method(self):
+        r = SpeciesIdResult()
+        assert r.method == "marker"
+        assert r.database_version == "unknown"
+
+    def test_to_dict_contains_method_and_database(self):
+        r = SpeciesIdResult(database_version="abcd1234")
+        d = r.to_dict()
+        assert d["method"] == "marker"
+        assert d["database"] == {"name": "species_markers", "version": "abcd1234"}
+
+    def test_identify_fills_version_from_markers_fasta(self, monkeypatch, tmp_path):
+        markers = tmp_path / "markers.fasta"
+        markers.write_bytes(b">x\nACGT\n")
+        monkeypatch.setattr(species_identifier, "_MARKERS_FASTA", markers)
+        monkeypatch.setattr(
+            species_identifier,
+            "scan",
+            lambda *a, **kw: _scan_result([("invA", 99.0, 100.0, "ctg1")]),
+        )
+        out = species_identifier.identify("/tmp/ctgs.fasta")
+        import hashlib
+
+        expected = hashlib.sha256(markers.read_bytes()).hexdigest()[:8]
+        assert out.database_version == expected
+        assert out.to_dict()["database"]["version"] == expected
+
+    def test_identify_missing_markers_fasta_gives_unknown(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(species_identifier, "_MARKERS_FASTA", tmp_path / "absent.fasta")
+        monkeypatch.setattr(
+            species_identifier,
+            "scan",
+            lambda *a, **kw: _scan_result([("tlh", 99.0, 100.0, "ctg1")]),
+        )
+        out = species_identifier.identify("/tmp/ctgs.fasta")
+        assert out.database_version == "unknown"
+
+
+class TestConfidenceTiers:
+    def test_identity_90_plus_is_high(self, monkeypatch):
+        monkeypatch.setattr(
+            species_identifier,
+            "scan",
+            lambda *a, **kw: _scan_result([("invA", 91.0, 100.0, "ctg1")]),
+        )
+        out = species_identifier.identify("/tmp/ctgs.fasta")
+        assert out.species == "Salmonella"
+        assert out.confidence == "high"
+
+    def test_identity_85_to_90_band_is_medium(self, monkeypatch):
+        monkeypatch.setattr(
+            species_identifier,
+            "scan",
+            lambda *a, **kw: _scan_result([("invA", 87.0, 100.0, "ctg1")]),
+        )
+        out = species_identifier.identify("/tmp/ctgs.fasta")
+        assert out.species == "Salmonella"
+        assert out.confidence == "medium"
+
+    def test_toxR_medium_band_still_calls_species(self, monkeypatch):
+        monkeypatch.setattr(
+            species_identifier,
+            "scan",
+            lambda *a, **kw: _scan_result([("toxR", 86.5, 100.0, "ctg1")]),
+        )
+        out = species_identifier.identify("/tmp/ctgs.fasta")
+        assert out.species == "V_parahaemolyticus"
+        assert out.confidence == "medium"
+
+
+class TestNearRelativeGuard:
+    """E110 案例回归：V. alginolyticus 的 tlh 同源基因 85.2% 边缘命中不得判为 V.para."""
+
+    def test_tlh_medium_band_suppressed_to_unknown(self, monkeypatch):
+        monkeypatch.setattr(
+            species_identifier,
+            "scan",
+            lambda *a, **kw: _scan_result([("tlh", 85.2, 86.0, "ctg1")]),
+        )
+        out = species_identifier.identify("/tmp/ctgs.fasta")
+        assert out.species == "Unknown"
+        assert out.confidence == "low"
+        assert any("tlh" in n for n in out.notes)
+
+    def test_tlh_90_plus_still_calls_vpara(self, monkeypatch):
+        monkeypatch.setattr(
+            species_identifier,
+            "scan",
+            lambda *a, **kw: _scan_result([("tlh", 95.0, 95.0, "ctg1")]),
+        )
+        out = species_identifier.identify("/tmp/ctgs.fasta")
+        assert out.species == "V_parahaemolyticus"
+        assert out.confidence == "high"
+
+    def test_notes_in_to_dict(self, monkeypatch):
+        monkeypatch.setattr(
+            species_identifier,
+            "scan",
+            lambda *a, **kw: _scan_result([("tlh", 85.2, 86.0, "ctg1")]),
+        )
+        d = species_identifier.identify("/tmp/ctgs.fasta").to_dict()
+        assert isinstance(d["notes"], list) and d["notes"]
+
+    def test_high_confidence_has_no_notes(self, monkeypatch):
+        monkeypatch.setattr(
+            species_identifier,
+            "scan",
+            lambda *a, **kw: _scan_result([("invA", 99.0, 100.0, "ctg1")]),
+        )
+        d = species_identifier.identify("/tmp/ctgs.fasta").to_dict()
+        assert d["notes"] == []
+
+
 class TestMain:
     def test_main_text_output_with_markers(self, monkeypatch, capsys):
         sr_with_tlh = _scan_result([("tlh", 99.0, 100.0, "ctg1")])

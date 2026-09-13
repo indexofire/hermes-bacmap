@@ -61,69 +61,80 @@ uv pip install -e ".[dev]"
 | **Salmonella** | invA (marker) / GTDB-Tk (standard) | SISTR | gmlst (salmonella_2) | abricate (CARD/VFDB/PlasmidFinder) | bwa+bcftools+iqtree | ✅ V0.3 |
 | **DEC** (E. coli) | uidA (marker) / GTDB-Tk (standard) | ecoh_serotyper (Python) | gmlst | abricate | bwa+bcftools+iqtree | ✅ V0.2 |
 | **Shigella / EIEC** | ipaH (marker) / GTDB-Tk (standard) | shigella_serotyper (58 serotypes) | gmlst | abricate | bwa+bcftools+iqtree | ✅ V0.2 |
-| **V. parahaemolyticus** | toxR + tlh (marker) / GTDB-Tk (standard) | native | gmlst | abricate | bwa+bcftools+iqtree | ✅ V0.4 (物种鉴定) |
+| **V. parahaemolyticus** | toxR + tlh (marker) / GTDB-Tk (standard) | VpaSerotyper (Python) | gmlst | abricate | bwa+bcftools+iqtree | ✅ V0.4 (物种鉴定) |
 
 ## 核心模块
 
 | 模块 | 行数 | 功能 |
 |---|---|---|
-| `tools/` | 2115 | 26 个 Hermes tool handler（seq / cli / pipeline / services 分包） |
-| `genome_object_service.py` | 667 | GOM（SQLite + 版本管理 + 事件 + 文件产物 + FTS5 搜索） |
-| `schemas.py` | 915 | 26 个 tool JSON Schema 定义 |
-| `genome_annotator.py` | 280 | 基因组注释（pyrodigal + Prokka DBs，Python 原生） |
-| `engine/` | 1121 | 算法抽象层（SequenceMatcher + ReadMapper + Hit） |
-| `gene_scanner.py` | 546 | 基因扫描引擎（委托 engine.SequenceMatcher） |
-| `shigella_serotyper.py` | 231 | Shigella 血清型（移植 ShigATyper） |
-| `deterministic_verifier.py` | 216 | 确定性规则校验（species/MLST/serotype/AMR） |
-| `species_identifier.py` | 122 | 物种鉴定（marker genes：invA/uidA/ipaH/toxR/tlh 五基因 1 次 BLAST；GTDB-Tk 标准模式在 `analysis/taxonomic_validator.py`） |
-| `ecoh_serotyper.py` | 134 | E. coli O:H 血清型（委托 gene_scanner） |
+| `tools/` | 2399 | 27 个 Hermes tool handler（seq / cli / pipeline / services 分包 + registry 表驱动注册） |
+| `services/genome_object_service.py` | 749 | GOM（SQLite + 版本管理 + 事件 + 文件产物 + FTS5 搜索） |
+| `schemas.py` | 936 | 27 个 tool JSON Schema 定义 |
+| `analysis/genome_annotator.py` | 280 | 基因组注释（pyrodigal + Prokka DBs，Python 原生） |
+| `engine/` | 1125 | 算法抽象层（SequenceMatcher + ReadMapper + Hit，backends/：blast / minimap2 / kma / kmer 可换后端） |
+| `analysis/gene_scanner.py` | 545 | 基因扫描引擎（委托 engine.SequenceMatcher） |
+| `analysis/nli_reflector.py` | 413 | Layer 3 NLI Reflector（原子声明蕴含/矛盾校验 + 审计事件） |
+| `typing/shigella_serotyper.py` | 231 | Shigella 血清型（移植 ShigATyper） |
+| `typing/vpa_serotyper_engine.py` | 450 | V. parahaemolyticus O/K 血清型（移植 vpautils） |
+| `analysis/deterministic_verifier.py` | 222 | 确定性规则校验（species/MLST/serotype/AMR） |
+| `analysis/species_identifier.py` | 123 | 物种鉴定（marker genes：invA/uidA/ipaH/toxR/tlh 五基因 1 次 BLAST；GTDB-Tk 标准模式在 `analysis/taxonomic_validator.py`） |
+| `typing/ecoh_serotyper.py` | 134 | E. coli O:H 血清型（委托 gene_scanner） |
+
+> 模块路径均相对 `src/hermes_bacmap/`。另有 `services/strain_index.py`（菌株检索 + FTS5）、`analysis/cgmlst_*.py`（cgMLST 溯源投影/距离）、`analysis/failure_diagnostics.py`（9 种失败模式诊断）等，详见 [docs/features.md](docs/features.md)。
 
 ## 项目结构
 
 ```
 hermes-bacmap/
 ├── src/hermes_bacmap/           Hermes 插件 Python 包
-│   ├── __init__.py             插件注册（26 tools + 4 skills）
-│   ├── schemas.py              Tool JSON Schema 定义
-│   ├── tools/                  Tool handler 包（含 registry 表驱动注册）
-│   ├── genome_object_service.py  GOM（SQLite + 版本管理）
-│   └── deterministic_verifier.py  确定性规则校验
+│   ├── __init__.py             插件注册（27 tools 表驱动 + skills 自动发现）
+│   ├── schemas.py              27 个 tool JSON Schema 定义
+│   ├── tools/                  Tool handler 包（seq / cli / pipeline / services + registry 表驱动注册）
+│   ├── engine/                 算法抽象层（SequenceMatcher / ReadMapper + backends/ 可换后端）
+│   ├── analysis/               领域分析（物种鉴定 / 基因扫描 / 注释 / 确定性校验 / cgMLST / NLI / 失败诊断）
+│   ├── typing/                 血清型模块（ecoh / shigella / vpa）
+│   ├── services/               GOM + 菌株索引 / 菌株元数据 / 实验室结果
+│   └── skills/                 6 个 Hermes Skills（随 wheel 打包）
+│       ├── bio-router/             始终加载的 skill 路由器
+│       ├── run-pipeline/           跨病原管线操作指南 + 5 个 references
+│       ├── bioinfo-analysis/       通用生信决策树
+│       ├── interpret-results/      结果解读知识库 + 2 个 references
+│       ├── seqkit-operations/      seqkit 序列操作
+│       └── ncbi-datasets/          NCBI 基因组数据获取
 ├── workflows/bacmap/        Snakemake 分析流程
 │   ├── Snakefile               主入口（per-sample + cohort DAG）
 │   ├── config/                 配置 + 样本表
 │   ├── rules/                  11 个 rule 文件（29 rules：25 常规 + 4 cgMLST cohort 门控，+ Snakefile `rule all` 共 30）
-│   └── scripts/                collect_summary + SNP matrix + pathotype
+│   └── scripts/                collect_summary + SNP/cgMLST cohort 脚本 + pathotype
 ├── scripts/                     编排脚本
 │   ├── run_analysis.py         端到端编排器（--sample/--all/--snp/--status）
 │   ├── ingest_results.py       GOM 入库（--sample/--all/--snp）
-│   ├── generate_report.py      HTML 报告（--sample/--all/--cohort）
-│   ├── download_gold_standard.py  ENA FASTQ 下载
-│   └── ...
-├── skills/                      Hermes Skills（4 个）
-│   ├── bio-router/             始终加载的 skill 路由器
-│   ├── run-pipeline/           跨病原管线操作指南 + 5 个 references
-│   ├── bioinfo-analysis/       通用生信决策树
-│   └── interpret-results/      结果解读知识库 + 2 个 references
+│   ├── generate_report.py      HTML/PDF 报告（--sample/--all/--cohort）
+│   ├── validate_analytical.py  分析验证 harness（vs gold standard）
+│   ├── build_cgmlst_reference.py  cgMLST 本地参考库构建
+│   └── ...                     ENA 下载 / 元数据导入 / 基准 / LLM 切换
+├── web/                         FastAPI Web UI（app.py + 单页模板，X-API-Key 认证）
 ├── tests/                       测试（1415 tests）
-│   ├── unit/                   GOM + Verifier + Cohort TDD
+│   ├── unit/                   GOM + Verifier + Engine + Cohort TDD
 │   ├── conftest.py             共享 fixtures
 │   └── fixtures/gold_standard/ 12 株 gold standard 数据集（9 株经验证 harness）
-├── data/reference/              参考数据库（15 个 FASTA）
-├── docs/                        开发文档
+├── data/reference/              参考数据库（8 类：amr / annotation / genomes / plasmid / serotype / species / virulence / vpa_serotype）
+├── metadata_profiles/           样本元数据模板（default / cdc_china）
+├── docs/                        mkdocs 文档站
 │   ├── features.md             ← 完整功能文档
-│   ├── gom-architecture.md     GOM 架构设计
-│   ├── getting-started.md      环境搭建
-│   └── hermes-chat-guide.md    Hermes 交互指南
+│   ├── architecture/           overview / engine / GOM / pipeline / skills / data-model
+│   └── installation/ · usage/ · pathogens/ · cases/ · reference/
+├── mkdocs.yml                   文档站导航配置
 ├── pixi.toml                    生信工具依赖
 ├── pyproject.toml               Python 依赖
-└── project.md                   开发计划（V0.4, 1176 行）
+└── project.md                   开发计划（V0.7, 1176 行）
 ```
 
 ## 环境架构
 
 | 工具 | 管理内容 | 说明 |
 |------|---------|------|
-| **pixi** | 生信 CLI + Python 运行时 | fastp, Shovill, blast, bwa, samtools, bcftools, seqkit, iqtree, prodigal, mash, snakemake, gmlst, biopython, pyrodigal, mappy, sourmash |
+| **pixi** | 生信 CLI + Python 运行时 | fastp, Shovill, blast, bwa, samtools, bcftools, seqkit, iqtree, pyrodigal, snakemake, gmlst, mash, skani, kraken2, bracken, biopython, pyrodigal, mappy, sourmash |
 | **uv** (可选) | Python 开发工具 | pytest, ruff, mypy（仅开发者需要） |
 | **Hermes Agent** | LLM 编排 | API-key 模式（GLM-5.2 via Z.AI） |
 

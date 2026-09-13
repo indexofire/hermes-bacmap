@@ -140,9 +140,7 @@ def _canonical_species(verdict: str, ipah: str) -> str:
 def _gene_names(rows: object) -> tuple[str, ...]:
     if not isinstance(rows, list):
         return ()
-    return tuple(
-        str(r.get("GENE", "")) for r in rows if isinstance(r, dict) and r.get("GENE")
-    )
+    return tuple(str(r.get("GENE", "")) for r in rows if isinstance(r, dict) and r.get("GENE"))
 
 
 def extract_facts(summary: dict[str, Any], sample_id: str) -> StrainFacts:

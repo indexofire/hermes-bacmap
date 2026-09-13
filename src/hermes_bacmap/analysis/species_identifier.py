@@ -8,25 +8,37 @@ new pathogens without changing code.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from ..analysis.gene_scanner import scan
+from ..config import REF_DIR
+from ..pathogen_registry import load_registry
 
 _SPECIES_MIN_IDENTITY = 85.0
 _SPECIES_MIN_COVERAGE = 30.0
+_HIGH_CONF_IDENTITY = 90.0
 
-_GENE_TO_SPECIES = {
-    "inva": ("Salmonella", "high"),
-    "uida": ("DEC", "high"),
-    "ipah": ("Shigella/EIEC", "high"),
-    "toxr": ("V_parahaemolyticus", "high"),
-    "tlh": ("V_parahaemolyticus", "high"),
-}
+# Markers with documented near-relative homologs: a sub-90% single hit is a
+# cross-reaction (e.g. V. alginolyticus tlh vs V. parahaemolyticus, 85.2% —
+# see docs/cases/species-crossreaction.md) and must not call the species.
+_SINGLE_HIT_GUARD_MARKERS = frozenset({"tlh"})
 
-_SPECIES_PRIORITY = ["inva", "ipah", "toxr", "tlh", "uida"]
+_gene_map, _priority = load_registry().species_markers()
+_GENE_TO_SPECIES: dict[str, tuple[str, str]] = _gene_map
+_SPECIES_PRIORITY: list[str] = _priority
+
+_MARKERS_FASTA = REF_DIR / "species" / "markers.fasta"
+
+
+def _markers_db_version() -> str:
+    try:
+        return hashlib.sha256(_MARKERS_FASTA.read_bytes()).hexdigest()[:8]
+    except OSError:
+        return "unknown"
 
 
 @dataclass
@@ -35,12 +47,18 @@ class SpeciesIdResult:
     confidence: str = "low"
     detected_markers: list[dict[str, Any]] = field(default_factory=list)
     all_hits: list[dict[str, Any]] = field(default_factory=list)
+    method: str = "marker"
+    database_version: str = "unknown"
+    notes: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "species": self.species,
             "confidence": self.confidence,
+            "method": self.method,
+            "database": {"name": "species_markers", "version": self.database_version},
             "detected_markers": self.detected_markers,
+            "notes": self.notes,
             "interpretation": self._interpret(),
         }
 
@@ -65,7 +83,7 @@ def identify(contigs_fasta: str | Path, mode: str = "simple") -> SpeciesIdResult
         min_coverage=_SPECIES_MIN_COVERAGE,
     )
 
-    result = SpeciesIdResult()
+    result = SpeciesIdResult(database_version=_markers_db_version())
 
     gene_hits: dict[str, dict[str, Any]] = {}
     for hit in scan_result.genes:
@@ -92,9 +110,26 @@ def identify(contigs_fasta: str | Path, mode: str = "simple") -> SpeciesIdResult
         return result
 
     for gene in _SPECIES_PRIORITY:
-        if gene in gene_hits:
-            result.species, result.confidence = _GENE_TO_SPECIES[gene]
+        if gene not in gene_hits:
+            continue
+        species, _ = _GENE_TO_SPECIES[gene]
+        identity = gene_hits[gene]["identity"]
+        if gene in _SINGLE_HIT_GUARD_MARKERS and identity < _HIGH_CONF_IDENTITY:
+            result.notes.append(
+                f"{gene} single hit at {identity:.1f}% identity (below "
+                f"{_HIGH_CONF_IDENTITY:.0f}%): near-relative homolog suspected "
+                "(e.g. Vibrio alginolyticus tlh); species call withheld, "
+                "ANI recheck advised"
+            )
             break
+        result.species = species
+        result.confidence = "high" if identity >= _HIGH_CONF_IDENTITY else "medium"
+        if result.confidence == "medium":
+            result.notes.append(
+                f"{gene} hit at {identity:.1f}% identity (85-90% band): "
+                "confidence downgraded, ANI recheck advised"
+            )
+        break
 
     return result
 

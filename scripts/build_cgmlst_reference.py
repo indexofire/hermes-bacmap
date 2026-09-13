@@ -160,9 +160,7 @@ def _run_one_sample(
     ]
     print(f"  $ {' '.join(cmd)}")
     try:
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout, check=False
-        )
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, check=False)
     except subprocess.TimeoutExpired:
         out_tsv.unlink(missing_ok=True)
         return (False, f"timeout after {timeout}s")
@@ -192,9 +190,7 @@ def _read_header_and_row(tsv_path: Path) -> tuple[str, str]:
     # Skip blank trailing lines (defensive — gmlst does not emit them).
     lines = [ln for ln in lines if ln.strip()]
     if len(lines) < 2:
-        raise ValueError(
-            f"{tsv_path}: expected header + 1 data row, found {len(lines)} line(s)"
-        )
+        raise ValueError(f"{tsv_path}: expected header + 1 data row, found {len(lines)} line(s)")
     return (lines[0], lines[1])
 
 
@@ -264,9 +260,7 @@ def _write_meta(
         "status": status,
     }
     if failures:
-        meta["failures"] = [
-            {"sample": s, "reason": r} for s, r in sorted(failures)
-        ]
+        meta["failures"] = [{"sample": s, "reason": r} for s, r in sorted(failures)]
     meta_path.parent.mkdir(parents=True, exist_ok=True)
     meta_path.write_text(json.dumps(meta, indent=2, sort_keys=True) + "\n")
     return meta
@@ -335,8 +329,7 @@ def build_reference(
 
         if not per_sample_outputs:
             print(
-                f"❌ all {len(assemblies)} gmlst runs failed; no reference "
-                "profiles produced",
+                f"❌ all {len(assemblies)} gmlst runs failed; no reference profiles produced",
                 file=sys.stderr,
             )
             _write_meta(
@@ -351,9 +344,7 @@ def build_reference(
             return 1
 
         # Merge happens inside the temp dir context so per-sample files exist.
-        n_loci, merged, merge_failures = merge_profiles(
-            per_sample_outputs, profiles_tsv
-        )
+        n_loci, merged, merge_failures = merge_profiles(per_sample_outputs, profiles_tsv)
         all_failures = run_failures + merge_failures
 
     # Integrity check: the merged TSV must round-trip through the todo-1 parser.
@@ -452,9 +443,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    output_dir = args.output_dir or (
-        DEFAULT_REFERENCE_ROOT / args.species.lower()
-    )
+    output_dir = args.output_dir or (DEFAULT_REFERENCE_ROOT / args.species.lower())
 
     try:
         gmlst_bin = _resolve_gmlst_bin(args.gmlst_bin)

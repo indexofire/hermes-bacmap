@@ -5,15 +5,17 @@
 #   V.parahaemolyticus  -> vparahaemolyticus_3  (2254 loci)
 # NOTE: _CGMLST_SCHEMES is DIFFERENT from _GMLST_SCHEMES in typing_amr.smk
 #       (those are classical-MLST schemes: salmonella_2/ecoli_1/vparahaemolyticus_1).
+# Both mappings derive from pathogens.yaml (single source of truth).
 # cgMLST cohort rules are added in todo 11 (gated by config.cgmlst.run_cgmlst_cohort).
 
-# Species -> EnteroBase cgMLST scheme name (as accepted by `gmlst typing cgmlst -s`).
-_CGMLST_SCHEMES = {
-    "Salmonella": "senterica_2",
-    "E.coli": "ecoli_2",
-    "Shigella": "ecoli_2",
-    "V.parahaemolyticus": "vparahaemolyticus_3",
-}
+import sys as _sys
+
+_sys.path.insert(0, str(PROJECT_ROOT / "src"))
+from hermes_bacmap.pathogen_registry import get_workflow_tables  # noqa: E402
+
+_TABLES = get_workflow_tables()
+
+_CGMLST_SCHEMES = _TABLES.cgmlst_schemes
 GMLST_BIN = str(PROJECT_ROOT / ".pixi/envs/default/bin/gmlst")
 
 rule typing_cgmlst:
@@ -37,33 +39,14 @@ rule typing_cgmlst:
 # Cohort rules (todo 11) — opt-in via config.cgmlst.run_cgmlst_cohort.
 # Mirrors the snp.smk cohort structure (per-species-group profiles -> matrix
 # -> tree -> summary) but for cgMLST allele distances. Outputs land under
-# results/cgmlst/{group}/. The SNP cohort (snp.smk) is untouched; this block
-# is purely additive and parsed only when the operator flips
-# `cgmlst.run_cgmlst_cohort: true` in config.yaml.
+# results/cgmlst/{group}/. The SNP cohort (snp.smk) is untouched; groups
+# derive from pathogens.yaml (same source as snp.smk, no cross-import).
 # ─────────────────────────────────────────────────────────────────
 import os as _cgmlst_os
 
-# Species grouping mirrors snp.smk _SPECIES_GROUPS (salmonella / ecoli+
-# Shigella / vpara) but keyed on the cgMLST scheme rather than a reference
-# genome. Redefined here on purpose (NOT imported from snp.smk) so the two
-# cohort pipelines stay decoupled — todo 11 forbids any change to snp.smk.
-_CGMLST_SPECIES_GROUPS = {
-    "salmonella": {
-        "species": ["Salmonella"],
-        "organism": "Salmonella enterica",
-        "scheme": "senterica_2",
-    },
-    "ecoli": {
-        "species": ["E.coli", "Shigella"],
-        "organism": "Escherichia coli / Shigella",
-        "scheme": "ecoli_2",
-    },
-    "vpara": {
-        "species": ["V.parahaemolyticus"],
-        "organism": "Vibrio parahaemolyticus",
-        "scheme": "vparahaemolyticus_3",
-    },
-}
+# Species grouping keyed on the cgMLST scheme rather than a reference
+# genome; scheme from the registry's cgmlst_species_groups().
+_CGMLST_SPECIES_GROUPS = _TABLES.cgmlst_species_groups
 
 # Derive per-group sample lists. A group needs >=2 samples to justify joint
 # analysis — mirrors the snp.smk:32-39 _GROUP_SAMPLES guard (single-sample

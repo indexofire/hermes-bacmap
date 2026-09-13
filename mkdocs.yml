@@ -52,6 +52,7 @@ nav:
     - Skills 技能系统: architecture/skills.md
     - 代码质量评估: architecture/code-quality.md
   - 病原分析:
+    - 分析总览: pathogens/overview.md
     - Salmonella: pathogens/salmonella.md
     - DEC / E.coli: pathogens/dec.md
     - Shigella / EIEC: pathogens/shigella.md
@@ -60,9 +61,11 @@ nav:
     - 单株分析: cases/single-sample.md
     - 暴发调查: cases/outbreak.md
     - 批量监测: cases/batch-surveillance.md
+    - marker 交叉反应: cases/species-crossreaction.md
   - 参考:
     - 工具列表: reference/tools.md
     - 参考数据库: reference/databases.md
+    - 病原面板台账: reference/pathogen-panel.md
     - 故障排查: reference/troubleshooting.md
     - 更新日志: reference/changelog.md
     - 分析验证报告: validation-report.md

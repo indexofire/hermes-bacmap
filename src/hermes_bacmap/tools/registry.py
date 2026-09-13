@@ -42,4 +42,5 @@ _TOOL_REGISTRY: list[tuple[str, dict[str, Any], Handler]] = [
     ("bio_add_metadata", schemas.ADD_METADATA, services.add_metadata),
     ("bio_query_lab_results", schemas.QUERY_LAB_RESULTS, services.query_lab_results),
     ("bio_add_lab_result", schemas.ADD_LAB_RESULT, services.add_lab_result),
+    ("bio_species_compare", schemas.SPECIES_COMPARE, services.species_compare),
 ]

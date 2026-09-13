@@ -40,6 +40,7 @@ _VALID_EVENT_TYPES = frozenset(
         "analysis_failed",
         "version_created",
         "nli_reflected",
+        "species_identified",
     }
 )
 
@@ -79,6 +80,7 @@ EventType = Literal[
     "analysis_failed",
     "version_created",
     "nli_reflected",
+    "species_identified",
 ]
 
 
@@ -87,6 +89,31 @@ _CGMLST_REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
     "cgmlst_profile": ("scheme", "n_loci"),
     "cgmlst_cohort": ("scheme", "n_loci", "allele_distances"),
 }
+
+SPECIES_ID_METHODS = frozenset(
+    {"marker", "panel", "skani_gtdb", "mash_refseq", "sourmash", "gtdbtk", "kraken2"}
+)
+
+
+def _validate_species_payload(payload: dict[str, Any]) -> None:
+    """Species-identification ANALYSIS payloads; no-op for any other analysis_type."""
+    if payload.get("analysis_type") != "species_identification":
+        return
+    for field_name in ("method", "database", "result"):
+        if field_name not in payload:
+            raise GOMValidationError(
+                f"species_identification payload missing required field {field_name!r}"
+            )
+    method = payload["method"]
+    if method not in SPECIES_ID_METHODS:
+        raise GOMValidationError(
+            f"species_identification method {method!r} not in {sorted(SPECIES_ID_METHODS)}"
+        )
+    result = payload["result"]
+    if not isinstance(result, dict) or "species" not in result or "confidence" not in result:
+        raise GOMValidationError(
+            "species_identification result must be a dict with 'species' and 'confidence'"
+        )
 
 
 def _validate_cgmlst_payload(payload: dict[str, Any]) -> None:
@@ -163,6 +190,7 @@ class GenomeObject:
                     "ANALYSIS GenomeObject requires non-empty database_versions (project.md §4.5)"
                 )
             _validate_cgmlst_payload(self.payload)
+            _validate_species_payload(self.payload)
 
 
 @dataclass(frozen=True)
@@ -403,6 +431,25 @@ class GenomeObjectService:
             (object_type.value, limit, offset),
         ).fetchall()
         return [self._row_to_go(r) for r in rows]
+
+    def list_species_identifications(self, strain_id: str) -> list[GenomeObject]:
+        """Latest-version species_identification ANALYSIS objects for one strain."""
+        rows = self._conn.execute(
+            """SELECT g.* FROM genome_objects g
+               INNER JOIN (
+                    SELECT object_id, MAX(version) AS max_v
+                    FROM genome_objects
+                    WHERE object_type = 'analysis' AND strain_id = ?
+                    GROUP BY object_id
+                ) latest ON g.object_id = latest.object_id AND g.version = latest.max_v
+                ORDER BY g.created_at DESC""",
+            (strain_id,),
+        ).fetchall()
+        return [
+            go
+            for go in (self._row_to_go(r) for r in rows)
+            if go.payload.get("analysis_type") == "species_identification"
+        ]
 
     def list_by_organism(
         self, organism: str, limit: int = 100, offset: int = 0

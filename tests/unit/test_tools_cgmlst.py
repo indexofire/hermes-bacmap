@@ -201,7 +201,7 @@ class TestCgmlstTracebackRegistration:
         assert "bio_snp_tree" in names  # baseline predecessor
         assert "bio_cgmlst" in names
         # Documented repo count after adding bio_cgmlst (was 24, now 25).
-        assert len(_TOOL_REGISTRY) == 26
+        assert len(_TOOL_REGISTRY) == 27
 
     def test_schema_has_required_sample_id(self):
         schema = next(s for n, s, _ in _TOOL_REGISTRY if n == "bio_cgmlst")

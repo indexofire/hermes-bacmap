@@ -97,6 +97,119 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+SPECIES_PIPELINE_VERSION = "species-id-v0.1"
+
+
+def _taxonomy_json_to_species_payload(data: dict) -> dict:
+    """standard-mode taxonomy/validation.json → gtdbtk species payload."""
+    genus = epithet = ""
+    for rank in str(data.get("gtdb_taxonomy", "")).split(";"):
+        token = rank.strip()
+        if token.startswith("g__"):
+            genus = token[3:]
+        elif token.startswith("s__"):
+            epithet = token[3:]
+    species = f"{genus} {epithet}".strip() or str(
+        data.get("marker_gene_species") or "Unknown"
+    )
+    return {
+        "species": species,
+        "confidence": "high" if epithet else "medium",
+        "method": "gtdbtk",
+        "database": {"name": "gtdbtk_r232", "version": "R232"},
+        "detected_markers": [],
+        "quality": {
+            "completeness": data.get("completeness"),
+            "contamination": data.get("contamination"),
+        },
+    }
+
+
+def _markers_db_version() -> str:
+    from hermes_bacmap.analysis.species_identifier import _markers_db_version as _v
+
+    return _v()
+
+
+def _ingest_sample_species(
+    gos: GenomeObjectService, sample_id: str, json_path: Path | None = None
+) -> str | None:
+    json_path = json_path or RESULTS_DIR / sample_id / "species" / "species_id.json"
+    if not json_path.exists():
+        return None
+
+    with json_path.open() as f:
+        data = json.load(f)
+
+    if "gtdb_taxonomy" in data and "analysis_type" not in data:
+        data = _taxonomy_json_to_species_payload(data)
+
+    method = data.get("method", "marker")
+    database = dict(data.get("database") or {})
+    database.setdefault("name", "species_markers")
+    database.setdefault("version", _markers_db_version())
+    signature = f"{database['name']}@{database['version']}"
+
+    for obj in gos.list_species_identifications(sample_id):
+        if obj.payload.get("method") == method and obj.database_signature == signature:
+            return obj.object_id
+
+    payload = {
+        "analysis_type": "species_identification",
+        "method": method,
+        "database": database,
+        "result": {
+            "species": data.get("species", "Unknown"),
+            "confidence": data.get("confidence", "low"),
+            "detected_markers": data.get("detected_markers", []),
+        },
+    }
+    if data.get("quality"):
+        payload["result"]["quality"] = data["quality"]
+
+    obj = gos.create(
+        GenomeObject(
+            object_id=str(uuid4()),
+            object_type=ObjectType.ANALYSIS,
+            version=1,
+            schema_version=SCHEMA_VERSION,
+            created_at=datetime.now(UTC),
+            created_by="ingest_species",
+            payload=payload,
+            pipeline_version=SPECIES_PIPELINE_VERSION,
+            database_versions={database["name"]: database["version"]},
+            organism=payload["result"]["species"],
+            strain_id=sample_id,
+            database_signature=signature,
+        )
+    )
+    gos.log_event(
+        obj.object_id,
+        "species_identified",
+        {"method": method, "species": payload["result"]["species"]},
+    )
+    return obj.object_id
+
+
+def ingest_species(gos: GenomeObjectService) -> list[str]:
+    if not RESULTS_DIR.exists():
+        return []
+    ingested: list[str] = []
+    candidates = (
+        "species/species_id.json",
+        "species/species_ani.json",
+        "species/species_sourmash.json",
+        "kraken2/kraken2_prefilter.json",
+        "taxonomy/validation.json",
+    )
+    for sample_dir in sorted(p for p in RESULTS_DIR.iterdir() if p.is_dir()):
+        for rel in candidates:
+            oid = _ingest_sample_species(gos, sample_dir.name, sample_dir / rel)
+            if oid:
+                ingested.append(oid)
+    return ingested
+
+
 def ingest_sample(gos: GenomeObjectService, sample_id: str) -> str | None:
     summary_path = RESULTS_DIR / sample_id / "report" / f"{sample_id}_summary.json"
     if not summary_path.exists():
@@ -494,9 +607,7 @@ def _ingest_sample_cgmlst(gos: GenomeObjectService, sample_id: str) -> str | Non
         return None
 
     if not profile.scheme or profile.n_total == 0:
-        print(
-            f"  ⏭️  {sample_id}: cgmlst.tsv empty (scheme={profile.scheme!r}), skipped"
-        )
+        print(f"  ⏭️  {sample_id}: cgmlst.tsv empty (scheme={profile.scheme!r}), skipped")
         return None
 
     payload, organism = _build_cgmlst_payload(profile)
@@ -507,9 +618,9 @@ def _ingest_sample_cgmlst(gos: GenomeObjectService, sample_id: str) -> str | Non
     }
 
     existing = [
-        o for o in gos.list_by_type(ObjectType.ANALYSIS)
-        if o.strain_id == sample_id
-        and o.payload.get("analysis_type") == "cgmlst_profile"
+        o
+        for o in gos.list_by_type(ObjectType.ANALYSIS)
+        if o.strain_id == sample_id and o.payload.get("analysis_type") == "cgmlst_profile"
     ]
 
     if existing:
@@ -517,9 +628,7 @@ def _ingest_sample_cgmlst(gos: GenomeObjectService, sample_id: str) -> str | Non
         if latest.pipeline_version == CGMLST_PIPELINE_VERSION and (
             latest.database_versions.get("cgmlst_scheme") == db_versions["cgmlst_scheme"]
         ):
-            print(
-                f"  ⏭️  {sample_id}: cgmlst_profile v{latest.version} 已存在, skipped"
-            )
+            print(f"  ⏭️  {sample_id}: cgmlst_profile v{latest.version} 已存在, skipped")
             return latest.object_id
         return _create_cgmlst_version(gos, latest.object_id, payload, db_versions, sample_id)
 
@@ -625,9 +734,7 @@ def ingest_cohort_cgmlst(gos: GenomeObjectService) -> list[str]:
         return []
 
     group_dirs = sorted(
-        d
-        for d in cgmlst_dir.iterdir()
-        if d.is_dir() and (d / "cgmlst_summary.json").exists()
+        d for d in cgmlst_dir.iterdir() if d.is_dir() and (d / "cgmlst_summary.json").exists()
     )
     if not group_dirs:
         print("  ✗ No per-group cgMLST summaries found in results/cgmlst/")
@@ -660,11 +767,7 @@ def _ingest_group_cgmlst(gos: GenomeObjectService, group: str) -> str | None:
         "gmlst": CGMLST_TOOL_VERSIONS["gmlst"],
     }
 
-    existing = [
-        o
-        for o in gos.list_by_type(ObjectType.ANALYSIS)
-        if o.strain_id == cohort_strain_id
-    ]
+    existing = [o for o in gos.list_by_type(ObjectType.ANALYSIS) if o.strain_id == cohort_strain_id]
 
     if existing:
         latest = max(existing, key=lambda o: o.version)
@@ -676,19 +779,14 @@ def _ingest_group_cgmlst(gos: GenomeObjectService, group: str) -> str | None:
         ):
             print(f"  ⏭️  cgMLST cohort [{group}]: 已存在 v{latest.version}, skipped")
             return latest.object_id
-        return _create_cgmlst_cohort_version(
-            gos, latest.object_id, cgmlst_data, group, db_versions
-        )
+        return _create_cgmlst_cohort_version(gos, latest.object_id, cgmlst_data, group, db_versions)
 
     return _create_cgmlst_cohort_new(gos, cgmlst_data, group, db_versions)
 
 
 def _build_cgmlst_cohort_payload(cgmlst_data: dict, group: str) -> tuple[dict, str]:
     scheme = cgmlst_data.get("scheme", "")
-    organism = (
-        cgmlst_data.get("organism")
-        or CGMLST_SCHEME_ORGANISMS.get(scheme, group)
-    )
+    organism = cgmlst_data.get("organism") or CGMLST_SCHEME_ORGANISMS.get(scheme, group)
     payload = {
         "analysis_type": "cgmlst_cohort",
         "group": group,
@@ -812,11 +910,20 @@ def main() -> int:
     group.add_argument("--snp", action="store_true")
     group.add_argument("--cgmlst", action="store_true")
     group.add_argument("--cgmlst-cohort", action="store_true", dest="cgmlst_cohort")
+    group.add_argument("--backfill-species", action="store_true", dest="backfill_species")
     group.add_argument("--rebuild-index", action="store_true")
     args = parser.parse_args()
 
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     gos = GenomeObjectService(DB_PATH)
+
+    if args.backfill_species:
+        print("=== 回填物种鉴定 (results/*/species/species_id.json) ===\n")
+        oids = ingest_species(gos)
+        print(f"\n✓ 物种鉴定回填完成: {len(oids)} 个对象 (幂等，可重复执行)")
+        print(f"  Database: {DB_PATH}")
+        gos.close()
+        return 0
 
     if args.rebuild_index:
         print("=== 重建基因型索引 ===\n")
@@ -890,6 +997,10 @@ def main() -> int:
             print(f"  ❌ {sid}: failed")
 
     print(f"\n✓ 入库完成: {ingested}/{len(samples)}")
+
+    print("\n=== 入库物种鉴定 (species_id.json) ===\n")
+    species_oids = [o for o in (_ingest_sample_species(gos, sid) for sid in samples) if o]
+    print(f"✓ 物种鉴定入库: {len(species_oids)}/{len(samples)}")
 
     if args.all:
         print("\n=== 入库 cgMLST Profile (per-sample, --all umbrella) ===\n")

@@ -33,11 +33,11 @@
 
 ```python
 if "Shigella" in species and serotype != "Undetermined":
-    primary = shigella_serotype       # shigella_serotyper
+    primary = shigella_serotype  # shigella_serotyper
 elif ecoh_serotype != "-:-":
-    primary = ecoh_serotype           # ecoh_serotyper (DEC/EIEC)
+    primary = ecoh_serotype  # ecoh_serotyper (DEC/EIEC)
 else:
-    primary = sistr_serovar           # SISTR (fallback for Salmonella)
+    primary = sistr_serovar  # SISTR (fallback for Salmonella)
 ```
 
 ## DEC Pathotype Classification

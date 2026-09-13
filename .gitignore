@@ -30,6 +30,10 @@ data/*.sqlite-wal
 data/*.sqlite-shm
 results/
 tests/fixtures/gold_standard/salmonella/data/
+tests/fixtures/validation_genomes/genomes/
+tests/fixtures/validation_genomes/genomes.zip
+tests/fixtures/validation_genomes/accessions.txt
+tests/fixtures/validation_genomes/ncbi_dataset/
 external/
 
 # Derived indexes — rebuildable via bwa index / makeblastdb / samtools faidx

@@ -47,7 +47,15 @@ def validate_sample(sample: str) -> None:
         sys.exit(1)
 
 
-def run_snakemake(targets: list[str], cores: int = 8, timeout: int = 7200) -> bool:
+SPECIES_MODES = ["simple", "panel", "skani_gtdb", "mash_refseq", "sourmash", "standard"]
+
+
+def run_snakemake(
+    targets: list[str],
+    cores: int = 8,
+    timeout: int = 7200,
+    config_overrides: dict[str, str] | None = None,
+) -> bool:
     import os
 
     env = dict(os.environ)
@@ -61,7 +69,10 @@ def run_snakemake(targets: list[str], cores: int = 8, timeout: int = 7200) -> bo
         str(cores),
         "--rerun-incomplete",
         "--printshellcmds",
-    ] + targets
+    ]
+    if config_overrides:
+        cmd += ["--config"] + [f"{k}={v}" for k, v in config_overrides.items()]
+    cmd += targets
 
     print(f"\n{'=' * 60}")
     print(f"启动 Snakemake 自动编排 ({len(targets)} target(s))")
@@ -178,6 +189,12 @@ def main() -> int:
     )
     group.add_argument("--status", action="store_true", help="Check analysis status")
     parser.add_argument("--cores", type=int, default=8)
+    parser.add_argument(
+        "--species-mode",
+        dest="species_mode",
+        choices=SPECIES_MODES,
+        help="Species identification method (default: config.yaml species_mode)",
+    )
     args = parser.parse_args()
 
     if args.status:
@@ -231,7 +248,12 @@ def main() -> int:
         return 1
 
     validate_all_sample_names()
-    success = run_snakemake(targets, args.cores)
+    if args.species_mode:
+        success = run_snakemake(
+            targets, args.cores, config_overrides={"species_mode": args.species_mode}
+        )
+    else:
+        success = run_snakemake(targets, args.cores)
 
     if success:
         if args.snp:

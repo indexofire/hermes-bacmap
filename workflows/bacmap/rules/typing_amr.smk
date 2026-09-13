@@ -1,20 +1,18 @@
 # Step 5-9: MLST + AMR + 毒力 + 质粒 + 血清型 (project.md §7.1 steps 5-9)
 
+import sys as _sys
+
+_sys.path.insert(0, str(PROJECT_ROOT / "src"))
+from hermes_bacmap.pathogen_registry import get_workflow_tables  # noqa: E402
+
+_TABLES = get_workflow_tables()
+
 ABRICATE_MINID = config["tools"]["abricate"]["minid"]
 ABRICATE_MINCOV = config["tools"]["abricate"]["mincov"]
-_GMLST_SCHEMES = {
-    "Salmonella": "salmonella_2",
-    "E.coli": "ecoli_1",
-    "Shigella": "ecoli_1",
-    "V.parahaemolyticus": "vparahaemolyticus_1",
-}
+_GMLST_SCHEMES = _TABLES.mlst_schemes
 GMLST_BIN = str(PROJECT_ROOT / ".pixi/envs/default/bin/gmlst")
 
-_AMRFINDER_ORGANISMS = {
-    "Salmonella": "Salmonella",
-    "E.coli": "Escherichia",
-    "Shigella": "Escherichia",
-}
+_AMRFINDER_ORGANISMS = _TABLES.amrfinder_organisms
 _AMRFINDER_DB_BASE = Path(PROJECT_ROOT / "data/db/amrfinderplus")
 # amrfinder -d 需要指向具体版本目录(amrfinder_update 会建 <base>/<version>/)
 _AMRFINDER_DB_VERSIONS = sorted(p for p in _AMRFINDER_DB_BASE.iterdir() if p.is_dir()) if _AMRFINDER_DB_BASE.exists() else []

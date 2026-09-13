@@ -569,3 +569,30 @@ def review_flags(args: dict[str, Any], **kwargs: Any) -> str:
                 )
     events.sort(key=lambda e: e["timestamp"], reverse=True)
     return json.dumps({"events": events[:limit], "total": len(events)}, ensure_ascii=False)
+
+
+def species_compare(args: dict[str, Any], **kwargs: Any) -> str:
+    strain = str(args.get("strain_id", "")).strip()
+    from pathlib import Path as _Path
+
+    from ..analysis.species_consensus import compare
+    from ..services.genome_object_service import GenomeObjectService
+
+    with GenomeObjectService(_Path(_DEFAULT_DB_PATH)) as gos:
+        consensus = compare(strain, gos)
+
+    if not consensus.methods:
+        return f"菌株 {strain}: 暂无物种鉴定记录 (no species identification objects)"
+
+    lines = [f"菌株 {strain} — 物种鉴定方法对比", "method\tspecies\tconfidence"]
+    for m in consensus.methods:
+        lines.append(f"{m.method}\t{m.species}\t{m.confidence}")
+    lines.append(
+        f"结论: {consensus.resolved_species} "
+        f"(agreement={consensus.agreement}, basis={consensus.basis})"
+    )
+    if consensus.disagreeing_methods:
+        lines.append(f"分歧方法: {', '.join(consensus.disagreeing_methods)}")
+    if consensus.needs_review:
+        lines.append("⚠ NEEDS_REVIEW: 同层方法冲突，需人工裁决")
+    return "\n".join(lines)

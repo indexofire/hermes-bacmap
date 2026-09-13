@@ -37,7 +37,9 @@ PIXI_BIN = str(_DEV_ROOT / ".pixi" / "envs" / "default" / "bin")
 PIXI_PYTHON = str(_DEV_ROOT / ".pixi" / "envs" / "default" / "bin" / "python")
 
 CHECKM2_DB = _env_path("CHECKM2DB", None) if os.environ.get("CHECKM2DB") else None
-GTDB_DB = _env_path("GTDBDB", None) if os.environ.get("GTDBDB") else None
+GTDB_DB = _env_path("GTDBTK_DATA_PATH", None) or _env_path("GTDBDB", None)
+
+SPECIES_DB_DIR = DATA_DIR / "db"
 
 
 def pixi_path() -> str:

@@ -913,3 +913,24 @@ ADD_LAB_RESULT = {
         "required": ["strain_id", "category", "test_name", "result"],
     },
 }
+
+SPECIES_COMPARE = {
+    "name": "bio_species_compare",
+    "description": (
+        "Compare every species-identification method run on one strain "
+        "(marker genes, ANI, sourmash, GTDB-Tk, kraken2) and show the "
+        "cross-method agreement matrix with the arbitration verdict. "
+        "Conflicts within the same evidence layer are flagged "
+        "NEEDS_REVIEW for human adjudication."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "strain_id": {
+                "type": "string",
+                "description": "Strain/sample ID (e.g., SAM-TYP-001).",
+            },
+        },
+        "required": ["strain_id"],
+    },
+}

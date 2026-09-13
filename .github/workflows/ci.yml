@@ -44,6 +44,8 @@ jobs:
           python-version: "3.12"
       - run: pip install "pytest>=8.0" "pytest-cov>=4.0" "pydantic>=2.0" biopython httpx
       - run: pip install -e ".[web]"
+      - name: Lint pathogen registry
+        run: python scripts/lint_pathogens.py
       - name: Run unit tests with coverage
         run: |
           pytest tests/unit/ tests/test_env.py \
