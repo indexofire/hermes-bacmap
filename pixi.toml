@@ -6,6 +6,9 @@ platforms = ["linux-64"]
 version = "0.5.0"
 
 [tasks]
+setup = "python scripts/setup_databases.py"
+docs = "uv run mkdocs serve"
+docs-build = "uv run mkdocs build"
 
 [dependencies]
 python = "3.12.*"
@@ -33,6 +36,7 @@ skani = "0.3.*"
 kraken2 = ">=2.1"
 bracken = ">=2.9"
 mash = ">=2.3"
+mummer = ">=4"
 
 [pypi-dependencies]
 gmlst = ">=0.1.4"

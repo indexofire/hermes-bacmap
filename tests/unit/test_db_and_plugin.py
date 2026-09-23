@@ -115,11 +115,11 @@ def _expected_skill_names() -> list[str]:
 
 
 class TestRegister:
-    def test_register_returns_none_and_records_27_tools(self):
+    def test_register_returns_none_and_records_29_tools(self):
         ctx = FakeCtx()
         result = register(ctx)
         assert result is None
-        assert len(ctx.tools) == 27, f"expected 27 tools, got {len(ctx.tools)}"
+        assert len(ctx.tools) == 29, f"expected 29 tools, got {len(ctx.tools)}"
 
     def test_all_tool_names_start_with_bio(self):
         ctx = FakeCtx()

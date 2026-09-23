@@ -934,3 +934,40 @@ SPECIES_COMPARE = {
         "required": ["strain_id"],
     },
 }
+
+DB_SETUP = {
+    "name": "bio_db_setup",
+    "description": (
+        "Deploy species-identification reference databases by tier. "
+        "action=list shows tiers with sizes and readiness; action=run starts "
+        "the download in the background (non-blocking, log at data/db/setup.log) "
+        "— poll progress with bio_db_status."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "action": {
+                "type": "string",
+                "enum": ["list", "run"],
+                "description": "list = show tiers; run = start background install",
+            },
+            "tier": {
+                "type": "string",
+                "description": "One of: instant, mini, sourmash, full, standard (for run)",
+            },
+        },
+        "required": ["action"],
+    },
+}
+
+DB_STATUS = {
+    "name": "bio_db_status",
+    "description": (
+        "Report installed species-ID databases (from manifests) and the tail "
+        "of any running/finished background setup log."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {},
+    },
+}

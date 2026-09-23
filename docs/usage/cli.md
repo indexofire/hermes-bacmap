@@ -192,3 +192,47 @@ python scripts/generate_report.py --cohort
     Snakemake 状态持久化在 `.snakemake/`。会话中断后重连，先 `run_analysis.py --status` 查看进度，再 `run_analysis.py --sample SAM-XXX` 续跑。若目录被锁，见[故障排查](../reference/troubleshooting.md)。
 
 命令行之外，也可通过 [Hermes Agent](hermes-agent.md) 自然语言交互，或用 [Web UI](web-ui.md) 浏览结果。
+
+
+## 数据库部署
+
+```bash
+# 交互式选择鉴定数据库档位
+pixi run setup
+
+# 非交互直接安装指定档位
+python scripts/setup_databases.py --tier mini --yes
+
+# 预览（不执行）
+python scripts/setup_databases.py --tier mini --dry-run
+```
+
+## 切换物种鉴定方法
+
+```bash
+# 使用 skani ANI 面板鉴定（需先部署 mini 档）
+python scripts/run_analysis.py --sample SAM-TYP-001 --species-mode panel
+
+# 使用 GTDB-Tk 标准模式（需 >=140GB RAM + 98GB 数据库）
+python scripts/run_analysis.py --sample SAM-TYP-001 --species-mode standard
+```
+
+## 验证鉴定准确率
+
+```bash
+# 下载 NCBI 病原追踪基因组作为验证数据集
+python scripts/download_validation_genomes.py
+
+# 运行三方法验证
+python scripts/validate_species_id.py --methods marker panel mash_refseq
+```
+
+## 物种鉴定结果入库与回填
+
+```bash
+# 常规入库（自动包含物种鉴定结果）
+python scripts/ingest_results.py --all
+
+# 存量数据回填物种鉴定
+python scripts/ingest_results.py --backfill-species
+```

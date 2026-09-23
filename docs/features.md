@@ -952,7 +952,36 @@ ruff + mypy --strict + markdownlint + trailing-whitespace + detect-secrets
 
 ---
 
-## 17. Gold Standard 验证数据集
+## 17. 多方法物种鉴定体系
+
+五方法并存（`species_mode` 统一切换），鉴定结果写入 GOM 跟随菌株，`bio_species_compare` 出具跨方法仲裁矩阵。
+
+| 方法 | species_mode | 数据库（体积） | 单株耗时 | 状态 |
+|---|---|---|---|---|
+| marker 靶基因 | `simple` | 0（已有） | 秒级 | ✅ 17/17 验证 |
+| skani 精选面板 | `panel` | 1-2 GB | 秒级 | ✅ 17/17 验证 |
+| skani GTDB 全库 | `skani_gtdb` | 30 GB | 秒级 | 代码就绪 |
+| Mash RefSeq | `mash_refseq` | 159 MB | 秒级 | ✅ 17/17 验证 |
+| sourmash gather | `sourmash` | 3.7 GB | 秒级 | 代码就绪 |
+| GTDB-Tk + CheckM2 | `standard` | 98 GB + 3 GB | 分钟级 | 代码就绪 |
+
+Kraken2 reads 级预筛独立开关（`kraken2_prefilter`），与任何模式组合。
+
+### 仲裁规则
+
+优先级 `gtdbtk > {skani_gtdb, panel, sourmash, mash_refseq} > marker`；同层冲突 → NEEDS_REVIEW；Shigella/EIEC ↔ E. coli 豁免（expected_divergence）。
+
+### 部署方式
+
+- **CLI**：`pixi run setup`（交互式选择档位）
+- **对话**：`bio_db_setup` tool（AI 自动执行，后台部署 + `bio_db_status` 跟进）
+- 缺库自动 WARNING 降级 marker（不中断管线）
+
+### marker 近缘守卫
+
+tlh 单基因 identity <90% 命中 → 物种判定抑制为 Unknown（防 *V. alginolyticus* tlh 同源基因交叉反应，见 [交叉反应案例](cases/species-crossreaction.md)）。
+
+## 18. Gold Standard 验证数据集
 
 ### 12 株菌株
 

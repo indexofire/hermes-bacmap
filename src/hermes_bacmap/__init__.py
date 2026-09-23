@@ -26,3 +26,15 @@ def register(ctx: Any) -> None:
                 ctx.register_skill(child.name, skill_md)
 
     logger.info("hermes_bacmap plugin registered %d tools", len(_TOOL_REGISTRY))
+
+    import os
+
+    from .config import SPECIES_DB_DIR
+
+    manifests = SPECIES_DB_DIR / "manifests"
+    if not os.environ.get("BACMAP_SKIP_SETUP_HINT") and not any(manifests.glob("*.json")):
+        print(
+            "[hermes-bacmap] 尚未部署鉴定数据库（当前仅 marker 靶基因模式）。"
+            "对话中说「安装 ANI 鉴定库」即可用 bio_db_setup 选择档位，"
+            "或 CLI 执行: pixi run setup"
+        )

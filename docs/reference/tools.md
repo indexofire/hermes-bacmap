@@ -1,6 +1,6 @@
 # 工具列表
 
-Hermes-bacmap 注册 **24 个 Tools**，分为两类：8 个生信原语（底层算法封装）与 16 个高层分析工具（业务级流程）。
+Hermes-bacmap 注册 **29 个 Tools**，分为两类：8 个生信原语（底层算法封装）与 21 个高层分析工具（业务级流程）。
 所有 tool 在 `src/hermes_bacmap/tools/` 包实现 handler（按 seq / cli / pipeline / services 分组），`schemas.py` 定义 JSON Schema，`tools/registry.py` 统一注册。
 
 ## 生信原语（8 个）
@@ -20,7 +20,7 @@ Hermes-bacmap 注册 **24 个 Tools**，分为两类：8 个生信原语（底�
 
 底层比对通过 [Engine 引擎层](../architecture/engine.md) 的 `SequenceMatcher` / `ReadMapper` 统一调度，自动选 blastn / blastp / minimap2 / bwa 后端。
 
-## 高层分析工具（16 个）
+## 高层分析工具（21 个）
 
 病原特异性业务流程，封装为单次调用。
 
@@ -42,6 +42,11 @@ Hermes-bacmap 注册 **24 个 Tools**，分为两类：8 个生信原语（底�
 | `bio_query_metadata` | 查询菌株背景元数据 | 省份 / outbreak_id / 来源 / 日期范围等过滤 | 匹配记录 |
 | `bio_add_lab_result` | 录入湿实验结果（AST / 血清学 / 生化 / PCR） | `sample_id` + 实验结果 | 实验记录 |
 | `bio_query_lab_results` | 查询湿实验结果 | 样本 / 类别 / test_name / 结果判读过滤 | 匹配记录 |
+| `bio_cgmlst` | cgMLST 溯源查询（最近邻投影 + 阈值判定） | `sample_id` | OUTBREAK/RELATED/UNRELATED + 距离 |
+| `bio_review_flags` | 列出/清除人工审核标记 | `sample_id`（可选） | 待审条目 / 清除结果 |
+| `bio_species_compare` | 跨方法物种鉴定一致性矩阵 + 仲裁结论 | `strain_id` | 方法列表 / agreement / NEEDS_REVIEW |
+| `bio_db_setup` | 部署鉴定数据库（list/run 后台） | `action`, `tier` | 档位清单 / 后台启动日志 |
+| `bio_db_status` | 查询已装库 + 部署进度 | 无 | manifest 清单 + 日志尾部 |
 
 ## bio_gene_scan 支持的数据库
 

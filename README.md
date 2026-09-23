@@ -24,7 +24,13 @@ pip install -e . --python ~/.hermes/hermes-agent/venv/bin/python
 hermes plugins enable hermes_bacmap
 ```
 
-4. 启动hermes
+4. （可选）部署鉴定数据库（交互选择 ANI/sourmash/GTDB-Tk 档位）
+
+```bash
+pixi run setup
+```
+
+5. 启动hermes
 
 启动`hermes agent`后，可以与其交互，开始让AI帮助进行食源性病原微生物的菌株基因组分析工作。
 
@@ -67,9 +73,9 @@ uv pip install -e ".[dev]"
 
 | 模块 | 行数 | 功能 |
 |---|---|---|
-| `tools/` | 2399 | 27 个 Hermes tool handler（seq / cli / pipeline / services 分包 + registry 表驱动注册） |
+| `tools/` | 2399 | 29 个 Hermes tool handler（seq / cli / pipeline / services 分包 + registry 表驱动注册） |
 | `services/genome_object_service.py` | 749 | GOM（SQLite + 版本管理 + 事件 + 文件产物 + FTS5 搜索） |
-| `schemas.py` | 936 | 27 个 tool JSON Schema 定义 |
+| `schemas.py` | 936 | 29 个 tool JSON Schema 定义 |
 | `analysis/genome_annotator.py` | 280 | 基因组注释（pyrodigal + Prokka DBs，Python 原生） |
 | `engine/` | 1125 | 算法抽象层（SequenceMatcher + ReadMapper + Hit，backends/：blast / minimap2 / kma / kmer 可换后端） |
 | `analysis/gene_scanner.py` | 545 | 基因扫描引擎（委托 engine.SequenceMatcher） |
@@ -87,8 +93,8 @@ uv pip install -e ".[dev]"
 ```
 hermes-bacmap/
 ├── src/hermes_bacmap/           Hermes 插件 Python 包
-│   ├── __init__.py             插件注册（27 tools 表驱动 + skills 自动发现）
-│   ├── schemas.py              27 个 tool JSON Schema 定义
+│   ├── __init__.py             插件注册（29 tools 表驱动 + skills 自动发现）
+│   ├── schemas.py              29 个 tool JSON Schema 定义
 │   ├── tools/                  Tool handler 包（seq / cli / pipeline / services + registry 表驱动注册）
 │   ├── engine/                 算法抽象层（SequenceMatcher / ReadMapper + backends/ 可换后端）
 │   ├── analysis/               领域分析（物种鉴定 / 基因扫描 / 注释 / 确定性校验 / cgMLST / NLI / 失败诊断）

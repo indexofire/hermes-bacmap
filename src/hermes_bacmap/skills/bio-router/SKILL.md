@@ -85,3 +85,15 @@ User says...
 | **E. coli / DEC** | uidA | ecoh_serotyper | gmlst | abricate | — |
 | **Shigella / EIEC** | ipaH | shigella_serotyper (58 types) | gmlst | abricate | — |
 | **V. parahaemolyticus** | toxR+tlh | — | — | abricate | — |
+
+## 物种鉴定模式选择（species-id 多方法）
+
+用户希望启用更可靠的物种鉴定（ANI/sourmash/GTDB-Tk）时，指引部署对应数据库：
+
+1. 先问需求档位并告知体积：
+   - instant（159MB，快速预筛）/ mini（1-2GB，离线秒级真 ANI，推荐）
+   - sourmash（3.7GB，含混合样本分解）/ full（30GB，全 GTDB 物种）/ standard（101GB+140GB RAM，仲裁）
+2. 直接调用工具 `bio_db_setup`（action=list 展示档位 → action=run tier=<档位> 后台部署），用 `bio_db_status` 跟进进度；CLI 用户等价入口 `pixi run setup`
+3. 部署完成后启用：`run_analysis.py --species-mode panel`（或改 config.yaml species_mode）
+4. 库缺失时管线自动降级 marker 并 WARNING——遇到降级提示即指引上述部署流程
+5. 多方法结果用 `bio_species_compare` 查看一致性矩阵与仲裁结论

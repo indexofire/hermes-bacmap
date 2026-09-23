@@ -12,15 +12,15 @@ Hermes-bacmap 采用**分层架构**：LLM 编排在顶层，工具与技能在�
                              │
 ┌────────────────────────────▼────────────────────────────────────┐
 │  Layer 3 · 工具与技能                                            │
-│  18 Hermes Tools（8 生信原语 + 10 高层分析）                      │
-│  4 Skills（bio-router / run-pipeline / interpret-results / ...） │
+│  29 Hermes Tools（8 生信原语 + 21 高层分析）                      │
+│  6 Skills（bio-router / run-pipeline / interpret-results / bioinfo-analysis / seqkit-operations / ncbi-datasets） │
 └────────────────────────────┬────────────────────────────────────┘
                              │
 ┌────────────────────────────▼────────────────────────────────────┐
 │  Layer 2 · 执行引擎                                             │
 │  Engine 抽象层（SequenceMatcher + ReadMapper + Hit + Registry） │
 │  Deterministic Verifier（三层 AI 防御）                          │
-│  Snakemake DAG（25 rules，per-sample + cohort）                  │
+│  Snakemake DAG（29 rules，per-sample + cohort，表驱动病原注册表）                  │
 └────────────────────────────┬────────────────────────────────────┘
                              │
 ┌────────────────────────────▼────────────────────────────────────┐
@@ -114,7 +114,7 @@ LLM 生成
   ↓
 Layer 1 · JSON Schema 校验        schemas.py 定义 24 个 tool 的输入输出契约
   ↓
-Layer 2 · Deterministic Verifier  确定性规则校验（species/MLST/serotype/AMR）
+Layer 2 · Deterministic Verifier  确定性规则校验（species/MLST/serotype/AMR/consensus）
   ↓
 Layer 3 · AI 解读                  Skills 知识库（interpret-results）
 ```
@@ -132,9 +132,9 @@ Layer 3 · AI 解读                  Skills 知识库（interpret-results）
 
 | 模块 | 行数 | 职责 |
 |---|---|---|
-| `tools/` | 2115 | 24 个 Hermes tool handler（7 文件包 + 表驱动注册） |
+| `tools/` | 2400+ | 29 个 Hermes tool handler（seq / cli / pipeline / services + registry 表驱动） |
 | `genome_object_service.py` | 667 | GOM：SQLite CRUD + 版本 + 事件 + 文件 + FTS5 |
-| `schemas.py` | 844 | 24 个 tool 的 JSON Schema 定义 |
+| `schemas.py` | 950+ | 29 个 tool 的 JSON Schema 定义 |
 | `genome_annotator.py` | 280 | 基因组注释（pyrodigal + Prokka DBs） |
 | `engine/` | 1121 | 算法抽象层（8 个文件） |
 | `gene_scanner.py` | 546 | 通用基因扫描引擎（委托 engine.SequenceMatcher） |
@@ -150,7 +150,8 @@ Layer 3 · AI 解读                  Skills 知识库（interpret-results）
 hermes-bacmap/
 ├── src/hermes_bacmap/           Hermes 插件 Python 包
 │   ├── engine/                  算法抽象层（8 文件，800 行）
-│   ├── tools/                   Tool handler 包（seq / cli / pipeline / services）
+│   ├── tools/                   Tool handler 包（seq / cli / pipeline / services + registry）
+│   ├── pathogen_registry.py      病原注册表（pathogens.yaml 表驱动）
 │   ├── schemas.py               Tool JSON Schema
 │   ├── genome_object_service.py GOM
 │   ├── deterministic_verifier.py 校验

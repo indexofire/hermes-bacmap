@@ -48,6 +48,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tier", required=True, choices=sorted(TIERS))
     parser.add_argument("--yes", action="store_true", help="Skip confirmation")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Show planned scripts without running"
+    )
     parser.add_argument("--scripts-dir", type=Path, default=ROOT / "scripts")
     args = parser.parse_args()
 
@@ -63,6 +66,11 @@ def main() -> int:
         for s in missing:
             print(f"❌ 下载脚本未就绪: {s}（对应方案 A/B/C 阶段交付，见 docs/plans/species-id/）")
         return 2
+
+    if args.dry_run:
+        for script in meta["scripts"]:
+            print(f"将执行: python scripts/{script}")
+        return 0
 
     if not args.yes:
         answer = input(f"确认下载 {args.tier} 档（{meta['size']}）? [y/N] ")

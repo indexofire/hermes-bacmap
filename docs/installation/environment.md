@@ -4,13 +4,17 @@
 
 ## 硬件要求
 
-| 配置 | 最低 | 推荐 | 舒适（批量 / 本地 LLM） |
-|---|---|---|---|
-| CPU | 4 核 x86_64 | 8 核 | 16 核+ |
-| RAM | 16 GB | 32 GB | 64 GB |
-| 磁盘 | 20 GB（SSD） | 50 GB（SSD） | 100 GB+ NVMe |
-| GPU | 不需要 | 不需要 | 可选，≥16 GB VRAM（本地 LLM） |
-| 网络 | 下载阶段需要 | 同左 | 本地推理后可离线 |
+| 配置 | 最低 | 推荐 | 舒适（批量 / 本地 LLM） | 全功能（Kraken2 + GTDB-Tk） |
+|---|---|---|---|---|
+| CPU | 4 核 x86_64 | 8 核 | 16 核+ | 32 核+（kraken2-build 与 GTDB-Tk pplacer 并行） |
+| RAM | 16 GB | 32 GB | 64 GB | **≥140 GB**（GTDB-Tk classify 硬门禁；不足时下载脚本自动拒绝） |
+| 磁盘 | 20 GB（SSD） | 50 GB（SSD） | 100 GB+ NVMe | **≥350 GB** NVMe（面板 12 GB + kraken2 库 6 GB + GTDB-Tk R232 98 GB + 解压缓冲 + 结果） |
+| GPU | 不需要 | 不需要 | 可选，≥16 GB VRAM（本地 LLM） | 同左（GTDB-Tk / Kraken2 均为纯 CPU） |
+| 网络 | 下载阶段需要 | 同左 | 本地推理后可离线 | 下载阶段需要（GTDB-Tk 98 GB 一次性下载） |
+
+> **全功能档说明**：仅当需要启用 `species_mode=standard`（GTDB-Tk 金标准仲裁）和 `kraken2_prefilter`（reads 级预筛 + 去人源）时才需要此档位。
+> 物种鉴定的 marker / panel / mash / sourmash 四种模式在"舒适"档即可全部运行。
+> GTDB-Tk 的 140 GB RAM 是硬约束——`download_db_gtdbtk.py` 下载脚本会预检 MemAvailable 并在不足时拒绝安装。
 
 ## 操作系统
 

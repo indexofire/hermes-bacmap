@@ -209,3 +209,23 @@ Layer 3: AI 解读（Skills 知识库）
 - [Web UI](web-ui.md)：浏览器查看结果
 - [单株分析案例](../cases/single-sample.md)：完整端到端实战
 - [Skills 技能系统](../architecture/skills.md)：创建自定义 skill
+
+
+## 数据库部署
+
+安装后首次运行会提示部署鉴定数据库。对话中直接说：
+
+```
+> 安装 ANI 鉴定库
+> 数据库装好了吗？
+```
+
+AI 会自动调用 `bio_db_setup` 选择档位并后台部署，`bio_db_status` 跟进进度。
+
+## 多方法鉴定对比
+
+```
+> 比较 SAM-TYP-001 的物种鉴定结果
+```
+
+AI 调用 `bio_species_compare`，输出各方法（marker / ANI / sourmash）的物种判定、置信度、一致性与仲裁结论。

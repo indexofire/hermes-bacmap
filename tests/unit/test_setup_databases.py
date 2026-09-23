@@ -56,3 +56,15 @@ class TestMain:
         code = setup_databases.main()
         assert code == 2
         assert "download_db_" in capsys.readouterr().out
+
+
+class TestDryRun:
+    def test_mini_lists_panel_script_without_running(self, monkeypatch, capsys):
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["setup_databases", "--tier", "mini", "--yes", "--dry-run"],
+        )
+        assert setup_databases.main() == 0
+        out = capsys.readouterr().out
+        assert "download_db_refseq_panel.py" in out

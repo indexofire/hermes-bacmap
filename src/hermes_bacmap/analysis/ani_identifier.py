@@ -129,7 +129,9 @@ def identify_by_ani(
         return AniIdResult(method=mode, database=database, result=result)
 
     skani_db = base / "panel.sketch" if (base / "panel.sketch").exists() else base
-    skani_hits = sorted(_skani_search(contigs, skani_db), key=lambda h: (-h.ani, -h.aligned_fraction))
+    skani_hits = sorted(
+        _skani_search(contigs, skani_db), key=lambda h: (-h.ani, -h.aligned_fraction)
+    )
     top = skani_hits[:_TOP_N]
     best = top[0] if top else None
 
