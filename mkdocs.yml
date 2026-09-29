@@ -49,6 +49,7 @@ nav:
     - 菌株元数据 + 湿实验: architecture/data-model.md
     - GBrain 知识层: architecture/gbrain.md
     - Snakemake 管线: architecture/pipeline.md
+    - 分层物种鉴定: architecture/species-id.md
     - Skills 技能系统: architecture/skills.md
     - 代码质量评估: architecture/code-quality.md
   - 病原分析:
@@ -57,6 +58,19 @@ nav:
     - DEC / E.coli: pathogens/dec.md
     - Shigella / EIEC: pathogens/shigella.md
     - V. parahaemolyticus: pathogens/vpara.md
+    - V. cholerae: pathogens/vcholerae.md
+    - L. monocytogenes: pathogens/lmonocytogenes.md
+    - Campylobacter: pathogens/campylobacter.md
+    - C. difficile: pathogens/cdifficile.md
+    - K. pneumoniae: pathogens/klebsiella.md
+    - A. baumannii: pathogens/acinetobacter.md
+    - P. aeruginosa: pathogens/pseudomonas.md
+    - S. aureus: pathogens/saureus.md
+    - Streptococcus: pathogens/streptococcus.md
+    - Neisseria: pathogens/neisseria.md
+    - L. pneumophila: pathogens/legionella.md
+    - M. pneumoniae: pathogens/mycoplasma.md
+    - H. pylori: pathogens/helicobacter.md
   - 案例介绍:
     - 单株分析: cases/single-sample.md
     - 暴发调查: cases/outbreak.md
