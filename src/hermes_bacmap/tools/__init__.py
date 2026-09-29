@@ -15,6 +15,7 @@ from .cli import align, blast, samtools_op, variant
 from .connectors import lit_search, ncbi_pathogen
 from .curation import db_build, marker_register
 from .discovery import analytics_query, differential_genes, pangenome
+from .knowledge import knowledge_capture, knowledge_search, knowledge_think
 from .pipeline import (
     analyze_pathogen,
     annotate_genome,
@@ -51,6 +52,9 @@ __all__ = [
     "lit_search",
     "ncbi_pathogen",
     "db_build",
+    "knowledge_capture",
+    "knowledge_search",
+    "knowledge_think",
     "marker_register",
     "plot",
     "sandbox_exec",

@@ -10,7 +10,7 @@ from collections.abc import Callable
 from typing import Any
 
 from .. import schemas
-from . import cli, connectors, curation, discovery, pipeline, sandbox, seq, services
+from . import cli, connectors, curation, discovery, knowledge, pipeline, sandbox, seq, services
 
 Handler = Callable[..., str]
 
@@ -55,4 +55,7 @@ _TOOL_REGISTRY: list[tuple[str, dict[str, Any], Handler]] = [
     ("bio_plot", schemas.PLOT, sandbox.plot),
     ("bio_db_build", schemas.DB_BUILD, curation.db_build),
     ("bio_marker_register", schemas.MARKER_REGISTER, curation.marker_register),
+    ("bio_knowledge_capture", schemas.KNOWLEDGE_CAPTURE, knowledge.knowledge_capture),
+    ("bio_knowledge_search", schemas.KNOWLEDGE_SEARCH, knowledge.knowledge_search),
+    ("bio_knowledge_think", schemas.KNOWLEDGE_THINK, knowledge.knowledge_think),
 ]

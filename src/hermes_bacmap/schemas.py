@@ -1321,3 +1321,82 @@ MARKER_REGISTER = {
         "required": ["species", "gene"],
     },
 }
+
+KNOWLEDGE_CAPTURE = {
+    "name": "bio_knowledge_capture",
+    "description": (
+        "Record a biologically meaningful finding into the GBrain knowledge "
+        "base as an evidence-linked page. Frontmatter carries species/gene/"
+        "strain_group/evidence for later retrieval during marker registration "
+        "and interpretation. Use after discoveries worth remembering: novel "
+        "clusters, enriched virulence genes, unusual AST profiles, field "
+        "observations."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "summary": {
+                "type": "string",
+                "description": "One-paragraph statement of the finding (facts only).",
+            },
+            "species": {
+                "type": "string",
+                "description": "Species context, e.g. Salmonella enterica.",
+            },
+            "gene": {"type": "string", "description": "Gene/cluster involved, e.g. cluster_0042."},
+            "strain_group": {
+                "type": "string",
+                "description": "Strain group context, e.g. outbreak-2026-09.",
+            },
+            "evidence": {
+                "type": "string",
+                "description": "Evidence pointer: GOM object id, result file path, or PMID.",
+            },
+            "kind": {
+                "type": "string",
+                "description": "Finding kind: finding | novel-marker | field-note | literature.",
+            },
+        },
+        "required": ["summary"],
+    },
+}
+
+KNOWLEDGE_SEARCH = {
+    "name": "bio_knowledge_search",
+    "description": (
+        "Search the GBrain knowledge base (semantic + keyword hybrid over "
+        "accumulated findings, imported skills knowledge, and captured "
+        "literature). Use before novel-marker registration (prior evidence / "
+        "cross-reaction check) and when interpreting results against past "
+        "local experience."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "query": {"type": "string", "description": "Search query (zh or en)."},
+            "limit": {"type": "integer", "description": "Max results (default 10, max 100)."},
+        },
+        "required": ["query"],
+    },
+}
+
+KNOWLEDGE_THINK = {
+    "name": "bio_knowledge_think",
+    "description": (
+        "Synthesize an answer from the knowledge base with citations and gap "
+        "analysis (multi-hop, slower than search). Use for interpretation "
+        "questions where prior knowledge matters, e.g. 'blaCMY-2 在沙门菌中的 "
+        "临床意义?'. Returns answer + cited slugs + missing-knowledge gaps."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "question": {"type": "string", "description": "Natural-language question (zh or en)."},
+            "anchor": {
+                "type": "string",
+                "description": "Optional entity slug to anchor the synthesis subgraph.",
+            },
+        },
+        "required": ["question"],
+    },
+}
