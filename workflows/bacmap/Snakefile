@@ -27,6 +27,7 @@ include: "rules/snp.smk"
 include: "rules/cgmlst.smk"
 include: "rules/taxonomy.smk"
 include: "rules/annotation.smk"
+include: "rules/typing_phase2.smk"
 include: "rules/report.smk"
 
 # species-id plan A/B/C/D gating: alternate identification methods add their
@@ -92,6 +93,16 @@ if _KRAKEN2_ACTIVE:
         str(WORKDIR) + "/{sample}/kraken2/kraken2_prefilter.json", sample=SAMPLES
     )
 
+_TYPING_PHASE2_TARGETS = expand(
+    str(WORKDIR) + "/{sample}/typing/vcholerae_genotype.json", sample=SAMPLES
+) + expand(
+    str(WORKDIR) + "/{sample}/typing/lmono_serogroup.json", sample=SAMPLES
+) + expand(
+    str(WORKDIR) + "/{sample}/typing/cdiff_toxin.json", sample=SAMPLES
+) + expand(
+    str(WORKDIR) + "/{sample}/typing/bcereus_toxin.json", sample=SAMPLES
+)
+
 rule all:
     input:
         expand(str(WORKDIR) + "/{sample}/report/{sample}_summary.json", sample=SAMPLES),
@@ -106,3 +117,4 @@ rule all:
             group=_CGMLST_ACTIVE_GROUPS
         ),
         _EXTRA_TARGETS,
+        _TYPING_PHASE2_TARGETS,

@@ -48,7 +48,7 @@ tools:
   amrfinderplus:
     organism: "Salmonella"
     min_coverage: 0.5
-  abricate:
+  gapit:
     minid: 80
     mincov: 60
 
