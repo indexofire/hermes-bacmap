@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""根据 abricate vfdb 检出的毒力基因组合判断 DEC pathotype。
+"""根据 gapit vfdb 检出的毒力基因组合判断 DEC pathotype。
 
 判定规则：
   stx1 或 stx2 阳性 → STEC

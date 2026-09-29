@@ -24,7 +24,7 @@ rule dec_ecoh_serotype:
 
 rule dec_pathotype:
     input:
-        vfdb = str(WORKDIR) + "/{sample}/amr/abricate_vfdb.tsv"
+        vfdb = str(WORKDIR) + "/{sample}/amr/gapit_vfdb.tsv"
     output:
         result = str(WORKDIR) + "/{sample}/dec/pathotype.tsv"
     params:

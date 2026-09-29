@@ -505,7 +505,7 @@ def search_samples(args: dict[str, Any], **kwargs: Any) -> str:
                 amr = p.get("amr", {})
                 amr_genes = []
                 if isinstance(amr, dict):
-                    for db_name in ("abricate_card", "abricate_vfdb"):
+                    for db_name in ("gapit_card", "gapit_vfdb"):
                         for hit in amr.get(db_name, []):
                             if isinstance(hit, dict) and hit.get("GENE"):
                                 amr_genes.append(hit["GENE"])

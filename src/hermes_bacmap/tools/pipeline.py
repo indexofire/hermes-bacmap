@@ -72,8 +72,8 @@ def get_result(args: dict[str, Any], **kwargs: Any) -> str:
     serovar = sero.get("sistr", "N/A") if isinstance(sero, dict) else "N/A"
 
     amr = steps.get("amr", {})
-    card = amr.get("abricate_card", []) if isinstance(amr, dict) else []
-    vfdb = amr.get("abricate_vfdb", []) if isinstance(amr, dict) else []
+    card = amr.get("gapit_card", []) if isinstance(amr, dict) else []
+    vfdb = amr.get("gapit_vfdb", []) if isinstance(amr, dict) else []
     pl = steps.get("plasmid", {}).get("plasmidfinder", [])
 
     dec = steps.get("dec", {}) if isinstance(steps.get("dec", {}), dict) else {}

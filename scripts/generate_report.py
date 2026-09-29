@@ -33,7 +33,7 @@ from hermes_bacmap.analysis.cgmlst_types import CgmlstProfile  # noqa: E402
 from hermes_bacmap.analysis.deterministic_verifier import DeterministicVerifier  # noqa: E402
 from hermes_bacmap.config import DB_PATH as _NLI_DB_PATH  # noqa: E402
 from hermes_bacmap.utils import (  # noqa: E402
-    parse_abricate_tsv,
+    parse_gapit_tsv,
     parse_cgmlst_profile,
     parse_cgmlst_profiles,
     parse_mlst,
@@ -329,14 +329,14 @@ def generate_html(sample_id: str, summary: dict, verification, output_path: Path
     h1 = sero.get("h1", "") if isinstance(sero, dict) else ""
     h2 = sero.get("h2", "") if isinstance(sero, dict) else ""
 
-    card_genes = parse_abricate_tsv("")
-    card_path = RESULTS_DIR / sample_id / "amr" / "abricate_card.tsv"
+    card_genes = parse_gapit_tsv("")
+    card_path = RESULTS_DIR / sample_id / "amr" / "gapit_card.tsv"
     if card_path.exists():
-        card_genes = parse_abricate_tsv(card_path.read_text())
-    vfdb_path = RESULTS_DIR / sample_id / "amr" / "abricate_vfdb.tsv"
-    vfdb_genes = parse_abricate_tsv(vfdb_path.read_text()) if vfdb_path.exists() else []
-    plasmid_path = RESULTS_DIR / sample_id / "plasmid" / "abricate_plasmidfinder.tsv"
-    plasmid_genes = parse_abricate_tsv(plasmid_path.read_text()) if plasmid_path.exists() else []
+        card_genes = parse_gapit_tsv(card_path.read_text())
+    vfdb_path = RESULTS_DIR / sample_id / "amr" / "gapit_vfdb.tsv"
+    vfdb_genes = parse_gapit_tsv(vfdb_path.read_text()) if vfdb_path.exists() else []
+    plasmid_path = RESULTS_DIR / sample_id / "plasmid" / "gapit_plasmidfinder.tsv"
+    plasmid_genes = parse_gapit_tsv(plasmid_path.read_text()) if plasmid_path.exists() else []
 
     asm_stats = steps.get("assembly", "")
     asm_parts = asm_stats.strip().split("\n")[-1].split("\t") if asm_stats else []
@@ -427,7 +427,7 @@ td.label {{ font-weight: bold; width: 180px; background: #f8f9fa; }}
 <h3>📌 三元证据链 (project.md §4.5)</h3>
 <p><strong>strain_id:</strong> {sample_id}</p>
 <p><strong>pipeline_version:</strong> {summary.get("pipeline_version", "salmonella-workflow-v0.1")}</p>
-<p><strong>tool_versions:</strong> fastp, Shovill 1.1.0, blastn 2.17.0+, gmlst 0.1.0, SISTR 1.1.3, abricate 1.4.0</p>
+<p><strong>tool_versions:</strong> fastp, Shovill 1.1.0, blastn 2.17.0+, gmlst 0.1.0, SISTR 1.1.3, gapit 0.2.2</p>
 <p><strong>database_versions:</strong> CARD 2026-Apr-3, VFDB 2026-Apr-3, PlasmidFinder 2026-Apr-3, PubMLST salmonella_2</p>
 </div>
 

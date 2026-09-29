@@ -1,6 +1,5 @@
 """Snakemake script: collect all analysis results into a summary JSON."""
 import json
-import sys
 from pathlib import Path
 
 sample = snakemake.wildcards.sample
@@ -20,6 +19,13 @@ def read_json(path, default=None):
         except json.JSONDecodeError:
             return default
     return default
+
+def safe_json(path):
+    try:
+        with open(path) as fh:
+            return json.load(fh)
+    except Exception:
+        return {}
 
 def parse_tsv(path, default=None):
     p = Path(path)
@@ -67,8 +73,12 @@ summary["steps"]["serotype"] = {
 }
 
 summary["steps"]["amr"] = {
-    "abricate_vfdb": parse_tsv(snakemake.input.vfdb, []),
-    "abricate_card": parse_tsv(snakemake.input.card, []),
+    "gapit_vfdb": parse_tsv(snakemake.input.vfdb, []),
+    "gapit_card": parse_tsv(snakemake.input.card, []),
+    "vcholerae_genotype": safe_json(snakemake.input.vcholerae_genotype),
+    "lmono_serogroup": safe_json(snakemake.input.lmono_serogroup),
+    "cdiff_toxin": safe_json(snakemake.input.cdiff_toxin),
+    "bcereus_toxin": safe_json(snakemake.input.bcereus_toxin),
     "amrfinderplus": parse_tsv(snakemake.input.amrfinderplus, []),
 }
 

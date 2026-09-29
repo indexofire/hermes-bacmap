@@ -67,7 +67,7 @@ def parse_db_header(sseqid: str) -> tuple[str, str, str, str]:
     return sseqid.strip(), "", "", ""
 
 
-def parse_abricate_tsv(tsv_text: str) -> list[dict[str, str]]:
+def parse_gapit_tsv(tsv_text: str) -> list[dict[str, str]]:
     """Parse abricate-format TSV into list of dicts."""
     if not tsv_text:
         return []
@@ -257,3 +257,5 @@ def parse_cgmlst_profile(tsv_text: str) -> CgmlstProfile:
     if not profiles:
         return CgmlstProfile(sample_id="", scheme="", st_raw="N/A")
     return profiles[0]
+
+parse_abricate_tsv = parse_gapit_tsv  # deprecated alias

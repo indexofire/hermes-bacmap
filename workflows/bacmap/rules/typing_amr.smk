@@ -7,14 +7,14 @@ from hermes_bacmap.pathogen_registry import get_workflow_tables  # noqa: E402
 
 _TABLES = get_workflow_tables()
 
-ABRICATE_MINID = config["tools"]["abricate"]["minid"]
-ABRICATE_MINCOV = config["tools"]["abricate"]["mincov"]
+GAPIT_MINID = config["tools"]["gapit"]["minid"]
+GAPIT_MINCOV = config["tools"]["gapit"]["mincov"]
+GAPIT_BIN = str(PROJECT_ROOT / ".pixi/envs/default/bin/gapit")
 _GMLST_SCHEMES = _TABLES.mlst_schemes
 GMLST_BIN = str(PROJECT_ROOT / ".pixi/envs/default/bin/gmlst")
 
 _AMRFINDER_ORGANISMS = _TABLES.amrfinder_organisms
 _AMRFINDER_DB_BASE = Path(PROJECT_ROOT / "data/db/amrfinderplus")
-# amrfinder -d 需要指向具体版本目录(amrfinder_update 会建 <base>/<version>/)
 _AMRFINDER_DB_VERSIONS = sorted(p for p in _AMRFINDER_DB_BASE.iterdir() if p.is_dir()) if _AMRFINDER_DB_BASE.exists() else []
 AMRFINDER_DB = str(_AMRFINDER_DB_VERSIONS[-1]) if _AMRFINDER_DB_VERSIONS else str(_AMRFINDER_DB_BASE)
 AMRFINDER_MINCOV = config["tools"]["amrfinderplus"]["min_coverage"]
@@ -52,46 +52,48 @@ rule typing_sistr:
         "mv {params.prefix}.json {output.json} || "
         "echo '{{\"serovar\":\"N/A\",\"serogroup\":\"N/A\",\"o_antigen\":\"N/A\",\"h1\":\"N/A\",\"h2\":\"N/A\"}}' > {output.json}"
 
-rule amr_abricate_vfdb:
+rule amr_gapit_vfdb:
     input:
         contigs = str(WORKDIR) + "/{sample}/assembly/contigs.fasta"
     output:
-        result = str(WORKDIR) + "/{sample}/amr/abricate_vfdb.tsv"
+        result = str(WORKDIR) + "/{sample}/amr/gapit_vfdb.tsv"
     params:
-        minid = ABRICATE_MINID,
-        mincov = ABRICATE_MINCOV
+        minid = GAPIT_MINID,
+        mincov = GAPIT_MINCOV
     shell:
         "mkdir -p $(dirname {output.result}) && "
-        "abricate --db vfdb --minid {params.minid} --mincov {params.mincov} "
-        "{input.contigs} > {output.result}"
+        "{GAPIT_BIN} screen --db vfdb --minid {params.minid} --mincov {params.mincov} "
+        "{input.contigs} 2>/dev/null | grep -v '^Processing' > {output.result} || "
+        "echo -e '#FILE\\tSEQUENCE\\tSTART\\tEND\\tSTRAND\\tGENE\\tCOVERAGE\\tCOVERAGE_MAP\\tGAPS\\t%COVERAGE\\t%IDENTITY\\tDATABASE\\tACCESSION\\tPRODUCT\\tRESISTANCE' > {output.result}"
 
-rule amr_abricate_card:
+rule amr_gapit_card:
     input:
         contigs = str(WORKDIR) + "/{sample}/assembly/contigs.fasta"
     output:
-        result = str(WORKDIR) + "/{sample}/amr/abricate_card.tsv"
+        result = str(WORKDIR) + "/{sample}/amr/gapit_card.tsv"
     params:
-        pixi = str(PROJECT_ROOT / ".pixi/envs/default/bin"),
-        minid = ABRICATE_MINID,
-        mincov = ABRICATE_MINCOV
+        minid = GAPIT_MINID,
+        mincov = GAPIT_MINCOV
     threads: 2
     shell:
         "mkdir -p $(dirname {output.result}) && "
-        "abricate --db card --minid {params.minid} --mincov {params.mincov} "
-        "{input.contigs} > {output.result}"
+        "{GAPIT_BIN} screen --db card --minid {params.minid} --mincov {params.mincov} "
+        "{input.contigs} 2>/dev/null | grep -v '^Processing' > {output.result} || "
+        "echo -e '#FILE\\tSEQUENCE\\tSTART\\tEND\\tSTRAND\\tGENE\\tCOVERAGE\\tCOVERAGE_MAP\\tGAPS\\t%COVERAGE\\t%IDENTITY\\tDATABASE\\tACCESSION\\tPRODUCT\\tRESISTANCE' > {output.result}"
 
-rule amr_abricate_plasmidfinder:
+rule amr_gapit_plasmidfinder:
     input:
         contigs = str(WORKDIR) + "/{sample}/assembly/contigs.fasta"
     output:
-        result = str(WORKDIR) + "/{sample}/plasmid/abricate_plasmidfinder.tsv"
+        result = str(WORKDIR) + "/{sample}/plasmid/gapit_plasmidfinder.tsv"
     params:
-        minid = ABRICATE_MINID,
-        mincov = ABRICATE_MINCOV
+        minid = GAPIT_MINID,
+        mincov = GAPIT_MINCOV
     shell:
         "mkdir -p $(dirname {output.result}) && "
-        "abricate --db plasmidfinder --minid {params.minid} --mincov {params.mincov} "
-        "{input.contigs} > {output.result}"
+        "{GAPIT_BIN} screen --db plasmidfinder --minid {params.minid} --mincov {params.mincov} "
+        "{input.contigs} 2>/dev/null | grep -v '^Processing' > {output.result} || "
+        "echo -e '#FILE\\tSEQUENCE\\tSTART\\tEND\\tSTRAND\\tGENE\\tCOVERAGE\\tCOVERAGE_MAP\\tGAPS\\t%COVERAGE\\t%IDENTITY\\tDATABASE\\tACCESSION\\tPRODUCT\\tRESISTANCE' > {output.result}"
 
 rule amr_amrfinderplus:
     input:

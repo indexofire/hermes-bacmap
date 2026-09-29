@@ -79,11 +79,11 @@ def _salmonella_steps() -> dict:
         ),
         "serotype": {"sistr": "Typhimurium", "serogroup": "B"},
         "amr": {
-            "abricate_card": [
+            "gapit_card": [
                 {"GENE": "blaCTX-M-15", "%IDENTITY": "99.5"},
                 {"GENE": "tet(A)", "%IDENTITY": "98.0"},
             ],
-            "abricate_vfdb": [{"GENE": "stfimA"}],
+            "gapit_vfdb": [{"GENE": "stfimA"}],
         },
         "plasmid": {"plasmidfinder": [{"GENE": "IncFIB"}]},
         "dec": {},
@@ -602,7 +602,7 @@ class TestSearchSamples:
                     "serotype": {"sistr": "Typhimurium"},
                     "mlst": ("FILE\tSCHEME\tST\ncontigs\tsalmonella_2\t19"),
                     "amr": {
-                        "abricate_card": [
+                        "gapit_card": [
                             {"GENE": "blaCTX-M-15"},
                         ],
                     },
@@ -638,7 +638,7 @@ class TestSearchSamples:
                     "serotype": {"sistr": "Enteritidis"},
                     "mlst": "",
                     "amr": {
-                        "abricate_card": [{"GENE": "tet(A)"}],
+                        "gapit_card": [{"GENE": "tet(A)"}],
                     },
                 },
                 organism="Salmonella",

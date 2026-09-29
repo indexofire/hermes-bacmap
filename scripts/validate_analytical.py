@@ -198,7 +198,7 @@ def aggregate(evals: list[StrainEvaluation]) -> MetricsReport:
     pl_exp = sum(e.plasmid_expected for e in evals)
 
     # Precision 仅对 amr.list_complete=true 的株计算（期望清单断言完整，
-    # 如 NCBI PD 全基因型）：abricate_CARD 自产清单截断至 15 基因，其 FP
+    # 如 NCBI PD 全基因型）：gapit_CARD 自产清单截断至 15 基因，其 FP
     # 源于清单不完整，进分母会系统性低估 precision。
     complete = [e for e in evals if e.amr_list_complete]
     v_tp = sum(e.amr_tp for e in complete)
@@ -316,7 +316,7 @@ def render_markdown(report: MetricsReport, evals: list[StrainEvaluation]) -> str
         "",
         "- AMR precision 是基因检出 FDR 的代理指标：真阴性空间为整个 CARD DB，",
         "  无法枚举（project.md §12.3 的 specificity 在基因面板受限场景取 precision）。",
-        "- 多数 gold standard 行的 amr_genes 证据来源即 abricate_CARD（管线自产），",
+        "- 多数 gold standard 行的 amr_genes 证据来源即 gapit_CARD（管线自产），",
         "  此类行衡量的是重跑一致性 + DB 漂移，而非独立方法学验证；",
         "  NCBI/ENA 独立验证的行为 CTX-008（blaCTX-M-15）与 MCR-010（mcr-1）。",
         "",
