@@ -110,10 +110,7 @@ def connect(results_dir: Path) -> Any:
         )
 
     sample_ids = sorted(
-        {
-            p.parent.parent.name
-            for p in results_dir.glob("*/annotation/annotation.json")
-        }
+        {p.parent.parent.name for p in results_dir.glob("*/annotation/annotation.json")}
         | {
             p.parent.parent.name
             for rel in _GAPIT_SOURCES.values()
@@ -122,15 +119,11 @@ def connect(results_dir: Path) -> Any:
     )
     if sample_ids:
         con.execute("CREATE TABLE samples (strain_id VARCHAR)")
-        con.executemany(
-            "INSERT INTO samples VALUES (?)", [(s,) for s in sample_ids]
-        )
+        con.executemany("INSERT INTO samples VALUES (?)", [(s,) for s in sample_ids])
 
     matrix = results_dir / "pangenome" / "presence_matrix.parquet"
     if matrix.exists():
-        con.execute(
-            f"CREATE VIEW pangenome AS SELECT * FROM read_parquet('{matrix}')"
-        )
+        con.execute(f"CREATE VIEW pangenome AS SELECT * FROM read_parquet('{matrix}')")
 
     return con
 
@@ -213,11 +206,7 @@ def differential_genes(
     for row, q in zip(raw, q_values, strict=True):
         row["q_value"] = round(q, 6)
 
-    rows = [
-        r
-        for r in raw
-        if r["prevalence_a"] >= min_prev_a and r["prevalence_b"] <= max_prev_b
-    ]
+    rows = [r for r in raw if r["prevalence_a"] >= min_prev_a and r["prevalence_b"] <= max_prev_b]
     rows.sort(key=lambda r: (r["p_value"], -(r["present_a"])))
 
     return DifferentialResult(

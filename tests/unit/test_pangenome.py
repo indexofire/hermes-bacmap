@@ -3,6 +3,7 @@
 Mmseqs2Backend is mocked at the class boundary; annotation.json inputs are
 synthetic fixtures on tmp_path.
 """
+
 from __future__ import annotations
 
 import json
@@ -62,9 +63,7 @@ class TestExtractProteins:
         _make_annotation_file(
             tmp_path, "SAM1", [_cds("cds001", "gapA"), _cds("cds002", "", "MNOVCCCC")]
         )
-        _make_annotation_file(
-            tmp_path, "SAM2", [_cds("cds010", "tdh", "MTDH"), _cds("cds011", "")]
-        )
+        _make_annotation_file(tmp_path, "SAM2", [_cds("cds010", "tdh", "MTDH"), _cds("cds011", "")])
 
         fasta, named, total = extract_proteins(tmp_path, ["SAM1", "SAM2"])
 

@@ -62,9 +62,7 @@ class Mmseqs2Backend:
             timeout=3600,
         )
         if result.returncode != 0:
-            raise RuntimeError(
-                f"mmseqs easy-linclust failed: {result.stderr.strip()[:500]}"
-            )
+            raise RuntimeError(f"mmseqs easy-linclust failed: {result.stderr.strip()[:500]}")
         tsv = Path(f"{out_prefix}_cluster.tsv")
         if not tsv.exists():
             raise RuntimeError(

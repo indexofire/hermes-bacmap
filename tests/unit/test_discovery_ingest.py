@@ -5,6 +5,7 @@ persist per-source JSON; scripts/ingest_results.py::ingest_discovery must
 register both as ANALYSIS cohort objects with file artifacts and events
 (idempotent, content-versioned).
 """
+
 from __future__ import annotations
 
 import importlib.util
@@ -152,8 +153,7 @@ class TestIngestDiscovery:
 
         assert len(oids) == 1
         objs = [
-            o for o in gos.list_by_type(ObjectType.ANALYSIS)
-            if o.strain_id == "cohort:pangenome"
+            o for o in gos.list_by_type(ObjectType.ANALYSIS) if o.strain_id == "cohort:pangenome"
         ]
         assert len(objs) == 1
         assert objs[0].payload["analysis_type"] == "pangenome"
@@ -176,8 +176,7 @@ class TestIngestDiscovery:
 
         assert first and not second
         objs = [
-            o for o in gos.list_by_type(ObjectType.ANALYSIS)
-            if o.strain_id == "cohort:pangenome"
+            o for o in gos.list_by_type(ObjectType.ANALYSIS) if o.strain_id == "cohort:pangenome"
         ]
         assert len(objs) == 1
         gos.close()
@@ -193,11 +192,7 @@ class TestIngestDiscovery:
 
         assert oids
         objs = sorted(
-            (
-                o
-                for o in gos.list_by_type(ObjectType.ANALYSIS)
-                if o.strain_id == "cohort:pangenome"
-            ),
+            (o for o in gos.list_by_type(ObjectType.ANALYSIS) if o.strain_id == "cohort:pangenome"),
             key=lambda o: o.version,
         )
         assert objs[-1].version == 2
@@ -214,13 +209,15 @@ class TestIngestDiscovery:
 
         assert len(oids) == 2
         strain_ids = {
-            o.strain_id for o in gos.list_by_type(ObjectType.ANALYSIS)
+            o.strain_id
+            for o in gos.list_by_type(ObjectType.ANALYSIS)
             if o.strain_id.startswith("cohort:discovery-")
         }
         assert strain_ids == {"cohort:discovery-gapit_card", "cohort:discovery-gapit_vfdb"}
 
         card = next(
-            o for o in gos.list_by_type(ObjectType.ANALYSIS)
+            o
+            for o in gos.list_by_type(ObjectType.ANALYSIS)
             if o.strain_id == "cohort:discovery-gapit_card"
         )
         events = gos.list_events(card.object_id)

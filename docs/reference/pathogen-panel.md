@@ -112,4 +112,3 @@
 | Vibrio_vulnificus | 672 | 1 | 5 | 6 |
 | Yersinia_enterocolitica | 630 | 1 | 5 | 6 |
 | Yersinia_ruckeri | 29486 | 1 | 5 | 6 |
-

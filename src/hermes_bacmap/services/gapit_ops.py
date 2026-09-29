@@ -32,9 +32,7 @@ def db_build(
 
     bin_path = which("gapit")
     if not bin_path:
-        raise RuntimeError(
-            "gapit not found in PATH. Install: pixi add 'gapit>=0.2'"
-        )
+        raise RuntimeError("gapit not found in PATH. Install: pixi add 'gapit>=0.2'")
 
     cmd = [bin_path, "db", "build", name, str(fasta)]
     if description:
@@ -54,9 +52,7 @@ def db_build(
         env={"PATH": pixi_path()},
     )
     if result.returncode != 0:
-        raise RuntimeError(
-            f"gapit db build failed: {result.stderr.strip()[:500]}"
-        )
+        raise RuntimeError(f"gapit db build failed: {result.stderr.strip()[:500]}")
 
     db_path = (datadir or _default_datadir()) / name
     if not db_path.exists():

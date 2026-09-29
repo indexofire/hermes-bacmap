@@ -3,6 +3,7 @@
 Read-only SELECT/WITH queries against the GOM SQLite database via ro URI;
 write statements rejected; markdown table output.
 """
+
 from __future__ import annotations
 
 import json

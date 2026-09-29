@@ -4,6 +4,7 @@ gapit db build subprocess mocked at module boundary; binary resolution via
 config.which (pixi-aware). The wrapper builds custom screening databases
 into the gapit datadir and verifies the resulting directory.
 """
+
 from __future__ import annotations
 
 import sys
@@ -35,9 +36,10 @@ class TestDbBuild:
             (tmp_path / "datadir" / name).mkdir(parents=True, exist_ok=True)
             return _proc(stdout="4 records written\n")
 
-        with patch(f"{_MOD}.which", return_value="/fake/gapit"), patch(
-            f"{_MOD}.subprocess.run", side_effect=fake_run
-        ) as run:
+        with (
+            patch(f"{_MOD}.which", return_value="/fake/gapit"),
+            patch(f"{_MOD}.subprocess.run", side_effect=fake_run) as run,
+        ):
             result = db_build(
                 "outbreak_marker",
                 fasta,
@@ -57,9 +59,10 @@ class TestDbBuild:
         fasta = tmp_path / "m.fa"
         fasta.write_text(">x\nAT\n")
 
-        with patch(f"{_MOD}.which", return_value="/fake/gapit"), patch(
-            f"{_MOD}.subprocess.run", return_value=_proc()
-        ) as run:
+        with (
+            patch(f"{_MOD}.which", return_value="/fake/gapit"),
+            patch(f"{_MOD}.subprocess.run", return_value=_proc()) as run,
+        ):
             db_build("m", fasta, datadir=tmp_path, force=True)
 
         assert "--force" in run.call_args.args[0]
@@ -80,8 +83,9 @@ class TestDbBuild:
         fasta = tmp_path / "m.fa"
         fasta.write_text(">x\nAT\n")
 
-        with patch(f"{_MOD}.which", return_value="/fake/gapit"), patch(
-            f"{_MOD}.subprocess.run", return_value=_proc(stderr="bad fasta", returncode=1)
+        with (
+            patch(f"{_MOD}.which", return_value="/fake/gapit"),
+            patch(f"{_MOD}.subprocess.run", return_value=_proc(stderr="bad fasta", returncode=1)),
         ):
             with pytest.raises(RuntimeError, match="bad fasta"):
                 db_build("m", fasta, datadir=tmp_path)
@@ -90,9 +94,10 @@ class TestDbBuild:
         fasta = tmp_path / "m.faa"
         fasta.write_text(">x\nMKV\n")
 
-        with patch(f"{_MOD}.which", return_value="/fake/gapit"), patch(
-            f"{_MOD}.subprocess.run", return_value=_proc()
-        ) as run:
+        with (
+            patch(f"{_MOD}.which", return_value="/fake/gapit"),
+            patch(f"{_MOD}.subprocess.run", return_value=_proc()) as run,
+        ):
             db_build("m", fasta, datadir=tmp_path, dbtype="prot")
 
         cmd = run.call_args.args[0]

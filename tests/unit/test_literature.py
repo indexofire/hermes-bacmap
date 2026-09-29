@@ -3,6 +3,7 @@
 urlopen is mocked at the services.literature module boundary; canned Europe
 PMC JSON fixtures verified against the live API response shape.
 """
+
 from __future__ import annotations
 
 import io

@@ -6,13 +6,10 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-import pytest
-
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
 from hermes_bacmap.services.genome_object_service import (  # noqa: E402
-    GOMValidationError,
     GenomeObject,
     GenomeObjectService,
     ObjectType,

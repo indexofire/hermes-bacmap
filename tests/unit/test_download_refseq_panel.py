@@ -169,12 +169,30 @@ class TestPerSpeciesCap:
 class TestGroupRecords:
     def _rows(self):
         return [
-            {"accession": "A1", "organism": "Aeromonas veronii X", "level": "Complete Genome",
-             "category": "reference genome", "species_taxid": "643", "taxid": "643"},
-            {"accession": "A2", "organism": "Aeromonas hydrophila", "level": "Complete Genome",
-             "category": "na", "species_taxid": "644", "taxid": "644"},
-            {"accession": "B1", "organism": "Salmonella enterica Typhi", "level": "Chromosome",
-             "category": "reference genome", "species_taxid": "28901", "taxid": "2"},
+            {
+                "accession": "A1",
+                "organism": "Aeromonas veronii X",
+                "level": "Complete Genome",
+                "category": "reference genome",
+                "species_taxid": "643",
+                "taxid": "643",
+            },
+            {
+                "accession": "A2",
+                "organism": "Aeromonas hydrophila",
+                "level": "Complete Genome",
+                "category": "na",
+                "species_taxid": "644",
+                "taxid": "644",
+            },
+            {
+                "accession": "B1",
+                "organism": "Salmonella enterica Typhi",
+                "level": "Chromosome",
+                "category": "reference genome",
+                "species_taxid": "28901",
+                "taxid": "2",
+            },
         ]
 
     def test_group_attribution_most_specific_prefix(self):
@@ -188,9 +206,7 @@ class TestGroupRecords:
         assert by_group["Salmonella"][4] == 1
 
     def test_taxids_collected_per_group(self):
-        recs = panel.build_group_records(
-            ["Aeromonas"], self._rows()[:2], self._rows()[:2]
-        )
+        recs = panel.build_group_records(["Aeromonas"], self._rows()[:2], self._rows()[:2])
         assert set(recs[0][1].split(";")) == {"643", "644"}
 
     def test_groups_without_rows_listed_with_zero(self):

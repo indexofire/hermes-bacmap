@@ -9,7 +9,6 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any
 
 import yaml
@@ -61,11 +60,11 @@ def _db_version() -> str:
         return "unknown"
 
 
-def _load_rules() -> list[dict]:
+def _load_rules() -> list[dict[str, Any]]:
     if not _MARKER_RULES.is_file():
         return []
     data = yaml.safe_load(_MARKER_RULES.read_text())
-    return data.get("rules", [])
+    return list(data.get("rules", []))
 
 
 def _blast_contigs(contigs_fasta: str) -> list[dict[str, Any]]:
@@ -77,7 +76,8 @@ def _blast_contigs(contigs_fasta: str) -> list[dict[str, Any]]:
     for candidate in ["blastn"]:
         result = subprocess.run(
             ["sh", "-c", f"command -v {candidate}"],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
             env={"PATH": pixi_path()},
         )
         if result.returncode == 0:
@@ -88,10 +88,24 @@ def _blast_contigs(contigs_fasta: str) -> list[dict[str, Any]]:
 
     db = str(REF_DIR / "species" / "markers_v2_blastdb")
     result = subprocess.run(
-        [blastn, "-query", str(contigs_fasta), "-db", db,
-         "-outfmt", "6 sseqid pident length slen", "-evalue", "1e-10",
-         "-word_size", "11", "-num_threads", "4"],
-        capture_output=True, text=True, timeout=600,
+        [
+            blastn,
+            "-query",
+            str(contigs_fasta),
+            "-db",
+            db,
+            "-outfmt",
+            "6 sseqid pident length slen",
+            "-evalue",
+            "1e-10",
+            "-word_size",
+            "11",
+            "-num_threads",
+            "4",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=600,
     )
     hits = []
     for line in result.stdout.splitlines():
@@ -105,13 +119,15 @@ def _blast_contigs(contigs_fasta: str) -> list[dict[str, Any]]:
         coverage = aln_len / subj_len * 100 if subj_len > 0 else 0
         parts = seqid.split("~~~")
         gene = parts[1].lower() if len(parts) >= 2 else seqid.lower()
-        hits.append({
-            "gene": gene,
-            "identity": pident,
-            "coverage": round(coverage, 1),
-            "ref_len": int(subj_len),
-            "seqid": seqid,
-        })
+        hits.append(
+            {
+                "gene": gene,
+                "identity": pident,
+                "coverage": round(coverage, 1),
+                "ref_len": int(subj_len),
+                "seqid": seqid,
+            }
+        )
     return hits
 
 
@@ -119,14 +135,15 @@ def identify_multigene(contigs_fasta: str) -> MultiGeneResult:
     raw_hits = _blast_contigs(contigs_fasta)
     rules = _load_rules()
 
-    best_hits: dict[str, dict] = {}
+    best_hits: dict[str, dict[str, Any]] = {}
     for hit in raw_hits:
         gene = hit["gene"]
         if gene not in best_hits or hit["identity"] > best_hits[gene]["identity"]:
             best_hits[gene] = hit
 
     significant = {
-        gene: hit for gene, hit in best_hits.items()
+        gene: hit
+        for gene, hit in best_hits.items()
         if hit["identity"] >= _MIN_IDENTITY and hit["coverage"] >= _MIN_COVERAGE
     }
 
@@ -180,10 +197,7 @@ def identify_multigene(contigs_fasta: str) -> MultiGeneResult:
         ]
 
     if not significant and raw_hits:
-        near = [
-            h for h in raw_hits
-            if h["identity"] >= 75 and h["coverage"] >= 20
-        ]
+        near = [h for h in raw_hits if h["identity"] >= 75 and h["coverage"] >= 20]
         if near:
             result.notes.append(
                 f"Near-threshold hits detected (identity 75-85%): "
@@ -196,7 +210,6 @@ def identify_multigene(contigs_fasta: str) -> MultiGeneResult:
 
 def main() -> None:
     import argparse
-    import sys as _sys
 
     parser = argparse.ArgumentParser(description="Multi-gene species identifier")
     parser.add_argument("contigs")

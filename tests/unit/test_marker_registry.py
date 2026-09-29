@@ -4,6 +4,7 @@ Additive, atomic updates to marker_rules.yaml (+ optional sequence append to
 markers fasta); idempotent re-registration; validation of species/gene
 names; backup of previous state.
 """
+
 from __future__ import annotations
 
 import sys

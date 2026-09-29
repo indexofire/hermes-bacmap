@@ -131,9 +131,7 @@ def _matched(value: float, evidence: set[float], rounded: set[float]) -> bool:
     return round(value / 100, 3) in rounded
 
 
-def verify_numeric_provenance(
-    text: str, evidence_numbers: set[float]
-) -> NumericProvenanceResult:
+def verify_numeric_provenance(text: str, evidence_numbers: set[float]) -> NumericProvenanceResult:
     rounded = {round(e, 3) for e in evidence_numbers}
     orphans: list[dict[str, Any]] = []
 

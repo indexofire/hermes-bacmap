@@ -19,13 +19,6 @@ class TestSpeciesIdentifierRewired:
     def test_module_dicts_equal_golden(self):
         from hermes_bacmap.analysis import species_identifier
 
-        golden_genes = {
-            "inva": ("Salmonella", "high"),
-            "uida": ("DEC", "high"),
-            "ipah": ("Shigella/EIEC", "high"),
-            "toxr": ("V_parahaemolyticus", "high"),
-            "tlh": ("V_parahaemolyticus", "high"),
-        }
         assert species_identifier._SPECIES_PRIORITY[:5] == ["inva", "ipah", "toxr", "tlh", "uida"]
 
     def test_dicts_derived_from_registry(self):
@@ -49,13 +42,8 @@ class TestWorkflowTables:
         assert t.mlst_schemes.get("Salmonella") == "salmonella_2"
         assert t.mlst_schemes.get("E.coli") == "ecoli_1"
         assert len(t.mlst_schemes) >= 30
-        golden_amr = {
-            "Salmonella": "Salmonella",
-            "E.coli": "Escherichia",
-            # V.parahaemolyticus deliberately absent (no curated AMRFinderPlus
-            # organism DB) — adding it would change rule behaviour.
-            "Shigella": "Escherichia",
-        }
+        # V.parahaemolyticus deliberately absent from AMR organisms (no curated
+        # AMRFinderPlus organism DB) — adding it would change rule behaviour.
 
         # mirrors rules/cgmlst.smk _CGMLST_SCHEMES
         assert t.cgmlst_schemes.get("Salmonella") == "senterica_2"

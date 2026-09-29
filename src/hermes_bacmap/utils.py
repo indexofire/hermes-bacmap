@@ -258,4 +258,5 @@ def parse_cgmlst_profile(tsv_text: str) -> CgmlstProfile:
         return CgmlstProfile(sample_id="", scheme="", st_raw="N/A")
     return profiles[0]
 
+
 parse_abricate_tsv = parse_gapit_tsv  # deprecated alias

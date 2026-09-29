@@ -13,7 +13,6 @@ re-exported here so `from ..tools import <handler>` keeps working.
 
 from .cli import align, blast, samtools_op, variant
 from .connectors import lit_search, ncbi_pathogen
-from .sandbox import plot, sandbox_exec, sql_query
 from .curation import db_build, marker_register
 from .discovery import analytics_query, differential_genes, pangenome
 from .pipeline import (
@@ -28,6 +27,7 @@ from .pipeline import (
     verify_result,
     vpa_serotype,
 )
+from .sandbox import plot, sandbox_exec, sql_query
 from .seq import fastq_qc, seq_convert, seq_ops, seq_stats
 from .services import (
     add_lab_result,

@@ -3,6 +3,7 @@
 Real subprocess execution (python -c runner) against tmp_path sandbox dirs;
 session variables persist via pickle across exec calls in one session.
 """
+
 from __future__ import annotations
 
 import sys
@@ -76,9 +77,7 @@ class TestExecCode:
             "import os; d = os.environ.get('BACMAP_RESULTS', '')\n"
             "print('R_OK' if os.path.isdir(d) else 'R_MISSING')"
         )
-        result = exec_code(
-            code, results_dir=tmp_path / "results", sandbox_root=tmp_path
-        )
+        result = exec_code(code, results_dir=tmp_path / "results", sandbox_root=tmp_path)
         assert RESULTS_DIR_FIELD == "BACMAP_RESULTS"
         assert "R_OK" in result["stdout"]
 

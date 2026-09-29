@@ -3,6 +3,7 @@
 mmseqs binary and subprocess.run are mocked at the module boundary;
 `which` is mocked per-backend-module (backends import it from ``.._env``).
 """
+
 from __future__ import annotations
 
 import sys
@@ -53,9 +54,11 @@ class TestCluster:
         fasta.write_text(">a\nMKVL\n")
         prefix = tmp_path / "clusters"
 
-        with patch(f"{_MOD}.which", return_value="/fake/bin/mmseqs"), patch(
-            f"{_MOD}.subprocess.run", return_value=_proc()
-        ) as run, patch("pathlib.Path.exists", return_value=True):
+        with (
+            patch(f"{_MOD}.which", return_value="/fake/bin/mmseqs"),
+            patch(f"{_MOD}.subprocess.run", return_value=_proc()) as run,
+            patch("pathlib.Path.exists", return_value=True),
+        ):
             backend = Mmseqs2Backend()
             tsv = backend.cluster(fasta, prefix, min_seq_id=0.9, coverage=0.8)
 
@@ -76,8 +79,9 @@ class TestCluster:
         fasta.write_text(">a\nMKVL\n")
         prefix = tmp_path / "clusters"
 
-        with patch(f"{_MOD}.which", return_value="/fake/bin/mmseqs"), patch(
-            f"{_MOD}.subprocess.run", return_value=_proc()
+        with (
+            patch(f"{_MOD}.which", return_value="/fake/bin/mmseqs"),
+            patch(f"{_MOD}.subprocess.run", return_value=_proc()),
         ):
             backend = Mmseqs2Backend()
             with pytest.raises(RuntimeError, match="did not produce"):
@@ -88,8 +92,9 @@ class TestCluster:
         fasta.write_text(">a\nMKVL\n")
         prefix = tmp_path / "clusters"
 
-        with patch(f"{_MOD}.which", return_value="/fake/bin/mmseqs"), patch(
-            f"{_MOD}.subprocess.run", return_value=_proc(stderr="boom", returncode=1)
+        with (
+            patch(f"{_MOD}.which", return_value="/fake/bin/mmseqs"),
+            patch(f"{_MOD}.subprocess.run", return_value=_proc(stderr="boom", returncode=1)),
         ):
             backend = Mmseqs2Backend()
             with pytest.raises(RuntimeError, match="mmseqs easy-linclust failed: boom"):

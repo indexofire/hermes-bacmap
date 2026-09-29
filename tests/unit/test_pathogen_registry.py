@@ -144,7 +144,7 @@ class TestGoldenMigration:
 
         schemes = load_registry().mlst_schemes()
         for k, v in GOLDEN_MLST_SCHEMES.items():
-            assert schemes.get(k) == v, f'{k}'
+            assert schemes.get(k) == v, f"{k}"
 
     def test_cgmlst_schemes(self):
         from hermes_bacmap.pathogen_registry import load_registry
@@ -156,14 +156,14 @@ class TestGoldenMigration:
 
         orgs = load_registry().amrfinder_organisms()
         for k, v in GOLDEN_AMRFINDER_ORGANISMS.items():
-            assert orgs.get(k) == v, f'{k}'
+            assert orgs.get(k) == v, f"{k}"
 
     def test_species_markers(self):
         from hermes_bacmap.pathogen_registry import load_registry
 
         gene_map, priority = load_registry().species_markers()
         for gene, expected in GOLDEN_GENE_TO_SPECIES.items():
-            assert gene_map.get(gene) == expected, f'{gene}'
+            assert gene_map.get(gene) == expected, f"{gene}"
         assert priority[:5] == GOLDEN_SPECIES_PRIORITY_START
 
     def test_snp_groups_resolved(self):

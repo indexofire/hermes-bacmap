@@ -16,9 +16,7 @@ from ._common import _RESULTS_DIR, _validate_sample_id, logger, tool_handler
 
 
 def _discover_annotated_samples(results_dir: Path) -> list[str]:
-    return sorted(
-        {p.parent.parent.name for p in results_dir.glob("*/annotation/annotation.json")}
-    )
+    return sorted({p.parent.parent.name for p in results_dir.glob("*/annotation/annotation.json")})
 
 
 def _resolve_samples(requested: list[str], results_dir: Path) -> list[str] | str:
@@ -49,9 +47,7 @@ def pangenome(args: dict[str, Any], **kwargs: Any) -> str:
     if isinstance(resolved, str):
         return resolved
     if len(resolved) < 2:
-        return json.dumps(
-            {"error": "pangenome needs >= 2 annotated samples", "samples": resolved}
-        )
+        return json.dumps({"error": "pangenome needs >= 2 annotated samples", "samples": resolved})
 
     try:
         from ..analysis.pangenome import run_pangenome
@@ -101,9 +97,7 @@ def differential_genes(args: dict[str, Any], **kwargs: Any) -> str:
     max_prev_b = args.get("max_prev_b", 1.0)
 
     if not group_a or not group_b:
-        return json.dumps(
-            {"error": "group_a and group_b (strain id lists) are both required"}
-        )
+        return json.dumps({"error": "group_a and group_b (strain id lists) are both required"})
     for sample in group_a + group_b:
         if not _validate_sample_id(sample):
             return json.dumps({"error": f"invalid sample id: {sample!r}"})
@@ -129,7 +123,7 @@ def differential_genes(args: dict[str, Any], **kwargs: Any) -> str:
         return json.dumps({"error": "differential_genes failed unexpectedly"})
 
 
-def _persist_differential(payload: dict, source: str, results_dir: Path) -> None:
+def _persist_differential(payload: dict[str, Any], source: str, results_dir: Path) -> None:
     out = results_dir / "analytics" / f"differential_{source}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")

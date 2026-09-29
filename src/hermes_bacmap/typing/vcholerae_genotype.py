@@ -48,7 +48,7 @@ def genotype(contigs_fasta: str | Path) -> CholeraToxinResult:
         min_coverage=_MIN_COVERAGE,
     )
 
-    gene_hits: dict[str, dict] = {}
+    gene_hits: dict[str, dict[str, Any]] = {}
     for hit in scan_result.genes:
         gene = hit.gene.lower()
         if gene not in gene_hits or hit.identity > gene_hits[gene]["identity"]:

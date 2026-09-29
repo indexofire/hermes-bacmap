@@ -3,6 +3,7 @@
 matplotlib Agg backend renders to PNG under results/plots/; five chart
 types validated by file existence + non-empty content + PNG magic bytes.
 """
+
 from __future__ import annotations
 
 import sys

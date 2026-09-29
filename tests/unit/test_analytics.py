@@ -4,6 +4,7 @@ Synthetic results tree on tmp_path mimics pipeline outputs (abricate-format
 gapit TSVs); Fisher exact and BH correction verified against hand-computed
 values.
 """
+
 from __future__ import annotations
 
 import sys
@@ -113,8 +114,7 @@ class TestConnect:
         n = con.execute("SELECT count(*) FROM gapit_card").fetchone()[0]
         assert n == 4 + 8 + 4 + 2
         strains = {
-            r[0]
-            for r in con.execute("SELECT DISTINCT strain_id FROM gapit_card").fetchall()
+            r[0] for r in con.execute("SELECT DISTINCT strain_id FROM gapit_card").fetchall()
         }
         assert "SAM-A1" in strains and "SAM-B4" in strains
         n_samples = con.execute("SELECT count(*) FROM samples").fetchone()[0]
@@ -146,9 +146,7 @@ class TestConnect:
 
         con = connect(tmp_path)
 
-        gene = con.execute(
-            "SELECT named_gene FROM pangenome WHERE n_genomes = 2"
-        ).fetchone()[0]
+        gene = con.execute("SELECT named_gene FROM pangenome WHERE n_genomes = 2").fetchone()[0]
         assert gene == "gapA"
 
 
@@ -203,9 +201,7 @@ class TestDifferentialGenes:
 
     def test_missing_view_raises(self, tmp_path):
         with pytest.raises(ValueError, match="gapit_card"):
-            differential_genes(
-                group_a=_A, group_b=_B, source="gapit_card", results_dir=tmp_path
-            )
+            differential_genes(group_a=_A, group_b=_B, source="gapit_card", results_dir=tmp_path)
 
 
 class TestGenePrevalence:

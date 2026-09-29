@@ -10,7 +10,7 @@ from collections.abc import Callable
 from typing import Any
 
 from .. import schemas
-from . import curation, cli, connectors, discovery, pipeline, sandbox, seq, services
+from . import cli, connectors, curation, discovery, pipeline, sandbox, seq, services
 
 Handler = Callable[..., str]
 

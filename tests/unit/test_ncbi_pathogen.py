@@ -8,6 +8,7 @@ The endpoint is the Isolates Browser's own backend (undocumented but
 publicly reachable, no key): action=retrieve&collection=isolates, with SOLR
 `fq` filters, `fl` field list, `start`/`limit` paging.
 """
+
 from __future__ import annotations
 
 import io
@@ -133,7 +134,7 @@ class TestPathogenIsolates:
 
     def test_raw_fq_passthrough(self):
         with patch(f"{_MOD}.urlopen", side_effect=_fake_urlopen(ISOLATES_RESPONSE)) as u:
-            pathogen_isolates(fq='epi_type:clinical AND AMR_genotypes:blaCTX*')
+            pathogen_isolates(fq="epi_type:clinical AND AMR_genotypes:blaCTX*")
 
         url = u.call_args.args[0].full_url
         assert "epi_type%3Aclinical" in url

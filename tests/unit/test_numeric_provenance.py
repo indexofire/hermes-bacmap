@@ -4,6 +4,7 @@ Orphan-claim guard: every number in an AI-generated report must trace to
 evidence numbers collected from GOM payloads / tool outputs. Deterministic
 regex extraction, no LLM.
 """
+
 from __future__ import annotations
 
 import sys

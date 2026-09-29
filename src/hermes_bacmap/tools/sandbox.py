@@ -50,18 +50,14 @@ def sql_query(args: dict[str, Any], **kwargs: Any) -> str:
     db_path = Path(_DEFAULT_DB_PATH)
 
     if not db_path.exists():
-        return json.dumps(
-            {"error": f"GOM database not found at {db_path} — run ingest first"}
-        )
+        return json.dumps({"error": f"GOM database not found at {db_path} — run ingest first"})
 
     from ..analysis.analytics import _is_readonly_sql
 
     if not sql:
         return _core_tables(db_path)
     if not _is_readonly_sql(sql):
-        return json.dumps(
-            {"error": "only single read-only SELECT/WITH statements are allowed"}
-        )
+        return json.dumps({"error": "only single read-only SELECT/WITH statements are allowed"})
 
     try:
         con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=10)
@@ -93,9 +89,7 @@ def _core_tables(db_path: Path) -> str:
     ]
     con.close()
     return (
-        "GOM tables: "
-        + ", ".join(tables)
-        + " — retry with sql='SELECT ...' (read-only). "
+        "GOM tables: " + ", ".join(tables) + " — retry with sql='SELECT ...' (read-only). "
         "Key tables: genome_objects (object_id, strain_id, object_type, "
         "payload_json, version), events (object_id, event_type, created_at), "
         "file_artifacts, strain_metadata, lab_results."

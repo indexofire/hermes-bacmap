@@ -53,16 +53,13 @@ class PangenomeResult:
         }
 
 
-def extract_proteins(
-    results_dir: Path, samples: list[str]
-) -> tuple[Path, dict[str, str], int]:
+def extract_proteins(results_dir: Path, samples: list[str]) -> tuple[Path, dict[str, str], int]:
     missing = [
         s for s in samples if not (results_dir / s / "annotation" / "annotation.json").exists()
     ]
     if missing:
         raise ValueError(
-            f"annotation.json not found for: {', '.join(missing)} "
-            "(run bio_analyze_pathogen first)"
+            f"annotation.json not found for: {', '.join(missing)} (run bio_analyze_pathogen first)"
         )
 
     fasta_path = results_dir / "pangenome" / "all_proteins.faa"
@@ -72,9 +69,7 @@ def extract_proteins(
     total = 0
     with fasta_path.open("w") as out:
         for sample in samples:
-            data = json.loads(
-                (results_dir / sample / "annotation" / "annotation.json").read_text()
-            )
+            data = json.loads((results_dir / sample / "annotation" / "annotation.json").read_text())
             for feature in data.get("features", []):
                 if feature.get("ftype") != "CDS":
                     continue
@@ -123,9 +118,7 @@ def export_parquet(rows: list[dict[str, Any]], path: Path) -> None:
 
     columns = list(rows[0].keys())
     con = duckdb.connect()
-    con.execute(
-        f"CREATE TABLE matrix ({', '.join(_duckdb_col(c, rows[0][c]) for c in columns)})"
-    )
+    con.execute(f"CREATE TABLE matrix ({', '.join(_duckdb_col(c, rows[0][c]) for c in columns)})")
     for row in rows:
         values = ", ".join(_duckdb_val(row[c]) for c in columns)
         con.execute(f"INSERT INTO matrix VALUES ({values})")

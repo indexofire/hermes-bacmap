@@ -4,6 +4,7 @@ _RESULTS_DIR is monkeypatched to a synthetic tree; mmseqs2 backend is
 mocked for pangenome; the plugin registry must expose 32 tools including
 the three discovery tools.
 """
+
 from __future__ import annotations
 
 import json
@@ -66,11 +67,7 @@ class TestDifferentialGenesHandler:
         _make_tree(tmp_path)
         monkeypatch.setattr("hermes_bacmap.tools.discovery._RESULTS_DIR", tmp_path)
 
-        out = _decode(
-            differential_genes(
-                {"group_a": ["SAM-A1", "SAM-A2"], "group_b": ["SAM-B1"]}
-            )
-        )
+        out = _decode(differential_genes({"group_a": ["SAM-A1", "SAM-A2"], "group_b": ["SAM-B1"]}))
 
         assert out["analysis_type"] == "differential_genes"
         genes = {r["gene"] for r in out["result"]["genes"]}
@@ -81,11 +78,7 @@ class TestDifferentialGenesHandler:
         assert "error" in out
 
     def test_bad_sample_id_returns_error(self):
-        out = _decode(
-            differential_genes(
-                {"group_a": ["../etc"], "group_b": ["SAM-B1"]}
-            )
-        )
+        out = _decode(differential_genes({"group_a": ["../etc"], "group_b": ["SAM-B1"]}))
         assert "error" in out
 
 
@@ -130,9 +123,7 @@ class TestPangenomeHandler:
             return PangenomeResult(samples=list(samples), total_clusters=1)
 
         monkeypatch.setattr("hermes_bacmap.tools.discovery._RESULTS_DIR", tmp_path)
-        with patch(
-            "hermes_bacmap.analysis.pangenome.run_pangenome", side_effect=fake_run
-        ):
+        with patch("hermes_bacmap.analysis.pangenome.run_pangenome", side_effect=fake_run):
             out = _decode(pangenome({}))
 
         assert out["analysis_type"] == "pangenome"
