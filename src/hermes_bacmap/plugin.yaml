@@ -1,5 +1,6 @@
 name: hermes_bacmap
 version: 0.5.1
+license: MIT
 author: indexofire <indexofire@gmail.com>
 description: >
   AI-native pathogen genome analysis platform. Supports Salmonella, DEC
