@@ -1,6 +1,7 @@
 # GBrain 知识大脑层
 
-> **状态**: 已安装 v0.42.57.0 · PGLite 模式 · MCP 接入 Hermes
+> **状态**: 设计文档（V0.9 立项落地）· 待部署：用户级安装 gbrain + init PGLite +
+> Hermes MCP 配置（见下方安装章节）；集成面以 `gbrain call` 子进程桥为主（见 V0.9 计划）
 
 ---
 

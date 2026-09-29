@@ -1036,6 +1036,24 @@ V0.4 引入 Web UI 后必须满足：
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
+│ V0.9 (v0.6.0) — 计划（下一版本：GBrain 知识层插件整合）           │
+│ 定位：记录生信分析/数据挖掘中有生物学意义的发现，为本地数据库     │
+│ 构建提供知识支持；抑制 LLM 幻觉（project.md §8.3 由 GBrain 承接）│
+│ 三面整合：                                                        │
+│ ① 工具面：bio_knowledge_capture/search/think（gbrain call 子进程 │
+│    封装，JSON 互操作，零新 Python 依赖；缺 gbrain 优雅降级）      │
+│ ② 事件面：发现结果自动知识捕获（差异富集基因/新颖簇/文献 PMID/   │
+│    标记注册档案 → capture + frontmatter 证据链 + GOM 新事件      │
+│    knowledge_captured；request_id 幂等回执）                      │
+│ ③ 消费面：marker_register 注册前知识查证（先行证据/交叉反应）；  │
+│    interpret-results/outbreak-investigation 技能动态检索增强     │
+│ 维护面：gbrain sweep --once（批捕获后自动连线）+ dream 周期      │
+│    （矛盾检测：eval-suspected-contradictions → find_contradictions）│
+│ 部署前提：用户级安装 gbrain（bun）+ init PGLite + 导入 skills 知识│
+│ 估算：~9 人日（client 2 + 工具 2 + 挂钩 2.5 + 消费 1.5 + 维护/文档 1）│
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
 │ V1.0 (计划 — 触发条件未满足，推迟)                                 │
 │ PostgreSQL 迁移 + 多用户 + 部署文档                               │
 │ KG（Apache AGE）待 V0.7 验证数据积累后重新评估                    │
