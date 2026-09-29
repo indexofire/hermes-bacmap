@@ -115,11 +115,11 @@ def _expected_skill_names() -> list[str]:
 
 
 class TestRegister:
-    def test_register_returns_none_and_records_29_tools(self):
+    def test_register_returns_none_and_records_39_tools(self):
         ctx = FakeCtx()
         result = register(ctx)
         assert result is None
-        assert len(ctx.tools) == 29, f"expected 29 tools, got {len(ctx.tools)}"
+        assert len(ctx.tools) == 39, f"expected 39 tools, got {len(ctx.tools)}"
 
     def test_all_tool_names_start_with_bio(self):
         ctx = FakeCtx()
@@ -181,6 +181,10 @@ class TestRegister:
             "bio_add_metadata",
             "bio_query_lab_results",
             "bio_add_lab_result",
+            "bio_species_compare",
+            "bio_pangenome",
+            "bio_analytics_query",
+            "bio_differential_genes",
         }
         assert expected <= names, f"missing: {expected - names}"
 

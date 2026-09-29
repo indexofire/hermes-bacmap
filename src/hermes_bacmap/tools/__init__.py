@@ -12,6 +12,10 @@ re-exported here so `from ..tools import <handler>` keeps working.
 """
 
 from .cli import align, blast, samtools_op, variant
+from .connectors import lit_search, ncbi_pathogen
+from .sandbox import plot, sandbox_exec, sql_query
+from .curation import db_build, marker_register
+from .discovery import analytics_query, differential_genes, pangenome
 from .pipeline import (
     analyze_pathogen,
     annotate_genome,
@@ -42,6 +46,16 @@ __all__ = [
     "analyze_pathogen",
     "annotate_genome",
     "blast",
+    "analytics_query",
+    "differential_genes",
+    "lit_search",
+    "ncbi_pathogen",
+    "db_build",
+    "marker_register",
+    "plot",
+    "sandbox_exec",
+    "sql_query",
+    "pangenome",
     "cgmlst_traceback",
     "diagnose_failure",
     "fastq_qc",

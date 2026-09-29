@@ -10,7 +10,7 @@ from collections.abc import Callable
 from typing import Any
 
 from .. import schemas
-from . import cli, pipeline, seq, services
+from . import curation, cli, connectors, discovery, pipeline, sandbox, seq, services
 
 Handler = Callable[..., str]
 
@@ -45,4 +45,14 @@ _TOOL_REGISTRY: list[tuple[str, dict[str, Any], Handler]] = [
     ("bio_species_compare", schemas.SPECIES_COMPARE, services.species_compare),
     ("bio_db_setup", schemas.DB_SETUP, services.db_setup),
     ("bio_db_status", schemas.DB_STATUS, services.db_status),
+    ("bio_pangenome", schemas.PANGENOME, discovery.pangenome),
+    ("bio_analytics_query", schemas.ANALYTICS_QUERY, discovery.analytics_query),
+    ("bio_differential_genes", schemas.DIFFERENTIAL_GENES, discovery.differential_genes),
+    ("bio_lit_search", schemas.LIT_SEARCH, connectors.lit_search),
+    ("bio_ncbi_pathogen", schemas.NCBI_PATHOGEN, connectors.ncbi_pathogen),
+    ("bio_sandbox_exec", schemas.SANDBOX_EXEC, sandbox.sandbox_exec),
+    ("bio_sql_query", schemas.SQL_QUERY, sandbox.sql_query),
+    ("bio_plot", schemas.PLOT, sandbox.plot),
+    ("bio_db_build", schemas.DB_BUILD, curation.db_build),
+    ("bio_marker_register", schemas.MARKER_REGISTER, curation.marker_register),
 ]

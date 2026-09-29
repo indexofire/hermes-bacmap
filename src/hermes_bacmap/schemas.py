@@ -971,3 +971,353 @@ DB_STATUS = {
         "properties": {},
     },
 }
+
+PANGENOME = {
+    "name": "bio_pangenome",
+    "description": (
+        "Cluster CDS protein sequences across annotated genomes (mmseqs2 "
+        "easy-linclust) into a cluster x sample presence/absence matrix "
+        "(Parquet). Reports core/accessory/unique cluster counts and novel "
+        "clusters (no named gene in any member) — the starting point for "
+        "discovering putative new markers. Query the matrix afterwards with "
+        "bio_analytics_query (view name: pangenome). Requires samples to be "
+        "annotated first (bio_analyze_pathogen)."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "samples": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Sample IDs (>= 2). Omit to use all annotated samples.",
+            },
+            "min_seq_id": {
+                "type": "number",
+                "description": "MMseqs2 cluster identity threshold (default 0.9).",
+            },
+            "coverage": {
+                "type": "number",
+                "description": "MMseqs2 coverage threshold (default 0.8).",
+            },
+            "threads": {
+                "type": "integer",
+                "description": "CPU threads for mmseqs2 (default 4).",
+            },
+        },
+        "required": [],
+    },
+}
+
+ANALYTICS_QUERY = {
+    "name": "bio_analytics_query",
+    "description": (
+        "Run a read-only DuckDB SQL query over existing analysis result "
+        "files. Available views (registered when files exist): gapit_card, "
+        "gapit_vfdb, gapit_plasmidfinder (columns strain_id, gene, identity, "
+        "coverage, database, product), samples (strain_id), pangenome "
+        "(cluster_id, representative, named_gene, is_novel, n_genomes, one "
+        "0/1 column per sample). Only single SELECT/WITH statements are "
+        "allowed. Example: SELECT gene, count(DISTINCT strain_id) AS n FROM "
+        "gapit_card WHERE identity >= 90 GROUP BY gene ORDER BY n DESC."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "sql": {
+                "type": "string",
+                "description": "Read-only DuckDB SQL (single SELECT or WITH statement).",
+            },
+        },
+        "required": ["sql"],
+    },
+}
+
+DIFFERENTIAL_GENES = {
+    "name": "bio_differential_genes",
+    "description": (
+        "Find genes significantly enriched in one strain group versus "
+        "another (two-tailed Fisher exact + Benjamini-Hochberg correction). "
+        "Classic outbreak investigation: group_a = outbreak strains, "
+        "group_b = background/older strains. Sources: gapit_card (AMR), "
+        "gapit_vfdb (virulence), gapit_plasmidfinder (plasmids). Returns "
+        "per-gene prevalence in both groups, fold enrichment, p_value and "
+        "q_value sorted by significance."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "group_a": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Strain IDs of group A (e.g., outbreak strains).",
+            },
+            "group_b": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Strain IDs of group B (e.g., background strains).",
+            },
+            "source": {
+                "type": "string",
+                "description": (
+                    "View to test: gapit_card (default), gapit_vfdb, gapit_plasmidfinder."
+                ),
+            },
+            "min_identity": {
+                "type": "number",
+                "description": "Minimum % identity for a hit to count (default 80).",
+            },
+            "min_prev_a": {
+                "type": "number",
+                "description": "Keep genes with prevalence in A >= this (default 0).",
+            },
+            "max_prev_b": {
+                "type": "number",
+                "description": "Keep genes with prevalence in B <= this (default 1).",
+            },
+        },
+        "required": ["group_a", "group_b"],
+    },
+}
+
+LIT_SEARCH = {
+    "name": "bio_lit_search",
+    "description": (
+        "Search scientific literature via Europe PMC (covers PubMed/MEDLINE "
+        "plus life-science preprints, free API). Use after discovering a "
+        "putative novel marker to check prior evidence, or to ground any "
+        "interpretation in published work. Returns title, formatted citation "
+        "(with PMID/DOI), truncated abstract, journal, year per hit."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "query": {
+                "type": "string",
+                "description": (
+                    "Search query, e.g. 'tdh Vibrio parahaemolyticus virulence' "
+                    "or a novel gene/cluster name."
+                ),
+            },
+            "max_results": {
+                "type": "integer",
+                "description": "Max hits to return, 1-25 (default 5).",
+            },
+        },
+        "required": ["query"],
+    },
+}
+
+NCBI_PATHOGEN = {
+    "name": "bio_ncbi_pathogen",
+    "description": (
+        "Query NCBI Pathogen Detection global surveillance data (7M+ "
+        "isolates, no API key). action=isolates: search isolate records by "
+        "organism/geo/serovar/collection-year with AST phenotypes and AMR "
+        "genotypes — use to compare local outbreak strains against global "
+        "surveillance. action=amr: search MicroBIGG-E AMR/virulence "
+        "elements by organism and element symbol — use to check whether a "
+        "candidate marker is already known in NCBI's curated AMR/virulence "
+        "database. Rate-limit: keep queries ≤1/s."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "action": {
+                "type": "string",
+                "enum": ["isolates", "amr"],
+                "description": "isolates = surveillance records; amr = AMR/virulence elements.",
+            },
+            "organism": {
+                "type": "string",
+                "description": 'Taxgroup name, e.g. "Salmonella enterica" (required for amr).',
+            },
+            "geo": {
+                "type": "string",
+                "description": "Geographic filter: country or country:state, e.g. China, USA:LA.",
+            },
+            "serovar": {
+                "type": "string",
+                "description": "Serovar filter (isolates action), e.g. Enteritidis.",
+            },
+            "element": {
+                "type": "string",
+                "description": "Element symbol filter (amr action), e.g. blaCTX-M-15, pagK.",
+            },
+            "year_from": {"type": "integer", "description": "Collection year lower bound."},
+            "year_to": {"type": "integer", "description": "Collection year upper bound."},
+            "has_ast": {
+                "type": "boolean",
+                "description": "Only isolates with AST phenotypes (isolates action).",
+            },
+            "fq": {
+                "type": "string",
+                "description": (
+                    "Raw SOLR filter query (advanced), e.g. "
+                    "'epi_type:clinical AND AMR_genotypes:blaCTX*'."
+                ),
+            },
+            "max_results": {
+                "type": "integer",
+                "description": "Max rows 1-100 (default 20).",
+            },
+        },
+        "required": ["action"],
+    },
+}
+
+SANDBOX_EXEC = {
+    "name": "bio_sandbox_exec",
+    "description": (
+        "Execute Python code in the L2 sandbox (subprocess, cwd=per-session "
+        "dir, results dir exposed via BACMAP_RESULTS env). Session variables "
+        "persist across calls (pickled); executed code is saved to "
+        "results/sandbox/<session>/run_NNNN.py for audit. For exploratory "
+        "cross-sample analysis, custom statistics, and bespoke matplotlib "
+        "figures. Per project L2 policy: sandbox outputs enter reports only "
+        "after user review."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "code": {"type": "string", "description": "Python code to execute."},
+            "session": {
+                "type": "string",
+                "description": "Session name for variable persistence (default 'default').",
+            },
+            "timeout": {
+                "type": "integer",
+                "description": "Timeout seconds (default 60, max suggested 300).",
+            },
+        },
+        "required": ["code"],
+    },
+}
+
+SQL_QUERY = {
+    "name": "bio_sql_query",
+    "description": (
+        "Run a read-only SQL (SELECT/WITH) query against the GOM SQLite "
+        "database (genome_objects, events, file_artifacts, strain_metadata, "
+        "lab_results). Returns a markdown table. Empty sql lists available "
+        "tables. Use json_extract(payload_json, '$.field') to dig into "
+        "payloads. For result-file analytics use bio_analytics_query instead."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "sql": {
+                "type": "string",
+                "description": "Read-only SELECT/WITH statement (empty = list tables).",
+            },
+        },
+        "required": [],
+    },
+}
+
+PLOT = {
+    "name": "bio_plot",
+    "description": (
+        "Render a quick chart to results/plots/ (PNG): bar, line, scatter, "
+        "hist, or heatmap. For standard visualizations; bespoke figures "
+        "should use bio_sandbox_exec with matplotlib."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "type": {
+                "type": "string",
+                "enum": ["bar", "line", "scatter", "hist", "heatmap"],
+                "description": "Chart type.",
+            },
+            "labels": {"type": "array", "description": "Category labels (bar)."},
+            "values": {"type": "array", "description": "Values (bar/hist)."},
+            "x": {"type": "array", "description": "X values (line/scatter)."},
+            "y": {"type": "array", "description": "Y values (line/scatter)."},
+            "matrix": {
+                "type": "array",
+                "items": {"type": "array"},
+                "description": "2D matrix (heatmap).",
+            },
+            "row_labels": {"type": "array", "description": "Row labels (heatmap)."},
+            "col_labels": {"type": "array", "description": "Column labels (heatmap)."},
+            "bins": {"type": "integer", "description": "Histogram bins (default 20)."},
+            "name": {"type": "string", "description": "Output file name (sanitized)."},
+            "title": {"type": "string"},
+            "xlabel": {"type": "string"},
+            "ylabel": {"type": "string"},
+        },
+        "required": ["type"],
+    },
+}
+
+DB_BUILD = {
+    "name": "bio_db_build",
+    "description": (
+        "Build a custom gapit screening database from a validated marker "
+        "FASTA (capability-evolution deployment step). The database lands "
+        "under the gapit datadir and is immediately usable by gapit screen / "
+        "bio_gene_scan with database=<name>."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "Database name (lowercase letters/digits/dash).",
+            },
+            "fasta": {
+                "type": "string",
+                "description": "Path to marker FASTA (plain, abricate ~~~, or gapit| headers).",
+            },
+            "description": {
+                "type": "string",
+                "description": "Default product description for headerless records.",
+            },
+            "dbtype": {
+                "type": "string",
+                "enum": ["nucl", "prot"],
+                "description": "Force type (default: auto-detect).",
+            },
+            "force": {"type": "boolean", "description": "Overwrite existing database."},
+        },
+        "required": ["name", "fasta"],
+    },
+}
+
+MARKER_REGISTER = {
+    "name": "bio_marker_register",
+    "description": (
+        "Register a validated novel marker into the species-identification "
+        "rules (marker_rules.yaml) — additive, atomic, with .bak backup and "
+        "idempotent re-registration. Optionally appends the sequence to the "
+        "markers FASTA. Subsequent multigene species-ID runs pick the marker "
+        "up automatically. Use after bio_validate-style panel evidence and "
+        "bio_lit_search novelty check; record provenance in the description."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "species": {
+                "type": "string",
+                "description": 'Species name, e.g. "Salmonella" or "yersinia enterocolitica".',
+            },
+            "gene": {
+                "type": "string",
+                "description": "Marker gene name, e.g. 'outbreak_marker' or 'ail'.",
+            },
+            "sequence_fasta": {
+                "type": "string",
+                "description": "Optional FASTA whose first record is appended to markers_v2.",
+            },
+            "min_identity": {
+                "type": "integer",
+                "description": "Minimum identity %% for the rule (default 90).",
+            },
+            "min_hits": {
+                "type": "integer",
+                "description": "Minimum hits for the rule (default 1).",
+            },
+        },
+        "required": ["species", "gene"],
+    },
+}
