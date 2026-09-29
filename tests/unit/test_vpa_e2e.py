@@ -26,8 +26,7 @@ _DB_DIR = _PROJECT_ROOT / "data" / "reference" / "vpa_serotype"
 _GENOMES = _PROJECT_ROOT / "data" / "reference" / "genomes"
 
 pytestmark = pytest.mark.skipif(
-    not (_DB_DIR / "ref_sketches.sig").exists()
-    or not (_DB_DIR / "ref_seqs.fasta").exists(),
+    not (_DB_DIR / "ref_sketches.sig").exists() or not (_DB_DIR / "ref_seqs.fasta").exists(),
     reason=(
         "VPA serotype reference sketches not built "
         "(requires scripts/build_vpa_references.py + sourmash)"
