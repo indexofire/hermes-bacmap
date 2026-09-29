@@ -60,14 +60,24 @@ uv pip install -e ".[dev]"
 详细功能文档见 **[docs/features.md](docs/features.md)**。
 详细环境搭建见 **[docs/installation/environment.md](docs/installation/environment.md)**。
 
-## 支持的病原
+## 支持的病原（v0.5.1：34 物种注册，30 启用 + 4 高后果默认关闭）
 
-| 病原 | 物种鉴定 | 血清型 | MLST | AMR | SNP/系统发育 | 状态 |
+**全流程验证病原（4）**——鉴定/血清型/MLST/AMR/SNP 全链路 gold standard 验证：
+
+| 病原 | 物种鉴定 | 血清型 | MLST | AMR/毒力 | SNP/系统发育 | 状态 |
 |---|---|---|---|---|---|---|
-| **Salmonella** | invA (marker) / GTDB-Tk (standard) | SISTR | gmlst (salmonella_2) | abricate (CARD/VFDB/PlasmidFinder) | bwa+bcftools+iqtree | ✅ V0.3 |
-| **DEC** (E. coli) | uidA (marker) / GTDB-Tk (standard) | ecoh_serotyper (Python) | gmlst | abricate | bwa+bcftools+iqtree | ✅ V0.2 |
-| **Shigella / EIEC** | ipaH (marker) / GTDB-Tk (standard) | shigella_serotyper (58 serotypes) | gmlst | abricate | bwa+bcftools+iqtree | ✅ V0.2 |
-| **V. parahaemolyticus** | toxR + tlh (marker) / GTDB-Tk (standard) | VpaSerotyper (Python) | gmlst | abricate | bwa+bcftools+iqtree | ✅ V0.4 (物种鉴定) |
+| **Salmonella** | invA (marker) / ANI / GTDB-Tk | SISTR | gmlst (salmonella_2) | gapit (CARD/VFDB/PlasmidFinder) | bwa+bcftools+iqtree | ✅ |
+| **DEC** (E. coli) | uidA (marker) / ANI / GTDB-Tk | ecoh_serotyper | gmlst | gapit | bwa+bcftools+iqtree | ✅ |
+| **Shigella / EIEC** | ipaH (marker) / ANI / GTDB-Tk | shigella_serotyper (58) | gmlst | gapit | bwa+bcftools+iqtree | ✅ |
+| **V. parahaemolyticus** | toxR+tlh (marker) / ANI / GTDB-Tk | VpaSerotyper | gmlst | gapit | bwa+bcftools+iqtree | ✅ |
+
+**物种鉴定扩展（30 启用）**——多基因标记（80 序列/38 规则）+ ANI 三档（panel skani / mash_refseq /
+GTDB-Tk）+ 7 方法共识仲裁，覆盖沙门菌、大肠、志贺、弧菌（霍乱/副溶血/创伤）、李斯特、金葡、
+肺链、化脓链球、肺克、铜绿、不动杆菌、艰难梭菌、空肠弯曲、幽门螺杆菌、嗜肺军团菌、
+肺炎支原体、脑膜炎奈瑟菌、蜡样芽孢等常见食源性及条件致病菌
+（完整清单见 `src/hermes_bacmap/pathogens.yaml` 与 [docs/pathogens/](docs/pathogens/)）；
+炭疽等 4 种高后果病原注册但默认关闭。
+分型扩展：V. cholerae 毒力基因型、L. monocytogenes 血清群、C. difficile 毒素型、B. cereus 肠毒素型。
 
 ## 核心模块
 
@@ -109,7 +119,7 @@ hermes-bacmap/
 │   ├── analysis/               领域分析（物种鉴定 / 基因扫描 / 注释 / 确定性校验 / cgMLST / NLI / 失败诊断）
 │   ├── typing/                 血清型模块（ecoh / shigella / vpa）
 │   ├── services/               GOM + 菌株索引 / 菌株元数据 / 实验室结果
-│   └── skills/                 6 个 Hermes Skills（随 wheel 打包）
+│   └── skills/                 7 个 Hermes Skills（随 wheel 打包）
 │       ├── bio-router/             始终加载的 skill 路由器
 │       ├── run-pipeline/           跨病原管线操作指南 + 5 个 references
 │       ├── bioinfo-analysis/       通用生信决策树
@@ -119,7 +129,7 @@ hermes-bacmap/
 ├── workflows/bacmap/        Snakemake 分析流程
 │   ├── Snakefile               主入口（per-sample + cohort DAG）
 │   ├── config/                 配置 + 样本表
-│   ├── rules/                  11 个 rule 文件（29 rules：25 常规 + 4 cgMLST cohort 门控，+ Snakefile `rule all` 共 30）
+│   ├── rules/                  12 个 rule 文件（32 rules：28 常规 + 4 cgMLST cohort 门控，+ Snakefile `rule all` 共 33）
 │   └── scripts/                collect_summary + SNP/cgMLST cohort 脚本 + pathotype
 ├── scripts/                     编排脚本
 │   ├── run_analysis.py         端到端编排器（--sample/--all/--snp/--status）
@@ -129,7 +139,7 @@ hermes-bacmap/
 │   ├── build_cgmlst_reference.py  cgMLST 本地参考库构建
 │   └── ...                     ENA 下载 / 元数据导入 / 基准 / LLM 切换
 ├── web/                         FastAPI Web UI（app.py + 单页模板，X-API-Key 认证）
-├── tests/                       测试（1415 tests）
+├── tests/                       测试（1711 tests）
 │   ├── unit/                   GOM + Verifier + Engine + Cohort TDD
 │   ├── conftest.py             共享 fixtures
 │   └── fixtures/gold_standard/ 12 株 gold standard 数据集（9 株经验证 harness）
@@ -142,7 +152,7 @@ hermes-bacmap/
 ├── mkdocs.yml                   文档站导航配置
 ├── pixi.toml                    生信工具依赖
 ├── pyproject.toml               Python 依赖
-└── project.md                   开发计划（V0.7, 1176 行）
+└── project.md                   开发计划（V0.7 文档版 + V0.8 路线登记, 1182 行）
 ```
 
 ## 环境架构

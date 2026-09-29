@@ -6,6 +6,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] — 2026-09-29
+
+### Added — 物种扩展 + 智能体发现栈（34 物种 / 39 tools / 1711 tests）
+
+- **病原注册表 4→34 物种**（30 启用 + 4 高后果默认关闭），26 SNP 分组，表驱动注册
+- **物种鉴定七方法**：multigene（80 序列/38 规则）、panel skani、mash_refseq、
+  sourmash、GTDB-Tk、kraken2 预筛 + 共识仲裁（bio_species_compare）
+- **gapit 全面替代 abricate**：全部 AMR/毒力/质粒筛查规则与下游消费方
+- **分型扩展**：V. cholerae 毒力 / L. mono 血清群 / C. difficile 毒素 / B. cereus 肠毒素
+- **发现栈**：MMseqs2 easy-linclust 后端、pangenome presence/absence 矩阵（Parquet）、
+  DuckDB 联邦分析（零索引）、Fisher+BH 差异富集（bio_pangenome / bio_analytics_query /
+  bio_differential_genes）
+- **外部连接器**：Europe PMC 文献检索、NCBI Pathogen Detection 监测分离株 +
+  MicroBIGG-E 元件（实测验证 pathogens-srv 契约）
+- **L2 沙箱**：会话持久化代码执行（审计落盘）、GOM 只读 SQL、快速绘图
+- **能力进化注册**：gapit db build 封装、marker_rules.yaml 原子注册
+- **数字溯源守卫**：报告数字必须可溯源到 GOM/工具输出（orphan-claim guard）
+- **发现运行 GOM 入库**：cohort:pangenome / cohort:discovery-* 版本化对象 + 新事件类型
+- **outbreak-investigation 元技能** + 13 篇病原文档 + 分层物种鉴定架构文档
+- 依赖：+mmseqs2、+duckdb；mummer 解析修复（bioconda 仅 3.23）
+
+
 ### Added — 评审 P3 收尾：审计确定性 + web 读回 + V0.7 终态（2026-09-08）
 
 - **P3-1 layer3 响应补 `threshold`**：调用方（LLM/报告）可见判定阈值（观测性，评审 NITPICK）
@@ -375,4 +397,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `pyproject.toml`: added mypy and pydantic to dev/runtime dependencies for GOM schema validation
 
-[Unreleased]: https://github.com/indexofire/hermes-bacmap/releases
+[Unreleased]: https://github.com/indexofire/hermes-bacmap/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/indexofire/hermes-bacmap/releases/tag/v0.5.1

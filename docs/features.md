@@ -1,7 +1,7 @@
 # Hermes-bacmap 功能文档
 
 > **版本**: V0.7 (2026-09-07)
-> **状态**: 26 Hermes tools · 30 Snakemake rules（25 常规 + 4 cgMLST cohort 门控 + `rule all`）· 1415 tests · 4 skills · engine 抽象层 · GBrain 知识层
+> **状态**（v0.5.1）: 39 Hermes tools · 33 Snakemake rules（28 常规 + 4 cgMLST cohort 门控 + `rule all`）· 1711 tests · 7 skills · engine 抽象层 · 发现栈（MMseqs2+DuckDB）· 外部连接器 · L2 沙箱 · 能力进化注册
 > **数据集**: 菌株元数据 + 湿实验结果 · cgMLST 溯源 · 12 株数据集（11 株已分析，9 株经 §12.3 验证 harness）
 > 测试口径：1415 = V0.7 终态（P0 +13 / P1 +16 / P2 +8 / P3 +2：web events 端点；明细见 CHANGELOG）
 
