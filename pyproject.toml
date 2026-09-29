@@ -1,6 +1,6 @@
 [project]
 name = "hermes-bacmap"
-version = "0.5.0"
+version = "0.5.1"
 description = "AI-native pathogen genome analysis platform — Hermes Agent plugin"
 requires-python = ">=3.12,<3.14"
 authors = [
