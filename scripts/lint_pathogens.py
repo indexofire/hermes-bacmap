@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
-"""Offline consistency checks between pathogens.yaml, markers.fasta and samples.tsv.
+"""Offline consistency checks between pathogens.yaml, markers FASTAs and samples.tsv.
 
-Exit code 0 = clean; 1 = findings. Run in CI and before any workflow run.
+Exit code 0 = clean (warnings allowed); 1 = errors. Reference genomes are
+data-layer artifacts (large or downloadable) — missing reference genomes
+and marker sequences are WARNINGS, not errors; pass --strict to fail on
+warnings too. Run in CI and before
+any workflow run.
 """
 
 from __future__ import annotations
@@ -19,7 +23,10 @@ from hermes_bacmap.pathogen_registry import (  # noqa: E402
 )
 
 DEFAULT_SAMPLES = PROJECT_ROOT / "workflows/bacmap/config/samples.tsv"
-DEFAULT_MARKERS = PROJECT_ROOT / "data/reference/species/markers.fasta"
+DEFAULT_MARKERS = PROJECT_ROOT / "data/reference/species/markers_v2.fasta"
+DEFAULT_LEGACY_MARKERS = PROJECT_ROOT / "data/reference/species/markers.fasta"
+
+_WARNING_PATTERNS = ("reference genome missing", "marker gene")
 
 
 def _marker_genes_from_fasta(markers_path: Path) -> set[str]:
@@ -34,10 +41,15 @@ def _marker_genes_from_fasta(markers_path: Path) -> set[str]:
     return genes
 
 
+def is_warning(finding: str) -> bool:
+    return any(pat in finding for pat in _WARNING_PATTERNS)
+
+
 def run_lint(
     registry_path: Path | None,
     samples_path: Path | None,
     markers_path: Path,
+    legacy_markers: Path | None = None,
 ) -> list[str]:
     findings: list[str] = []
 
@@ -46,7 +58,9 @@ def run_lint(
     except RegistryError as e:
         return [f"registry invalid: {e}"]
 
-    markers = _marker_genes_from_fasta(markers_path)
+    markers = _marker_genes_from_fasta(markers_path) | _marker_genes_from_fasta(
+        legacy_markers or DEFAULT_LEGACY_MARKERS
+    )
     if not markers:
         findings.append(f"markers fasta missing or empty: {markers_path}")
     for name, p in reg.pathogens.items():
@@ -85,15 +99,23 @@ def main() -> int:
     parser.add_argument("--registry", type=Path, default=None)
     parser.add_argument("--samples", type=Path, default=DEFAULT_SAMPLES)
     parser.add_argument("--markers", type=Path, default=DEFAULT_MARKERS)
+    parser.add_argument("--strict", action="store_true", help="fail on warnings too")
     args = parser.parse_args()
 
     samples = args.samples if args.samples.exists() else None
     findings = run_lint(args.registry, samples, args.markers)
-    for f in findings:
+    errors = [f for f in findings if not is_warning(f)]
+    warnings = [f for f in findings if is_warning(f)]
+    for f in errors:
         print(f"LINT: {f}")
-    if findings:
-        print(f"{len(findings)} finding(s)")
+    for f in warnings:
+        print(f"WARN: {f}")
+    if errors:
+        print(f"{len(errors)} error(s), {len(warnings)} warning(s)")
         return 1
+    if warnings:
+        print(f"pathogen registry lint: {len(warnings)} warning(s) (0 errors)")
+        return 1 if args.strict else 0
     print("pathogen registry lint: clean")
     return 0
 

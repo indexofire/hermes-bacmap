@@ -94,7 +94,7 @@ class TestRunLint:
 
 
 class TestMain:
-    def test_exit_code_nonzero_on_findings(self, tmp_path, monkeypatch, capsys):
+    def test_marker_missing_is_warning_exit_zero(self, tmp_path, monkeypatch, capsys):
         reg = _write(tmp_path, "pathogens.yaml", CLEAN_REGISTRY)
         markers = _write(tmp_path, "markers.fasta", ">species_markers~~~zzz~~~X.1\nACGT\n")
         monkeypatch.setattr(
@@ -111,8 +111,32 @@ class TestMain:
             ],
         )
         code = lint_pathogens.main()
-        assert code == 1
-        assert "tsta" in capsys.readouterr().out
+        out = capsys.readouterr().out
+        assert code == 0
+        assert "WARN" in out and "tsta" in out
+
+    def test_structural_error_exit_nonzero(self, tmp_path, monkeypatch):
+        reg = _write(tmp_path, "pathogens.yaml", CLEAN_REGISTRY)
+        markers = _write(tmp_path, "markers.fasta", MARKERS_WITH_TSTA)
+        samples = _write(
+            tmp_path,
+            "samples.tsv",
+            "sample\tspecies\tR1\tR2\nS1\tUnknownus\ta\tb\n",
+        )
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "lint_pathogens",
+                "--registry",
+                str(reg),
+                "--markers",
+                str(markers),
+                "--samples",
+                str(samples),
+            ],
+        )
+        assert lint_pathogens.main() == 1
 
     def test_exit_code_zero_when_clean(self, tmp_path, monkeypatch):
         reg = _write(tmp_path, "pathogens.yaml", CLEAN_REGISTRY)
@@ -131,3 +155,67 @@ class TestMain:
             ],
         )
         assert lint_pathogens.main() == 0
+
+
+class TestSeveritySplit:
+    def test_missing_snp_reference_is_warning_not_error(self, tmp_path, monkeypatch, capsys):
+        reg = _write(
+            tmp_path,
+            "pathogens.yaml",
+            CLEAN_REGISTRY.replace("salmonella_LT2.fasta", "does_not_exist_anywhere.fasta"),
+        )
+        markers = _write(tmp_path, "markers.fasta", MARKERS_WITH_TSTA)
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "lint_pathogens",
+                "--registry",
+                str(reg),
+                "--markers",
+                str(markers),
+                "--samples",
+                str(tmp_path / "no_samples.tsv"),
+            ],
+        )
+        code = lint_pathogens.main()
+        out = capsys.readouterr().out
+        assert code == 0
+        assert "WARN" in out and "does_not_exist_anywhere" in out
+
+    def test_strict_flag_fails_on_warnings(self, tmp_path, monkeypatch):
+        reg = _write(
+            tmp_path,
+            "pathogens.yaml",
+            CLEAN_REGISTRY.replace("salmonella_LT2.fasta", "does_not_exist_anywhere.fasta"),
+        )
+        markers = _write(tmp_path, "markers.fasta", MARKERS_WITH_TSTA)
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "lint_pathogens",
+                "--registry",
+                str(reg),
+                "--markers",
+                str(markers),
+                "--samples",
+                str(tmp_path / "no_samples.tsv"),
+                "--strict",
+            ],
+        )
+        assert lint_pathogens.main() == 1
+
+
+class TestDefaultMarkers:
+    def test_default_markers_is_v2_union_legacy(self):
+        assert lint_pathogens.DEFAULT_MARKERS.name == "markers_v2.fasta"
+        assert lint_pathogens.DEFAULT_LEGACY_MARKERS.name == "markers.fasta"
+
+    def test_gene_in_legacy_markers_passes_v2_check(self, tmp_path):
+        reg = _write(tmp_path, "pathogens.yaml", CLEAN_REGISTRY)
+        v2_empty = _write(tmp_path, "markers_v2.fasta", "")
+        findings = lint_pathogens.run_lint(
+            reg, None, v2_empty, legacy_markers=_write(tmp_path, "markers.fasta", MARKERS_WITH_TSTA)
+        )
+        assert findings == []

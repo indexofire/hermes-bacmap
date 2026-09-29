@@ -69,6 +69,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install "snakemake==7.32.*" "pulp<2.8" pandas
+      - run: pip install -e .
       - name: Create dummy input reads (dry-run does not read contents)
         run: |
           # samples.tsv has mixed CRLF/LF endings — strip \r from paths
