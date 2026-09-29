@@ -39,7 +39,7 @@ _PATHOGEN_FIELDS = frozenset(
         "enabled",
     }
 )
-_PATHOGEN_REQUIRED = ("display_name", "marker_genes", "mlst_scheme", "snp_group")
+_PATHOGEN_REQUIRED = ("display_name", "marker_genes", "snp_group")
 _SNP_GROUP_FIELDS = frozenset({"ref", "species", "organism"})
 _MARKER_CONFIDENCE = "high"
 
@@ -193,7 +193,7 @@ def _validate_pathogen(name: str, raw: dict[str, Any]) -> PathogenSpec:
         display_name=str(raw["display_name"]),
         species_label=str(raw.get("species_label", name)),
         marker_genes=marker_genes,
-        mlst_scheme=str(raw["mlst_scheme"]),
+        mlst_scheme=str(raw.get("mlst_scheme") or ""),
         cgmlst_scheme=raw.get("cgmlst_scheme"),
         amrfinder_organism=raw.get("amrfinder_organism"),
         serotype_engine=raw.get("serotype_engine"),

@@ -1,15 +1,8 @@
-# 病原注册表（R0 重构）：所有 rule / 分析模块的病原配置唯一来源。
-#
-# 语义约定：
-# - pathogens 的键 = samples.tsv `species` 列的合法值域
-# - 键的声明顺序即 marker 基因的鉴定优先级（先声明者优先），
-#   pathogen 内 marker_genes 列表顺序为种内优先级
-# - species_label 是 species_identifier 报告的物种名（历史值：
-#   E.coli→DEC、Shigella→Shigella/EIEC，保持不变）
-# - enabled: false 的病原不出现在任何查询表中（P3 管制病原用）
-# - snp_groups.ref 相对项目根解析；species 引用必须已注册
-# - cgMLST 溯源阈值暂留 config.yaml（cgmlst.thresholds），新病原接入时迁移
+# 病原注册表 — 全部常见病原（阶段 1 推广）
+# 语义约定见各字段注释；键序 = marker 鉴定优先级（先声明者优先）
+# enabled: false 的病原不出现在任何查询表中（高后果/管制病原用）
 pathogens:
+  # ═══ 原有 4 病原 ═══
   Salmonella:
     display_name: 沙门菌
     species_label: Salmonella
@@ -39,13 +32,187 @@ pathogens:
   E.coli:
     display_name: 大肠埃希菌
     species_label: DEC
-    marker_genes: [uida]
+    marker_genes: [uida, lacy]
     mlst_scheme: ecoli_1
     cgmlst_scheme: ecoli_2
     amrfinder_organism: Escherichia
     serotype_engine: ecoh
     pathotype: dec
     snp_group: ecoli
+
+  # ═══ P1 食源性/水源性 ═══
+  "Vibrio cholerae":
+    display_name: 霍乱弧菌
+    marker_genes: [ompw, ctxa]
+    mlst_scheme: vcholerae
+    amrfinder_organism: Vibrio_cholerae
+    snp_group: vcholerae
+  "Listeria monocytogenes":
+    display_name: 单增李斯特菌
+    marker_genes: [hly, prs]
+    mlst_scheme: listeria
+    amrfinder_organism: Listeria_monocytogenes
+    snp_group: listeria
+  "Campylobacter jejuni":
+    display_name: 空肠弯曲菌
+    marker_genes: [mapa, cadf]
+    mlst_scheme: campylobacter
+    amrfinder_organism: Campylobacter
+    snp_group: campylobacter
+  "Campylobacter coli":
+    display_name: 结肠弯曲菌
+    marker_genes: [ceue]
+    mlst_scheme: campylobacter
+    amrfinder_organism: Campylobacter
+    snp_group: campylobacter
+
+  # ═══ P2 呼吸道 ═══
+  "Streptococcus pneumoniae":
+    display_name: 肺炎链球菌
+    marker_genes: [lyta, psaa]
+    mlst_scheme: spneumoniae
+    amrfinder_organism: Streptococcus_pneumoniae
+    snp_group: streptococcus
+  "Neisseria meningitidis":
+    display_name: 脑膜炎奈瑟菌
+    marker_genes: [ctra, sodc]
+    mlst_scheme: neisseria
+    snp_group: neisseria
+  "Legionella pneumophila":
+    display_name: 嗜肺军团菌
+    marker_genes: [mip, dota]
+    mlst_scheme: legionella
+    snp_group: legionella
+  "Mycoplasma pneumoniae":
+    display_name: 肺炎支原体
+    marker_genes: [p1]
+    snp_group: mpneumoniae
+  "Haemophilus influenzae":
+    display_name: 流感嗜血杆菌
+    marker_genes: [hpd]
+    mlst_scheme: haemophilus
+    snp_group: haemophilus
+  "Bordetella pertussis":
+    display_name: 百日咳鲍特菌
+    marker_genes: [is481, ptxs1]
+    snp_group: bordetella
+
+  # ═══ 条件致病/院感 ═══
+  "Klebsiella pneumoniae":
+    display_name: 肺炎克雷伯菌
+    marker_genes: [khe]
+    mlst_scheme: kpneumoniae
+    amrfinder_organism: Klebsiella_pneumoniae
+    snp_group: klebsiella
+  "Acinetobacter baumannii":
+    display_name: 鲍曼不动杆菌
+    marker_genes: [oxa51]
+    mlst_scheme: abaumannii
+    amrfinder_organism: Acinetobacter_baumannii
+    snp_group: acinetobacter
+  "Pseudomonas aeruginosa":
+    display_name: 铜绿假单胞菌
+    marker_genes: [ecfx]
+    mlst_scheme: paeruginosa
+    amrfinder_organism: Pseudomonas_aeruginosa
+    snp_group: pseudomonas
+  "Staphylococcus aureus":
+    display_name: 金黄色葡萄球菌
+    marker_genes: [nuc, fema]
+    mlst_scheme: saureus
+    amrfinder_organism: Staphylococcus_aureus
+    snp_group: staphylococcus
+  "Enterococcus faecalis":
+    display_name: 粪肠球菌
+    marker_genes: [ddl-ef]
+    mlst_scheme: efaecalis
+    amrfinder_organism: Enterococcus_faecalis
+    snp_group: enterococcus
+  "Enterococcus faecium":
+    display_name: 屎肠球菌
+    marker_genes: [ddl-efm]
+    mlst_scheme: efaecium
+    amrfinder_organism: Enterococcus_faecium
+    snp_group: enterococcus
+  "Clostridioides difficile":
+    display_name: 艰难梭菌
+    marker_genes: [tcda, tcdb]
+    mlst_scheme: cdifficile
+    snp_group: cdifficile
+
+  # ═══ 其他重要病原 ═══
+  "Streptococcus pyogenes":
+    display_name: 化脓链球菌
+    marker_genes: [speb]
+    mlst_scheme: spyogenes
+    amrfinder_organism: Streptococcus_pyogenes
+    snp_group: streptococcus
+  "Streptococcus agalactiae":
+    display_name: 无乳链球菌
+    marker_genes: [cfb, dlrS]
+    mlst_scheme: sagalactiae
+    amrfinder_organism: Streptococcus_agalactiae
+    snp_group: streptococcus
+  "Neisseria gonorrhoeae":
+    display_name: 淋病奈瑟菌
+    marker_genes: [pora]
+    mlst_scheme: ngonorrhoeae
+    snp_group: neisseria
+  "Helicobacter pylori":
+    display_name: 幽门螺杆菌
+    marker_genes: [urea, urec]
+    mlst_scheme: hpylori
+    snp_group: hpylori
+  "Cronobacter sakazakii":
+    display_name: 阪崎克罗诺杆菌
+    marker_genes: [rpob-cs]
+    mlst_scheme: cronobacter
+    snp_group: cronobacter
+  "Yersinia enterocolitica":
+    display_name: 小肠结肠炎耶尔森菌
+    marker_genes: [ail]
+    mlst_scheme: yenterocolitica
+    snp_group: yersinia
+  "Aeromonas hydrophila":
+    display_name: 嗜水气单胞菌
+    marker_genes: [aera, ahh1]
+    mlst_scheme: ahydrophila
+    snp_group: aeromonas
+  "Streptococcus suis":
+    display_name: 猪链球菌
+    marker_genes: [gdh]
+    mlst_scheme: ssuis
+    snp_group: streptococcus
+  "Corynebacterium diphtheriae":
+    display_name: 白喉棒状杆菌
+    marker_genes: [tox]
+    mlst_scheme: cdiphtheriae
+    snp_group: corynebacterium
+
+  # ═══ 高后果/管制（默认禁用） ═══
+  "Yersinia pestis":
+    display_name: 鼠疫耶尔森菌
+    marker_genes: [caf1, pla]
+    mlst_scheme: ypestis
+    snp_group: yersinia
+    enabled: false
+  "Bacillus anthracis":
+    display_name: 炭疽芽胞杆菌
+    marker_genes: [paga, capb]
+    mlst_scheme: banthracis
+    snp_group: bacillus
+    enabled: false
+  "Burkholderia pseudomallei":
+    display_name: 类鼻疽伯克霍尔德菌
+    marker_genes: [tts1, bimabp]
+    mlst_scheme: bpseudomallei
+    snp_group: burkholderia
+    enabled: false
+  "Clostridium botulinum":
+    display_name: 肉毒梭菌
+    marker_genes: [bontA, bontB]
+    snp_group: cbotulinum
+    enabled: false
 
 snp_groups:
   salmonella:
@@ -60,3 +227,95 @@ snp_groups:
     ref: data/reference/genomes/vpara_rimd.fasta
     species: [V.parahaemolyticus]
     organism: Vibrio parahaemolyticus
+  vcholerae:
+    ref: data/reference/genomes/vcholerae_n16961.fasta
+    species: ["Vibrio cholerae"]
+    organism: Vibrio cholerae
+  listeria:
+    ref: data/reference/genomes/lmonocytogenes_egde.fasta
+    species: ["Listeria monocytogenes"]
+    organism: Listeria monocytogenes
+  campylobacter:
+    ref: data/reference/genomes/cjejuni_nctc11168.fasta
+    species: ["Campylobacter jejuni", "Campylobacter coli"]
+    organism: Campylobacter jejuni / C. coli
+  streptococcus:
+    ref: data/reference/genomes/spneumoniae_tigr4.fasta
+    species: ["Streptococcus pneumoniae", "Streptococcus pyogenes", "Streptococcus agalactiae", "Streptococcus suis"]
+    organism: Streptococcus spp.
+  neisseria:
+    ref: data/reference/genomes/nmeningitidis_mc58.fasta
+    species: ["Neisseria meningitidis", "Neisseria gonorrhoeae"]
+    organism: Neisseria spp.
+  legionella:
+    ref: data/reference/genomes/lpneumophila_philadelphia.fasta
+    species: ["Legionella pneumophila"]
+    organism: Legionella pneumophila
+  klebsiella:
+    ref: data/reference/genomes/kpneumoniae_atcc700603.fasta
+    species: ["Klebsiella pneumoniae"]
+    organism: Klebsiella pneumoniae
+  acinetobacter:
+    ref: data/reference/genomes/abaumannii_atcc17978.fasta
+    species: ["Acinetobacter baumannii"]
+    organism: Acinetobacter baumannii
+  pseudomonas:
+    ref: data/reference/genomes/paeruginosa_pao1.fasta
+    species: ["Pseudomonas aeruginosa"]
+    organism: Pseudomonas aeruginosa
+  staphylococcus:
+    ref: data/reference/genomes/saureus_n315.fasta
+    species: ["Staphylococcus aureus"]
+    organism: Staphylococcus aureus
+  enterococcus:
+    ref: data/reference/genomes/efaecalis_v583.fasta
+    species: ["Enterococcus faecalis", "Enterococcus faecium"]
+    organism: Enterococcus spp.
+  cdifficile:
+    ref: data/reference/genomes/cdifficile_630.fasta
+    species: ["Clostridioides difficile"]
+    organism: Clostridioides difficile
+  mpneumoniae:
+    ref: data/reference/genomes/mpneumoniae_m129.fasta
+    species: ["Mycoplasma pneumoniae"]
+    organism: Mycoplasma pneumoniae
+  haemophilus:
+    ref: data/reference/genomes/hinfluenzae_kw20.fasta
+    species: ["Haemophilus influenzae"]
+    organism: Haemophilus influenzae
+  hpylori:
+    ref: data/reference/genomes/hpylori_26695.fasta
+    species: ["Helicobacter pylori"]
+    organism: Helicobacter pylori
+  cronobacter:
+    ref: data/reference/genomes/csakazakii_atcc29544.fasta
+    species: ["Cronobacter sakazakii"]
+    organism: Cronobacter sakazakii
+  yersinia:
+    ref: data/reference/genomes/yenterocolitica_8081.fasta
+    species: ["Yersinia enterocolitica", "Yersinia pestis"]
+    organism: Yersinia spp.
+  aeromonas:
+    ref: data/reference/genomes/ahydrophila_atcc7966.fasta
+    species: ["Aeromonas hydrophila"]
+    organism: Aeromonas hydrophila
+  bordetella:
+    ref: data/reference/genomes/bpertussis_tohama.fasta
+    species: ["Bordetella pertussis"]
+    organism: Bordetella pertussis
+  corynebacterium:
+    ref: data/reference/genomes/cdiphtheriae_nctc13129.fasta
+    species: ["Corynebacterium diphtheriae"]
+    organism: Corynebacterium diphtheriae
+  bacillus:
+    ref: data/reference/genomes/banthracis_ames.fasta
+    species: ["Bacillus anthracis"]
+    organism: Bacillus anthracis
+  burkholderia:
+    ref: data/reference/genomes/bpseudomallei_k96243.fasta
+    species: ["Burkholderia pseudomallei"]
+    organism: Burkholderia pseudomallei
+  cbotulinum:
+    ref: data/reference/genomes/cbotulinum_atcc3502.fasta
+    species: ["Clostridium botulinum"]
+    organism: Clostridium botulinum
