@@ -41,6 +41,8 @@ _VALID_EVENT_TYPES = frozenset(
         "version_created",
         "nli_reflected",
         "species_identified",
+        "pangenome_clustered",
+        "differential_computed",
     }
 )
 
@@ -81,6 +83,8 @@ EventType = Literal[
     "version_created",
     "nli_reflected",
     "species_identified",
+    "pangenome_clustered",
+    "differential_computed",
 ]
 
 
@@ -91,7 +95,7 @@ _CGMLST_REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
 }
 
 SPECIES_ID_METHODS = frozenset(
-    {"marker", "panel", "skani_gtdb", "mash_refseq", "sourmash", "gtdbtk", "kraken2"}
+    {"marker", "multigene", "panel", "skani_gtdb", "mash_refseq", "sourmash", "gtdbtk", "kraken2"}
 )
 
 
