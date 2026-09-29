@@ -1,0 +1,38 @@
+diff --git i/src/core/ai/gateway.ts w/src/core/ai/gateway.ts
+index e684503..2ecb263 100644
+--- i/src/core/ai/gateway.ts
++++ w/src/core/ai/gateway.ts
+@@ -1802,6 +1802,33 @@ async function embedSubBatch(
+   modelId: string,
+   opts?: EmbedOpts,
+ ): Promise<Float32Array[]> {
++  // PATCH(hermes-bacmap): ollama direct text path. The Vercel AI SDK's OpenAI
++  // provider encodes inputs as tiktoken token-id arrays, which ollama's
++  // /v1/embeddings rejects (400 invalid input type). Bypass the SDK for the
++  // ollama recipe and POST plain string arrays instead.
++  if (recipe.id === 'ollama') {
++    const base = (process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434/v1').replace(/\/$/, '');
++    const res = await fetch(`${base}/embeddings`, {
++      method: 'POST',
++      headers: { 'Content-Type': 'application/json' },
++      body: JSON.stringify({ model: modelId, input: texts }),
++      signal: withDefaultTimeout(opts?.abortSignal, AI_EMBED_TIMEOUT_MS),
++    });
++    if (!res.ok) {
++      throw new Error(`ollama embed HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`);
++    }
++    const json: any = await res.json();
++    const embeddings = (json.data ?? []).map((d: any) => new Float32Array(d.embedding));
++    if (embeddings.length !== texts.length) {
++      throw new Error(`ollama embed returned ${embeddings.length} embedding(s) for ${texts.length} input(s).`);
++    }
++    for (const e of embeddings) {
++      if (e.length !== expectedDims) {
++        throw new Error(`ollama embed dim mismatch: got ${e.length}, expected ${expectedDims}.`);
++      }
++    }
++    return embeddings;
++  }
+   try {
+     const callTransport = () => invokeAI({ operation: 'gateway.embed', kind: 'embedding', model: `${recipe.id}:${modelId}`,
+       maxInputTokens: recipe.touchpoints.embedding?.max_batch_tokens

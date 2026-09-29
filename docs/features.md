@@ -1244,7 +1244,7 @@ mcp_servers:
 
 ### 已知问题与运维
 
-- gbrain 0.59 ↔ ollama 嵌入端点 token-array 兼容问题：语义检索暂缺（关键词中英正常），
-  本地翻译代理已部署待上游修复（详见 docs/architecture/gbrain.md）
+- gbrain 嵌入已修复：本地补丁（scripts/patches/gbrain-ollama-text-embed.patch）为 ollama
+  加文本直通，语义检索全通（中文→英文语义桥实测 0.85 分）；待上游修复后移除补丁
 - `think` 需要 LLM key；`gbrain sweep --once` 用于批量捕获后补自动连线
 - 用户级服务：ollama.service（:11434）+ gbrain-embed-proxy.service（:11435）

@@ -21,6 +21,11 @@ fi
 cd ~/gbrain
 say "安装依赖（bun install）"
 bun install
+# 应用本地补丁：ollama 文本直通（上游 Vercel AI SDK token 化不兼容，待上游修复后移除）
+PATCH="$(cd "$(dirname "$0")" && pwd)/patches/gbrain-ollama-text-embed.patch"
+if [ -f "$PATCH" ] && ! grep -q "PATCH(hermes-bacmap)" src/core/ai/gateway.ts; then
+    git apply "$PATCH" || echo "WARN: 补丁应用失败（可能已合入上游）"
+fi
 chmod +x src/cli.ts
 ln -sf ~/gbrain/src/cli.ts ~/.bun/bin/gbrain
 export PATH="$HOME/.bun/bin:$PATH"

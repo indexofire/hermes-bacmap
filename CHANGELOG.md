@@ -14,8 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 发现结果自动捕获挂钩（差异富集基因/泛基因组新颖簇/标记注册）+ GOM
   `knowledge_captured` 事件类型；`BACMAP_KNOWLEDGE_HOOKS=0` 关闭
 - `scripts/setup_gbrain.sh` 用户级部署（gbrain + PGLite + 本地 bge-m3）
-- 已知问题：gbrain 0.59 ↔ ollama 嵌入 token-array 兼容（语义检索暂缺，关键词正常；
-  本地翻译代理已部署待上游修复）
+- gbrain 嵌入修复：本地补丁（scripts/patches/gbrain-ollama-text-embed.patch）绕过
+  Vercel AI SDK token 化为 ollama 提供文本直通——13/13 chunks 嵌入、中文→英文语义
+  检索 0.85 分实测通过；setup_gbrain.sh 自动应用，待上游修复后移除
+  （think 综合仍需独立 LLM key，GLM coding key 的 chat 端点不兼容）
 
 ## [0.5.1] — 2026-09-29
 
