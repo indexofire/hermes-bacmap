@@ -6,6 +6,23 @@ site_url: https://github.com/indexofire/hermes-bacmap
 repo_name: indexofire/hermes-bacmap
 repo_url: https://github.com/indexofire/hermes-bacmap
 
+exclude_docs: |
+  README.md
+  README.en.md
+
+plugins:
+  - search
+  - i18n:
+      docs_structure: suffix
+      languages:
+        - locale: zh
+          default: true
+          name: 简体中文
+          build: true
+        - locale: en
+          name: English
+          build: true
+
 theme:
   name: material
   language: zh

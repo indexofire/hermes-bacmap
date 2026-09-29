@@ -1,6 +1,6 @@
 # 更新日志 Changelog
 
-完整变更记录见项目根目录 [CHANGELOG.md](../../CHANGELOG.md)。
+完整变更记录见项目根目录 [CHANGELOG.md](https://github.com/indexofire/hermes-bacmap/blob/main/CHANGELOG.md)。
 
 ## 版本概览
 
@@ -50,4 +50,4 @@
 - 端到端 Snakemake 管线 + GOM 入库 + HTML 报告
 - 10/10 株 gold standard 全量验证
 
-> 完整详情、PR 链接与未发布改动请查阅 [CHANGELOG.md](../../CHANGELOG.md)。
+> 完整详情、PR 链接与未发布改动请查阅 [CHANGELOG.md](https://github.com/indexofire/hermes-bacmap/blob/main/CHANGELOG.md)。

@@ -26,6 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **发现运行 GOM 入库**：cohort:pangenome / cohort:discovery-* 版本化对象 + 新事件类型
 - **outbreak-investigation 元技能** + 13 篇病原文档 + 分层物种鉴定架构文档
 - 依赖：+mmseqs2、+duckdb；mummer 解析修复（bioconda 仅 3.23）
+- **MIT License**：LICENSE + pyproject/plugin.yaml 元数据
+- **双语文档**：README 英文版（中文移至 README.zh-CN.md）；mkdocs-static-i18n
+  suffix 模式，docs/ 全量 *.en.md 英文页与中文页并存（语言切换）
+- **CI 修复（28 连败根因）**：ruff-pre-commit rev v0.5.0→v0.16.7（陈旧 --check 参数）、
+  snakemake-dag job 补装运行时依赖（-e .）、lint_pathogens 严重度分级
+  （数据层缺失=warning，--strict 可选）、mypy --strict 5 处类型标注、
+  ruff 14 错误 + 25 文件格式化、secrets baseline 再生成
 
 
 ### Added — 评审 P3 收尾：审计确定性 + web 读回 + V0.7 终态（2026-09-08）
