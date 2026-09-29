@@ -177,6 +177,20 @@ When summarizing results for users:
 4. Provide context (is this serotype common? is this ST associated with outbreaks?)
 5. Note limitations (in silico predictions need phenotypic confirmation)
 
+## Numeric Provenance Rule (orphan-claim guard)
+
+Every number written into a report or interpretation MUST come from a tool
+output or GOM payload — never computed or estimated by the LLM itself:
+
+- Ratios ("12/12 阳性"), percentages ("99.5%"), statistics ("q<0.05"),
+  counts ("384 clusters") — copy verbatim from tool results
+- Before delivering a report, re-check each number against the tool output
+  you cited; the deterministic guard
+  (`hermes_bacmap.analysis.provenance.verify_numeric_provenance`) flags
+  untraceable numbers as orphans — orphans must be fixed or removed
+- Literature citations need PMID/DOI from bio_lit_search output
+- Uncertain values: state "approximately" and cite the source, or omit
+
 ## cgMLST Trace-back Interpretation
 
 cgMLST (core-genome MLST) provides high-resolution typing via allele-by-allele
