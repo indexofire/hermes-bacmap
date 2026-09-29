@@ -1046,3 +1046,182 @@ snakemake 7.32.*      # 工作流引擎
 ```
 pixi (gmlst now included)/          # Python 3.12 (gmlst 需要 ≥3.12)
 ```
+
+---
+
+## 14. 智能体自主数据挖掘层（DuckDB + MMseqs2 发现引擎）
+
+解决"LLM 如何从已有数据中自主发现有意义的基因"：跨基因组模式识别需要两层能力——
+计算层（聚类）+ 查询层（联邦分析）。设计遵循**零索引原则**：不向 GOM 写入任何新数据，
+DuckDB 直接扫描已有结果文件（列式 + 向量化 + 谓词下推），存储开销为零。
+
+### 三工具协作模型
+
+| 工具 | 角色 | 底层 |
+|---|---|---|
+| `bio_pangenome` | 计算层：CDS 蛋白聚类 → 簇×样本矩阵 | mmseqs2 easy-linclust（线性时间） |
+| `bio_analytics_query` | 查询层：只读 SQL 联邦查询 | DuckDB 内存连接 + 视图注册 |
+| `bio_differential_genes` | 统计层：两组富集分析 | Fisher 精确检验（纯 Python）+ BH 校正 |
+
+### 数据流
+
+```
+annotation.json (protein_seq, 已有)
+    → extract_proteins → all_proteins.faa ({sample}__{locus_tag} ID 携带基因组归属)
+    → mmseqs2 easy-linclust → cluster.tsv (rep → members)
+    → build_matrix → presence_matrix.parquet (cluster_id/named_gene/is_novel/n_genomes/每样本 0-1)
+    → DuckDB 视图 pangenome（与 gapit_card/gapit_vfdb/samples 同库联邦查询）
+```
+
+### 典型发现工作流（暴发调查）
+
+```
+用户: "这 12 株暴发株和背景比较，有什么特别的基因？"
+
+1. AI → bio_differential_genes(group_a=暴发株, group_b=背景株, source=gapit_vfdb)
+   ← 已知基因富集（如 tdh 12/12 vs 5/284, q<1e-10）
+2. AI → bio_pangenome(samples=全部) + bio_analytics_query(
+     sql: SELECT cluster_id, n_genomes FROM pangenome
+          WHERE is_novel AND "SAM-outbreak-01"=1 ... GROUP BY ...)
+   ← 新颖基因簇（无任何命名注释但跨基因组重现）
+3. AI 解读 → 候选新标记 → 验证（面板筛查）→ 注册（gapit db build）
+```
+
+### DuckDB 视图注册（connect()）
+
+| 视图 | 来源文件 | 关键列 |
+|---|---|---|
+| `gapit_card` / `gapit_vfdb` / `gapit_plasmidfinder` | `*/amr/*.tsv` 等（abricate 格式） | strain_id, gene, identity, coverage, database, product |
+| `samples` | 注释目录 ∪ gapit 菌株 | strain_id |
+| `pangenome` | `pangenome/presence_matrix.parquet` | cluster_id, representative, named_gene, is_novel, n_genomes, 每样本 0/1 |
+
+SQL 安全：仅允许单条 SELECT/WITH 语句（`_is_readonly_sql` 白名单 + 关键字黑名单），
+多语句与 COPY/CREATE/ATTACH 等一律拒绝；连接为纯内存，无持久化副作用。
+
+### Fisher 精确检验实现
+
+2×2 列联表超几何分布精确计算（`math.lgamma`，无 scipy 依赖），双侧 p 值 = 观察概率
+及以下所有支撑点的概率和；多重检验 Benjamini-Hochberg FDR 校验（含单调性强制）。
+单元测试用手算值验证（如 [[4,0],[0,4]] → p = 2/C(8,4) = 0.0286）。
+
+### 相关模块
+
+| 模块 | 内容 |
+|---|---|
+| `engine/backends/mmseqs2.py` | MMseqs2 后端（easy-linclust 封装 + cluster TSV 解析，注册于 _BUILTINS） |
+| `analysis/pangenome.py` | 蛋白提取 / 聚类编排 / 矩阵构建 / Parquet 导出 / PangenomeResult |
+| `analysis/analytics.py` | 视图注册 / 只读 query / differential_genes / gene_prevalence |
+| `tools/discovery.py` | 3 个 Hermes handler（@tool_handler，JSON 返回） |
+
+---
+
+## 15. 外部科学数据连接器 + 数字溯源守卫（OpenScience 借鉴层）
+
+借鉴 OpenScience 科研智能体的三类机制：科学数据库连接器、结论审计门、
+发现运行可回溯。设计原则保持本地优先（免 API key、密钥不出本机）。
+
+### 15.1 文献连接器 — `bio_lit_search`
+
+Europe PMC REST（覆盖 PubMed/MEDLINE + 生命科学预印本，免 key）。
+发现闭环的"查证"环节：AI 发现新标记候选后检索先行文献，返回
+title/引用（含 PMID/DOI）/摘要（截断 500 字）/期刊/年份。
+
+### 15.2 全球监测连接器 — `bio_ncbi_pathogen`
+
+NCBI Pathogen Detection（700 万+分离株，免 key）。端点为 Isolates
+Browser 自身后端 `pathogens-srv`（经实测验证的未公开契约，礼貌限速
+≤1 req/s，UA 标识 hermes-bacmap）：
+
+| action | collection | 用途 |
+|---|---|---|
+| isolates | isolates | 按 organism/geo/serovar/年份/AST 过滤监测分离株（AST 表型、AMR 基因型、SNP 簇 erd_group） |
+| amr | amr | MicroBIGG-E AMR/毒力元件检索（element_symbol，验证候选标记是否已被 NCBI 收录） |
+
+本地暴发株 vs 全球监测对比：`fq` SOLR 过滤 + `fl` 字段清单 +
+`start/limit` 分页，响应根 `ngout.data.content/totalCount`。
+
+### 15.3 元技能 — outbreak-investigation
+
+编排发现闭环（借鉴 OpenScience ai4s-agent 元技能模式）：分组确认 →
+`bio_differential_genes`（已知基因富集）→ `bio_pangenome` + 新颖簇
+查询 → `bio_lit_search`（文献查证）→ 报告（引用带 PMID）。每阶段
+产物落盘 + GOM 留痕。见 skills/outbreak-investigation/。
+
+### 15.4 发现运行 GOM 入库（发现可回溯）
+
+- `run_pangenome` 持久化 `pangenome/summary.json`
+- differential handler 持久化 `analytics/differential_{source}.json`
+- `ingest_results.py --discovery` 注册 cohort 对象：
+  - `cohort:pangenome`（注册矩阵 Parquet 文件产物 + `pangenome_clustered` 事件）
+  - `cohort:discovery-{source}`（`differential_computed` 事件）
+  - 幂等：内容不变跳过；变化 → 新版本（沿用 cohort SNP 模式）
+
+### 15.5 数字溯源守卫 — verify_numeric_provenance
+
+`analysis/provenance.py`（借鉴 OpenScience.ai orphan-claim guard）：
+AI 报告中每个数字（比值、百分比、p/q 值、计数）必须能溯源到 GOM/
+工具输出的数字集合；确定性正则提取，无 LLM。
+
+- 容差：3 位小数舍入 + 百分比↔比例换算（33.3% ↔ 0.333）
+- 豁免：孤立个位数（"阶段 3"、"v2" 等结构性文本）
+- 比值 `12/12` 两位都检查；科学计数 `1e-10`、千分位 `384,211` 支持
+- `collect_numbers(payload)` 递归展平 GOM payload 为证据集
+- 挂接 interpret-results skill：报告交付前自查，orphan 必须修复
+
+### 15.6 新增模块清单
+
+| 模块 | 内容 |
+|---|---|
+| `services/literature.py` | Europe PMC 检索（urllib，30s 超时，错误安全） |
+| `services/ncbi_pathogen.py` | pathogens-srv 连接器（isolates + amr 双 collection） |
+| `tools/connectors.py` | bio_lit_search / bio_ncbi_pathogen handler |
+| `analysis/provenance.py` | 数字声明提取 + 证据集收集 + orphan 判定 |
+| `skills/outbreak-investigation/` | 元技能（SKILL.md + worked-example 参考） |
+
+---
+
+## 16. L2 沙箱 + 能力进化注册层（P2/P3）
+
+### 16.1 L2 受控探索（project.md §L2 三工具）
+
+| 工具 | 能力 | 实现要点 |
+|---|---|---|
+| `bio_sandbox_exec` | AI 写 Python 子进程执行 | cwd=results/sandbox/<session>/，变量 pickle 会话持久化，超时保护（-u 无缓冲部分输出可回收），执行代码 run_NNNN.py 落盘审计；**输出入报告需用户 sign-off** |
+| `bio_sql_query` | GOM SQLite 只读查询 | ro URI 打开 + 只读守卫（复用 _is_readonly_sql），空 sql 列出核心表；payload_json 可用 json_extract 深挖 |
+| `bio_plot` | 快速图表 | matplotlib Agg，bar/line/scatter/hist/heatmap → results/plots/*.png（文件名净化）；定制图走沙箱 |
+
+沙箱代码可经 `$BACMAP_RESULTS` 访问结果目录；会话隔离（session 名隔离变量空间）。
+
+### 16.2 能力进化注册（发现→验证→注册→部署闭环）
+
+| 工具 | 能力 | 实现要点 |
+|---|---|---|
+| `bio_db_build` | 自定义 gapit 筛查库 | 封装 `gapit db build`（abricate ~~~ / gapit| 头格式，nucl/prot 自动检测），子进程注入 pixi PATH（makeblastdb 依赖）；建库立即可被 gapit screen / bio_gene_scan 使用 |
+| `bio_marker_register` | 新标记入规则库 | marker_rules.yaml 原子追加（tmp+rename）、.bak 备份、幂等重注册、物种名归一化（空格→下划线、属名大写）；可选序列追加到 markers_v2.fasta（按基因名去重） |
+
+完整进化流程：`bio_differential_genes`/`bio_pangenome` 发现 → 面板验证 → `bio_lit_search` 查新 → `bio_ncbi_pathogen`（MicroBIGG-E）收录检查 → `bio_marker_register` 入规则 → `bio_db_build` 建筛查库 → 后续管线自动生效。
+
+### 16.3 gapit MCP 接入（文档化配置）
+
+Hermes 插件 API（register_tool/register_skill/register_approval_transport）无 MCP 注册口；
+MCP server 经 Hermes config.yaml 配置。gapit 内置 MCP server（`gapit mcp`）接入方式：
+
+```yaml
+# ~/.hermes/config.yaml （或项目 config）
+mcp_servers:
+  gapit:
+    command: /path/to/.pixi/envs/default/bin/gapit
+    args: [mcp]
+```
+
+接入后 LLM 可直调 gapit 全功能（screen/db search/db build/summary）。
+
+### 16.4 新增模块
+
+| 模块 | 内容 |
+|---|---|
+| `analysis/sandbox.py` | L2 执行器（子进程 + runner + 会话变量 pickle） |
+| `analysis/plotting.py` | 五类图表快速渲染（Agg，文件名净化） |
+| `services/gapit_ops.py` | gapit db build 封装（PATH 注入 + 记录数解析） |
+| `services/marker_registry.py` | 规则文件原子注册（备份/幂等/归一化） |
+| `tools/sandbox.py` / `tools/curation.py` | 5 个 handler（39 tools） |

@@ -73,11 +73,20 @@ uv pip install -e ".[dev]"
 
 | 模块 | 行数 | 功能 |
 |---|---|---|
-| `tools/` | 2399 | 29 个 Hermes tool handler（seq / cli / pipeline / services 分包 + registry 表驱动注册） |
+| `tools/` | 2700 | 39 个 Hermes tool handler（seq / cli / pipeline / services / discovery / connectors / sandbox / curation 分包 + registry 表驱动注册） |
 | `services/genome_object_service.py` | 749 | GOM（SQLite + 版本管理 + 事件 + 文件产物 + FTS5 搜索） |
-| `schemas.py` | 936 | 29 个 tool JSON Schema 定义 |
+| `schemas.py` | 1180 | 39 个 tool JSON Schema 定义 |
 | `analysis/genome_annotator.py` | 280 | 基因组注释（pyrodigal + Prokka DBs，Python 原生） |
-| `engine/` | 1125 | 算法抽象层（SequenceMatcher + ReadMapper + Hit，backends/：blast / minimap2 / kma / kmer 可换后端） |
+| `engine/` | 1230 | 算法抽象层（SequenceMatcher + ReadMapper + Hit，backends/：blast / minimap2 / kma / kmer / skani / mmseqs2 可换后端） |
+| `analysis/pangenome.py` | 200 | 泛基因组发现（mmseqs2 easy-linclust 聚类 → 簇×样本 presence/absence 矩阵 Parquet） |
+| `analysis/analytics.py` | 310 | DuckDB 联邦分析（零索引查询 gapit TSV/注释/泛基因组 + Fisher 精确检验差异富集） |
+| `analysis/provenance.py` | 160 | 数字溯源守卫（orphan-claim guard：报告数字必须可溯源到 GOM/工具输出） |
+| `analysis/sandbox.py` | 130 | L2 沙箱执行器（子进程 + 会话变量持久化 + 审计落盘） |
+| `analysis/plotting.py` | 110 | 快速绘图（bar/line/scatter/hist/heatmap，matplotlib Agg） |
+| `services/marker_registry.py` | 140 | 标记注册（marker_rules.yaml 原子更新 + 备份 + 幂等） |
+| `services/gapit_ops.py` | 75 | 自定义 gapit 数据库构建（能力进化部署段） |
+| `services/literature.py` | 90 | 文献连接器（Europe PMC：PubMed + 预印本，免 key） |
+| `services/ncbi_pathogen.py` | 160 | NCBI Pathogen Detection 连接器（700 万+监测分离株 + MicroBIGG-E 元件，实测验证 API） |
 | `analysis/gene_scanner.py` | 545 | 基因扫描引擎（委托 engine.SequenceMatcher） |
 | `analysis/nli_reflector.py` | 413 | Layer 3 NLI Reflector（原子声明蕴含/矛盾校验 + 审计事件） |
 | `typing/shigella_serotyper.py` | 231 | Shigella 血清型（移植 ShigATyper） |
@@ -93,8 +102,8 @@ uv pip install -e ".[dev]"
 ```
 hermes-bacmap/
 ├── src/hermes_bacmap/           Hermes 插件 Python 包
-│   ├── __init__.py             插件注册（29 tools 表驱动 + skills 自动发现）
-│   ├── schemas.py              29 个 tool JSON Schema 定义
+│   ├── __init__.py             插件注册（39 tools 表驱动 + skills 自动发现）
+│   ├── schemas.py              39 个 tool JSON Schema 定义
 │   ├── tools/                  Tool handler 包（seq / cli / pipeline / services + registry 表驱动注册）
 │   ├── engine/                 算法抽象层（SequenceMatcher / ReadMapper + backends/ 可换后端）
 │   ├── analysis/               领域分析（物种鉴定 / 基因扫描 / 注释 / 确定性校验 / cgMLST / NLI / 失败诊断）
