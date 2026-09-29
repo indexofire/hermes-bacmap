@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
+
+os.environ.setdefault("BACMAP_KNOWLEDGE_HOOKS", "0")
 
 
 @pytest.fixture

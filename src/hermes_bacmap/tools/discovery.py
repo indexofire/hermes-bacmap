@@ -60,7 +60,14 @@ def pangenome(args: dict[str, Any], **kwargs: Any) -> str:
             coverage=float(coverage),
             threads=int(threads),
         )
-        return json.dumps(result.to_dict(), ensure_ascii=False)
+        payload = result.to_dict()
+        payload["knowledge"] = _capture_pangenome_knowledge(payload)
+        summary_path = results_dir / "pangenome" / "summary.json"
+        if summary_path.exists():
+            summary_path.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
+        return json.dumps(payload, ensure_ascii=False)
     except (RuntimeError, ValueError) as e:
         return json.dumps({"error": f"pangenome failed: {e}"})
     except Exception:
@@ -114,8 +121,10 @@ def differential_genes(args: dict[str, Any], **kwargs: Any) -> str:
             min_prev_a=float(min_prev_a),
             max_prev_b=float(max_prev_b),
         )
-        _persist_differential(result.to_dict(), source, Path(_RESULTS_DIR))
-        return json.dumps(result.to_dict(), ensure_ascii=False)
+        payload = result.to_dict()
+        payload["knowledge"] = _capture_differential_knowledge(payload)
+        _persist_differential(payload, source, Path(_RESULTS_DIR))
+        return json.dumps(payload, ensure_ascii=False)
     except ValueError as e:
         return json.dumps({"error": str(e)})
     except Exception:
@@ -127,3 +136,50 @@ def _persist_differential(payload: dict[str, Any], source: str, results_dir: Pat
     out = results_dir / "analytics" / f"differential_{source}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _capture_knowledge_best_effort(page: str, what: str) -> dict[str, Any] | None:
+    import os
+
+    if os.environ.get("BACMAP_KNOWLEDGE_HOOKS") == "0":
+        return None
+    try:
+        from ..services.gbrain_client import capture
+
+        receipt = capture(page, what=what)
+        return {
+            "state": receipt.get("state", ""),
+            "slug": receipt.get("slug", ""),
+        }
+    except Exception:
+        return None
+
+
+def _capture_differential_knowledge(payload: dict[str, Any]) -> dict[str, Any] | None:
+    genes = payload.get("result", {}).get("genes") or []
+    if not genes:
+        return None
+    top = ", ".join(
+        f"{g['gene']} {g['prevalence_a']:.0%}/{g['prevalence_b']:.0%} (q={g['q_value']})"
+        for g in genes[:5]
+    )
+    page = (
+        f"Enriched genes in {payload.get('source', 'screening')}: {top}. "
+        f"Group A n={payload['result']['n_a']}, group B n={payload['result']['n_b']}."
+    )
+    return _capture_knowledge_best_effort(page, what=top[:120])
+
+
+def _capture_pangenome_knowledge(payload: dict[str, Any]) -> dict[str, Any] | None:
+    novel = payload.get("result", {}).get("novel_clusters") or []
+    if not novel:
+        return None
+    top = "; ".join(
+        f"{c['cluster_id']} in {c['n_genomes']} genomes ({', '.join(c['samples'][:3])})"
+        for c in novel[:3]
+    )
+    page = (
+        f"Novel pan-genome clusters (no named gene, recurring): {top}. "
+        f"Clustered at identity {payload['result'].get('min_seq_id', 'n/a')}."
+    )
+    return _capture_knowledge_best_effort(page, what=top[:120])

@@ -109,8 +109,8 @@ Beyond fixed pipelines, the AI agent can mine your own data and evolve the platf
 
 | Module | Lines | Function |
 |---|---|---|
-| `tools/` | 2700 | 39 Hermes tool handlers (seq / cli / pipeline / services / discovery / connectors / sandbox / curation packages, table-driven registry) |
-| `schemas.py` | 1180 | 39 tool JSON schemas |
+| `tools/` | 2700 | 42 Hermes tool handlers (seq / cli / pipeline / services / discovery / connectors / sandbox / curation / knowledge packages, table-driven registry) |
+| `schemas.py` | 1180 | 42 tool JSON schemas |
 | `services/genome_object_service.py` | 749 | GOM (SQLite + versioning + events + file artifacts + FTS5 search) |
 | `engine/` | 1230 | Algorithm abstraction (SequenceMatcher + ReadMapper + Hit; swappable backends: blast / minimap2 / kma / kmer / skani / mmseqs2) |
 | `analysis/genome_annotator.py` | 280 | Genome annotation (pyrodigal + Prokka DBs, pure Python) |
@@ -141,7 +141,7 @@ Beyond fixed pipelines, the AI agent can mine your own data and evolve the platf
 hermes-bacmap/
 ├── src/hermes_bacmap/           Hermes plugin Python package
 │   ├── __init__.py             plugin registration (39 table-driven tools + skill autodiscovery)
-│   ├── schemas.py              39 tool JSON schemas
+│   ├── schemas.py              42 tool JSON schemas
 │   ├── tools/                  tool handlers (seq / cli / pipeline / services + table-driven registry)
 │   ├── engine/                 algorithm abstraction (SequenceMatcher / ReadMapper + swappable backends)
 │   ├── analysis/               domain analysis (species ID / gene scanning / annotation / verification / cgMLST / NLI / diagnostics)

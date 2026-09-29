@@ -1,7 +1,15 @@
 # GBrain 知识大脑层
 
-> **状态**: 设计文档（V0.9 立项落地）· 待部署：用户级安装 gbrain + init PGLite +
-> Hermes MCP 配置（见下方安装章节）；集成面以 `gbrain call` 子进程桥为主（见 V0.9 计划）
+> **状态**: ✅ 已部署（V0.9，2026-09-29）· gbrain 0.59.18 · PGLite · bge-m3（本地）
+> 插件集成：`gbrain call` 子进程桥（services/gbrain_client.py）+ 3 个 bio_knowledge_* 工具 +
+> 发现结果自动捕获挂钩（BACMAP_KNOWLEDGE_HOOKS=0 可关）。部署：`scripts/setup_gbrain.sh`
+>
+> **已知问题（上游）**: gbrain 0.59 向 ollama /v1/embeddings 发送 token-id 数组被拒
+> （400 invalid input type），语义向量检索暂缺；关键词检索（中英）正常。本地翻译代理
+> 已部署（~/.config/systemd/user/gbrain-embed-proxy.service，tiktoken 解码，curl 验证
+> 通过），待 gbrain 修复 OLLAMA_BASE_URL 预检链路后 `gbrain migrate embeddings --to
+> ollama:bge-m3 --yes --max-cost-usd 1` 即可补齐嵌入。`think` 需 LLM key（如
+> ANTHROPIC_API_KEY 或配置 OpenAI 兼容端点）。
 
 ---
 

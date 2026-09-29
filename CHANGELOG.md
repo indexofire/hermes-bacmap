@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — GBrain 知识层（V0.9）
+
+- `services/gbrain_client.py`：gbrain call 子进程桥（capture/search/think，pglite_busy
+  重试感知，优雅降级）
+- 3 个知识工具：`bio_knowledge_capture/search/think`（42 tools）
+- 发现结果自动捕获挂钩（差异富集基因/泛基因组新颖簇/标记注册）+ GOM
+  `knowledge_captured` 事件类型；`BACMAP_KNOWLEDGE_HOOKS=0` 关闭
+- `scripts/setup_gbrain.sh` 用户级部署（gbrain + PGLite + 本地 bge-m3）
+- 已知问题：gbrain 0.59 ↔ ollama 嵌入 token-array 兼容（语义检索暂缺，关键词正常；
+  本地翻译代理已部署待上游修复）
+
 ## [0.5.1] — 2026-09-29
 
 ### Added — 物种扩展 + 智能体发现栈（34 物种 / 39 tools / 1711 tests）

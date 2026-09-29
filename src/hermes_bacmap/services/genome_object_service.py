@@ -43,6 +43,7 @@ _VALID_EVENT_TYPES = frozenset(
         "species_identified",
         "pangenome_clustered",
         "differential_computed",
+        "knowledge_captured",
     }
 )
 
@@ -85,6 +86,7 @@ EventType = Literal[
     "species_identified",
     "pangenome_clustered",
     "differential_computed",
+    "knowledge_captured",
 ]
 
 

@@ -85,9 +85,9 @@ GTDB-Tk）+ 7 方法共识仲裁，覆盖沙门菌、大肠、志贺、弧菌（
 
 | 模块 | 行数 | 功能 |
 |---|---|---|
-| `tools/` | 2700 | 39 个 Hermes tool handler（seq / cli / pipeline / services / discovery / connectors / sandbox / curation 分包 + registry 表驱动注册） |
+| `tools/` | 2700 | 42 个 Hermes tool handler（seq / cli / pipeline / services / discovery / connectors / sandbox / curation / knowledge 分包 + registry 表驱动注册） |
 | `services/genome_object_service.py` | 749 | GOM（SQLite + 版本管理 + 事件 + 文件产物 + FTS5 搜索） |
-| `schemas.py` | 1180 | 39 个 tool JSON Schema 定义 |
+| `schemas.py` | 1180 | 42 个 tool JSON Schema 定义 |
 | `analysis/genome_annotator.py` | 280 | 基因组注释（pyrodigal + Prokka DBs，Python 原生） |
 | `engine/` | 1230 | 算法抽象层（SequenceMatcher + ReadMapper + Hit，backends/：blast / minimap2 / kma / kmer / skani / mmseqs2 可换后端） |
 | `analysis/pangenome.py` | 200 | 泛基因组发现（mmseqs2 easy-linclust 聚类 → 簇×样本 presence/absence 矩阵 Parquet） |
@@ -114,8 +114,8 @@ GTDB-Tk）+ 7 方法共识仲裁，覆盖沙门菌、大肠、志贺、弧菌（
 ```
 hermes-bacmap/
 ├── src/hermes_bacmap/           Hermes 插件 Python 包
-│   ├── __init__.py             插件注册（39 tools 表驱动 + skills 自动发现）
-│   ├── schemas.py              39 个 tool JSON Schema 定义
+│   ├── __init__.py             插件注册（42 tools 表驱动 + skills 自动发现）
+│   ├── schemas.py              42 个 tool JSON Schema 定义
 │   ├── tools/                  Tool handler 包（seq / cli / pipeline / services + registry 表驱动注册）
 │   ├── engine/                 算法抽象层（SequenceMatcher / ReadMapper + backends/ 可换后端）
 │   ├── analysis/               领域分析（物种鉴定 / 基因扫描 / 注释 / 确定性校验 / cgMLST / NLI / 失败诊断）

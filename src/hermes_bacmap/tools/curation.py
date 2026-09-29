@@ -61,9 +61,30 @@ def marker_register(args: dict[str, Any], **kwargs: Any) -> str:
             min_identity=int(args.get("min_identity", 90) or 90),
             min_hits=int(args.get("min_hits", 1) or 1),
         )
+        result["knowledge"] = _capture_registration_knowledge(result)
         return json.dumps(result, ensure_ascii=False)
     except (ValueError, FileNotFoundError) as e:
         return json.dumps({"error": str(e)})
     except Exception:
         logger.exception("marker_register failed")
         return json.dumps({"error": f"marker_register failed for {gene!r}"})
+
+
+def _capture_registration_knowledge(result: dict[str, Any]) -> dict[str, Any] | None:
+    import os
+
+    if result.get("action") == "already_present":
+        return None
+    if os.environ.get("BACMAP_KNOWLEDGE_HOOKS") == "0":
+        return None
+    try:
+        from ..services.gbrain_client import capture
+
+        page = (
+            f"Marker registered: {result['gene']} for {result['species']} "
+            f"(min_identity {result['min_identity']}, genes now: {', '.join(result['genes'])})."
+        )
+        receipt = capture(page, what=f"register {result['gene']}")
+        return {"state": receipt.get("state", ""), "slug": receipt.get("slug", "")}
+    except Exception:
+        return None

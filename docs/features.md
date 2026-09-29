@@ -1225,3 +1225,26 @@ mcp_servers:
 | `services/gapit_ops.py` | gapit db build 封装（PATH 注入 + 记录数解析） |
 | `services/marker_registry.py` | 规则文件原子注册（备份/幂等/归一化） |
 | `tools/sandbox.py` / `tools/curation.py` | 5 个 handler（39 tools） |
+
+---
+
+## 17. GBrain 知识层（V0.9：生物学意义记录与知识消费）
+
+定位：记录生信分析/数据挖掘中**有生物学意义的发现**，为本地数据库构建提供知识支持，
+抑制 LLM 幻觉（project.md §8.3 由 GBrain 承接）。部署：`scripts/setup_gbrain.sh`
+（gbrain 0.59 + PGLite + 本地 bge-m3 embedding）。
+
+### 三面整合
+
+| 面 | 交付物 | 说明 |
+|---|---|---|
+| 工具面 | `bio_knowledge_capture` / `bio_knowledge_search` / `bio_knowledge_think`（42 tools） | `gbrain call` 子进程桥（services/gbrain_client.py，零新 Python 依赖）；capture 携带 species/gene/strain_group/evidence frontmatter 证据链 |
+| 事件面 | 自动捕获挂钩 ×3 + GOM `knowledge_captured` 事件类型 | 差异富集 top 基因、pangenome 新颖簇、marker 注册档案自动入知识库（best-effort，失败不影响分析主路）；回执嵌入结果 JSON；`BACMAP_KNOWLEDGE_HOOKS=0` 关闭（测试默认关闭） |
+| 消费面 | `bio_knowledge_search` 注册前查证 / 技能增强 | 先行证据、交叉反应、现场经验的语义/关键词检索 |
+
+### 已知问题与运维
+
+- gbrain 0.59 ↔ ollama 嵌入端点 token-array 兼容问题：语义检索暂缺（关键词中英正常），
+  本地翻译代理已部署待上游修复（详见 docs/architecture/gbrain.md）
+- `think` 需要 LLM key；`gbrain sweep --once` 用于批量捕获后补自动连线
+- 用户级服务：ollama.service（:11434）+ gbrain-embed-proxy.service（:11435）
