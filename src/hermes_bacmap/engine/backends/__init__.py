@@ -18,6 +18,7 @@ _BUILTINS = {
     "sourmash": ("hermes_bacmap.engine.backends.kmer", "SourmashBackend"),
     "kma": ("hermes_bacmap.engine.backends.kma", "KmaBackend"),
     "skani": ("hermes_bacmap.engine.backends.skani", "SkaniBackend"),
+    "mmseqs2": ("hermes_bacmap.engine.backends.mmseqs2", "Mmseqs2Backend"),
 }
 
 

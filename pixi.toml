@@ -36,7 +36,8 @@ skani = "0.3.*"
 kraken2 = ">=2.1"
 bracken = ">=2.9"
 mash = ">=2.3"
-mummer = ">=4"
+mummer = ">=3.23"
+mmseqs2 = ">=15"
 
 [pypi-dependencies]
 gmlst = ">=0.1.4"
@@ -46,6 +47,8 @@ pyrodigal = ">=3.0"
 pyhmmer = ">=0.10"
 mappy = ">=2.24"
 sourmash = ">=4.8"
+gapit = ">=0.2"
+duckdb = ">=1.1"
 
 [feature.taxonomic.dependencies]
 gtdbtk = "2.7.*"
