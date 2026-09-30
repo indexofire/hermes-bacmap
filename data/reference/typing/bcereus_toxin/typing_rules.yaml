@@ -1,0 +1,24 @@
+scheme: bcereus_toxin
+species: Bacillus cereus
+database: markers_v2
+min_identity: 85
+min_coverage: 30
+markers:
+  nheb: { role: toxin, label: "non-hemolytic enterotoxin B" }
+  ces: { role: toxin, label: "cereulide synthetase" }
+  hbla: { role: toxin, label: "hemolysin BL A" }
+rules:
+  - id: diarrheal
+    when: { nheb: "+" }
+    call: { toxin_type: diarrheal, confidence: high }
+    interpretation: "腹泻型（nhe+）"
+  - id: emetic
+    when: { ces: "+" }
+    call: { toxin_type: emetic, confidence: high }
+    interpretation: "呕吐型（cereulide，preformed toxin）"
+  - id: both
+    when: { nheb: "+", ces: "+" }
+    call: { toxin_type: diarrheal_and_ematic, confidence: high }
+  - id: none
+    when: { nheb: "-", ces: "-" }
+    call: { toxin_type: none, confidence: medium }

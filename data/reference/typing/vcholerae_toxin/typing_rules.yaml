@@ -1,0 +1,22 @@
+# gapit DB 分型配置：基因组合 → 型别（数据内聚，bacmap 只提供通用规则引擎）
+scheme: vcholerae_toxin
+species: Vibrio cholerae
+database: markers_v2
+min_identity: 85
+min_coverage: 30
+markers:
+  ctxa: { role: toxin, label: "cholera enterotoxin A subunit" }
+  ompw: { role: species, label: "outer membrane protein W" }
+rules:
+  - id: toxigenic
+    when: { ctxa: "+", ompw: "+" }
+    call: { toxigenic: true, confidence: high }
+    interpretation: "产毒株（甲类传染病，立即上报）"
+  - id: non_toxigenic
+    when: { ctxa: "-", ompw: "+" }
+    call: { toxigenic: false, confidence: high }
+    interpretation: "非产毒株（环境株）"
+  - id: uncertain
+    when: { ompw: "+" }
+    call: { toxigenic: null, confidence: low }
+    interpretation: "ctxA 不确定，需复核"

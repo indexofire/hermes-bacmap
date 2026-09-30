@@ -1,0 +1,30 @@
+scheme: lmono_serogroup
+species: Listeria monocytogenes
+database: markers_v2
+min_identity: 85
+min_coverage: 30
+markers:
+  prs: { role: genus, label: "Listeria genus" }
+  lmo0737: { role: serogroup }
+  lmo1118: { role: serogroup }
+  orf2819: { role: serogroup }
+  orf2110: { role: serogroup }
+rules:
+  - id: "1/2a"
+    when: { prs: "+", lmo0737: "+" }
+    call: { serogroup: "1/2a", confidence: high }
+    interpretation: "最常见临床血清群"
+  - id: "1/2c"
+    when: { prs: "+", lmo1118: "+", orf2110: "+" }
+    call: { serogroup: "1/2c", confidence: high }
+  - id: "1/2b"
+    when: { prs: "+", orf2819: "+", lmo0737: "-", orf2110: "-" }
+    call: { serogroup: "1/2b", confidence: high }
+  - id: "4b"
+    when: { prs: "+", orf2110: "+", orf2819: "+" }
+    call: { serogroup: "4b", confidence: high }
+    interpretation: "暴发相关，高致死率"
+  - id: uncertain
+    when: { prs: "+" }
+    call: { serogroup: null, confidence: low }
+    interpretation: "血清群不确定"

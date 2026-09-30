@@ -1,0 +1,28 @@
+scheme: cdiff_toxin
+species: Clostridioides difficile
+database: markers_v2
+min_identity: 85
+min_coverage: 30
+markers:
+  tcda: { role: toxin, label: "toxin A" }
+  tcdb: { role: toxin, label: "toxin B" }
+  cdta: { role: toxin, label: "binary toxin A" }
+  cdtb: { role: toxin, label: "binary toxin B" }
+rules:
+  - id: toxigenic
+    when: { tcda: "+", tcdb: "+" }
+    call: { toxigenic: true, confidence: high }
+    interpretation: "产毒株（tcdA+tcdB+）"
+  - id: rt027
+    when: { tcda: "+", tcdb: "+", cdta: "+", cdtb: "+" }
+    call: { toxigenic: true, rt027: true, confidence: high }
+    interpretation: "RT027 高毒力株（tcdA+tcdB+ + binary toxin）"
+  - id: binary_only
+    when: { tcda: "-", tcdb: "-", cdta: "+", cdtb: "+" }
+    call: { toxigenic: false, binary_toxin: true, confidence: medium }
+  - id: non_toxigenic
+    when: { tcda: "-", tcdb: "-" }
+    call: { toxigenic: false, confidence: high }
+  - id: uncertain
+    when: {}
+    call: { toxigenic: null, confidence: low }
