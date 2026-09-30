@@ -45,12 +45,18 @@ class SkaniBackend:
         if not lines:
             return []
 
-        header = lines[0].split("\t")
-        try:
-            ref_i = header.index("ref_filename")
-            qaf_i = header.index("Estimated_query_aligned_fraction")
-            ani_i = header.index("ANI")
-        except ValueError:
+        header = [h.strip() for h in lines[0].split("\t")]
+        ref_i = next((i for i, h in enumerate(header) if h in ("ref_filename", "Ref_file")), None)
+        qaf_i = next(
+            (
+                i
+                for i, h in enumerate(header)
+                if h in ("Estimated_query_aligned_fraction", "Align_fraction_query")
+            ),
+            None,
+        )
+        ani_i = next((i for i, h in enumerate(header) if h == "ANI"), None)
+        if ref_i is None or qaf_i is None or ani_i is None:
             ref_i, qaf_i, ani_i = 0, 3, 5
 
         hits: list[AniHit] = []

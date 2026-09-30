@@ -1183,3 +1183,27 @@ class TestSourmashDistance:
             results = s.distance(q, r)
         assert len(results) == 1
         assert results[0].reference_id == "geneZ"
+
+
+class TestSkaniNewHeader:
+    SKANI_NEW_OUT = (
+        "Ref_file\tQuery_file\tANI\tAlign_fraction_ref\tAlign_fraction_query\tRef_name\tQuery_name\n"
+        "/db/genomes/GCF_9.1_genomic.fna\t/q/x.fna\t99.12\t95.1\t96.3\tC. jejuni NCTC11168\tx\n"
+        "/db/genomes/GCF_8.1_genomic.fna\t/q/x.fna\t87.5\t30.0\t31.2\tC. coli\tx\n"
+    )
+
+    def test_parses_new_skani_header(self):
+        from hermes_bacmap.engine.backends.skani import SkaniBackend
+
+        with (
+            patch("hermes_bacmap.engine.backends.skani.which", return_value="/fake/skani"),
+            patch(
+                "hermes_bacmap.engine.backends.skani.subprocess.run",
+                return_value=_proc(self.SKANI_NEW_OUT),
+            ),
+        ):
+            hits = SkaniBackend().search(Path("q.fna"), Path("db"))
+        assert hits[0].ref.endswith("GCF_9.1_genomic.fna")
+        assert hits[0].ani == pytest.approx(99.12)
+        assert hits[0].aligned_fraction == pytest.approx(96.3)
+        assert hits[1].ani == pytest.approx(87.5)
