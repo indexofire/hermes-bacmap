@@ -8,16 +8,22 @@ rule species_identify:
         src_path = str(PROJECT_ROOT / "src"),
         contigs = str(WORKDIR) + "/{sample}/assembly/contigs.fasta",
         out = str(WORKDIR) + "/{sample}/species/species_id.json",
+        gside = str(PROJECT_ROOT / ".pixi/envs/default/bin/gside") if (PROJECT_ROOT / ".pixi/envs/default/bin/gside").exists() else "gside",
         fallback = '{"species":"Unknown","confidence":"low","detected_markers":[],"interpretation":"species_identify failed"}'
     shell:
         "mkdir -p $(dirname {params.out}) && "
+        "if command -v {params.gside} >/dev/null 2>&1; then "
+        "{params.gside} species {params.contigs} --mode marker > {params.out} 2>/dev/null || "
+        "echo '{params.fallback}' > {params.out}; "
+        "else "
         "{params.python} -c \""
         "import sys; sys.path.insert(0, '{params.src_path}'); "
         "from hermes_bacmap.analysis.species_identifier import identify; "
         "import json; r = identify('{params.contigs}'); "
         "json.dump(r.to_dict() if hasattr(r,'to_dict') else r, "
         "open('{params.out}', 'w'), ensure_ascii=False, indent=2)"
-        "\" || echo '{params.fallback}' > {params.out}"
+        "\" || echo '{params.fallback}' > {params.out}; "
+        "fi"
 
 
 # sourmash gather identification (species-id plan B). Same gating model as
@@ -53,12 +59,18 @@ rule species_ani:
         mode = config["species_mode"],
         contigs = str(WORKDIR) + "/{sample}/assembly/contigs.fasta",
         out = str(WORKDIR) + "/{sample}/species/species_ani.json",
+        gside = str(PROJECT_ROOT / ".pixi/envs/default/bin/gside") if (PROJECT_ROOT / ".pixi/envs/default/bin/gside").exists() else "gside",
         fallback = '{"analysis_type":"species_identification","method":"PLACEHOLDER","database":{"name":"x","version":"unknown"},"result":{"species":"Unknown","confidence":"low","interpretation":"species_ani failed"}}'
     shell:
         "mkdir -p $(dirname {params.out}) && "
+        "if command -v {params.gside} >/dev/null 2>&1; then "
+        "{params.gside} species {params.contigs} --mode {params.mode} > {params.out} 2>/dev/null || "
+        "echo '{params.fallback}' > {params.out}; "
+        "else "
         "{params.python} -c \""
         "import sys, json; sys.path.insert(0, '{params.src_path}'); "
         "from hermes_bacmap.analysis.ani_identifier import identify_by_ani; "
         "r = identify_by_ani('{params.contigs}', '{params.mode}'); "
         "json.dump(r.to_dict(), open('{params.out}', 'w'), ensure_ascii=False, indent=2)"
-        "\" || echo '{params.fallback}' > {params.out}"
+        "\" || echo '{params.fallback}' > {params.out}; "
+        "fi"

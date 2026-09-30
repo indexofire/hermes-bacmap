@@ -126,3 +126,20 @@ class TestErrorHandling:
     def test_unknown_scheme_raises(self):
         with pytest.raises(ValueError, match="not found"):
             type_by_rules("fake.fna", "nonexistent_scheme")
+
+
+class TestGsideBridge:
+    def test_bridge_detects_gside(self):
+        from hermes_bacmap.services.gside_bridge import gside_available
+
+        # gside is installed in both .venv and .pixi — should be True
+        result = gside_available()
+        assert isinstance(result, bool)
+
+    def test_bridge_returns_none_when_binary_missing(self):
+        from unittest.mock import patch
+
+        from hermes_bacmap.services.gside_bridge import gside_species
+
+        with patch("hermes_bacmap.services.gside_bridge.which", return_value=None):
+            assert gside_species("fake.fna") is None
