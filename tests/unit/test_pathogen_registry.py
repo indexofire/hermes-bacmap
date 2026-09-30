@@ -19,12 +19,12 @@ sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 from hermes_bacmap.config import PROJECT_ROOT  # noqa: E402
 
 GOLDEN_MLST_SCHEMES = {
-    "Salmonella": "salmonella_2",
+    "Salmonella": "senterica_1",
     "E.coli": "ecoli_1",
     "Shigella": "ecoli_1",
     "V.parahaemolyticus": "vparahaemolyticus_1",
-    "Vibrio cholerae": "vcholerae",
-    "Klebsiella pneumoniae": "kpneumoniae",
+    "Vibrio cholerae": "vcholerae_1",
+    "Klebsiella pneumoniae": "kpneumoniae_2",
 }
 
 GOLDEN_CGMLST_SCHEMES = {
@@ -92,7 +92,7 @@ MINIMAL_VALID: dict = {
         "Salmonella": {
             "display_name": "沙门菌",
             "marker_genes": ["inva"],
-            "mlst_scheme": "salmonella_2",
+            "mlst_scheme": "senterica_1",
             "snp_group": "salmonella",
         },
         "E.coli": {

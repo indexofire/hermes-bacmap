@@ -4,7 +4,7 @@
 #   E.coli / Shigella   -> ecoli_2              (2513 loci)
 #   V.parahaemolyticus  -> vparahaemolyticus_3  (2254 loci)
 # NOTE: _CGMLST_SCHEMES is DIFFERENT from _GMLST_SCHEMES in typing_amr.smk
-#       (those are classical-MLST schemes: salmonella_2/ecoli_1/vparahaemolyticus_1).
+#       (those are classical-MLST schemes: senterica_1/ecoli_1/vparahaemolyticus_1).
 # Both mappings derive from pathogens.yaml (single source of truth).
 # cgMLST cohort rules are added in todo 11 (gated by config.cgmlst.run_cgmlst_cohort).
 

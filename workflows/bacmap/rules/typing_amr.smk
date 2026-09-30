@@ -26,7 +26,7 @@ rule typing_mlst:
         result = str(WORKDIR) + "/{sample}/typing/mlst.tsv"
     params:
         scheme = lambda wc: _GMLST_SCHEMES.get(
-            SAMPLES_DF.loc[wc.sample, "species"], "salmonella_2"
+            SAMPLES_DF.loc[wc.sample, "species"], "senterica_1"
         )
     threads: 4
     shell:

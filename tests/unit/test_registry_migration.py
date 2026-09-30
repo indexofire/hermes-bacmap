@@ -39,7 +39,7 @@ class TestWorkflowTables:
 
         t = get_workflow_tables()
 
-        assert t.mlst_schemes.get("Salmonella") == "salmonella_2"
+        assert t.mlst_schemes.get("Salmonella") == "senterica_1"
         assert t.mlst_schemes.get("E.coli") == "ecoli_1"
         assert len(t.mlst_schemes) >= 30
         # V.parahaemolyticus deliberately absent from AMR organisms (no curated
@@ -110,7 +110,7 @@ class TestRegistrySignature:
                 "Salmonella": {
                     "display_name": "s",
                     "marker_genes": ["inva"],
-                    "mlst_scheme": "salmonella_2",
+                    "mlst_scheme": "senterica_1",
                     "snp_group": "g1",
                 }
             },

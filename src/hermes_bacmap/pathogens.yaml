@@ -7,7 +7,7 @@ pathogens:
     display_name: 沙门菌
     species_label: Salmonella
     marker_genes: [inva]
-    mlst_scheme: salmonella_2
+    mlst_scheme: senterica_1
     cgmlst_scheme: senterica_2
     amrfinder_organism: Salmonella
     serotype_engine: sistr
@@ -44,25 +44,25 @@ pathogens:
   "Vibrio cholerae":
     display_name: 霍乱弧菌
     marker_genes: [ompw, ctxa]
-    mlst_scheme: vcholerae
+    mlst_scheme: vcholerae_1
     amrfinder_organism: Vibrio_cholerae
     snp_group: vcholerae
   "Listeria monocytogenes":
     display_name: 单增李斯特菌
     marker_genes: [hly, prs]
-    mlst_scheme: listeria
+    mlst_scheme: lmonocytogenes_1
     amrfinder_organism: Listeria_monocytogenes
     snp_group: listeria
   "Campylobacter jejuni":
     display_name: 空肠弯曲菌
     marker_genes: [mapa, cadf]
-    mlst_scheme: campylobacter
+    mlst_scheme: campylobacter_1
     amrfinder_organism: Campylobacter
     snp_group: campylobacter
   "Campylobacter coli":
     display_name: 结肠弯曲菌
     marker_genes: [ceue]
-    mlst_scheme: campylobacter
+    mlst_scheme: campylobacter_1
     amrfinder_organism: Campylobacter
     snp_group: campylobacter
 
@@ -70,18 +70,18 @@ pathogens:
   "Streptococcus pneumoniae":
     display_name: 肺炎链球菌
     marker_genes: [lyta, psaa]
-    mlst_scheme: spneumoniae
+    mlst_scheme: spneumoniae_1
     amrfinder_organism: Streptococcus_pneumoniae
     snp_group: streptococcus
   "Neisseria meningitidis":
     display_name: 脑膜炎奈瑟菌
     marker_genes: [ctra, sodc]
-    mlst_scheme: neisseria
+    mlst_scheme: neisseria_1
     snp_group: neisseria
   "Legionella pneumophila":
     display_name: 嗜肺军团菌
     marker_genes: [mip, dota]
-    mlst_scheme: legionella
+    mlst_scheme: ""
     snp_group: legionella
   "Mycoplasma pneumoniae":
     display_name: 肺炎支原体
@@ -90,7 +90,7 @@ pathogens:
   "Haemophilus influenzae":
     display_name: 流感嗜血杆菌
     marker_genes: [hpd]
-    mlst_scheme: haemophilus
+    mlst_scheme: hinfluenzae_1
     snp_group: haemophilus
   "Bordetella pertussis":
     display_name: 百日咳鲍特菌
@@ -101,111 +101,111 @@ pathogens:
   "Klebsiella pneumoniae":
     display_name: 肺炎克雷伯菌
     marker_genes: [khe]
-    mlst_scheme: kpneumoniae
+    mlst_scheme: kpneumoniae_2
     amrfinder_organism: Klebsiella_pneumoniae
     snp_group: klebsiella
   "Acinetobacter baumannii":
     display_name: 鲍曼不动杆菌
     marker_genes: [oxa51]
-    mlst_scheme: abaumannii
+    mlst_scheme: abaumannii_1
     amrfinder_organism: Acinetobacter_baumannii
     snp_group: acinetobacter
   "Pseudomonas aeruginosa":
     display_name: 铜绿假单胞菌
     marker_genes: [ecfx]
-    mlst_scheme: paeruginosa
+    mlst_scheme: paeruginosa_1
     amrfinder_organism: Pseudomonas_aeruginosa
     snp_group: pseudomonas
   "Staphylococcus aureus":
     display_name: 金黄色葡萄球菌
     marker_genes: [nuc, fema]
-    mlst_scheme: saureus
+    mlst_scheme: saureus_1
     amrfinder_organism: Staphylococcus_aureus
     snp_group: staphylococcus
   "Enterococcus faecalis":
     display_name: 粪肠球菌
     marker_genes: [ddl-ef]
-    mlst_scheme: efaecalis
+    mlst_scheme: efaecalis_1
     amrfinder_organism: Enterococcus_faecalis
     snp_group: enterococcus
   "Enterococcus faecium":
     display_name: 屎肠球菌
     marker_genes: [ddl-efm]
-    mlst_scheme: efaecium
+    mlst_scheme: efaecium_1
     amrfinder_organism: Enterococcus_faecium
     snp_group: enterococcus
   "Clostridioides difficile":
     display_name: 艰难梭菌
     marker_genes: [tcda, tcdb]
-    mlst_scheme: cdifficile
+    mlst_scheme: cdifficile_1
     snp_group: cdifficile
 
   # ═══ 其他重要病原 ═══
   "Streptococcus pyogenes":
     display_name: 化脓链球菌
     marker_genes: [speb]
-    mlst_scheme: spyogenes
+    mlst_scheme: spyogenes_1
     amrfinder_organism: Streptococcus_pyogenes
     snp_group: streptococcus
   "Streptococcus agalactiae":
     display_name: 无乳链球菌
     marker_genes: [cfb, dlrS]
-    mlst_scheme: sagalactiae
+    mlst_scheme: sagalactiae_1
     amrfinder_organism: Streptococcus_agalactiae
     snp_group: streptococcus
   "Neisseria gonorrhoeae":
     display_name: 淋病奈瑟菌
     marker_genes: [pora]
-    mlst_scheme: ngonorrhoeae
+    mlst_scheme: neisseria_1
     snp_group: neisseria
   "Helicobacter pylori":
     display_name: 幽门螺杆菌
     marker_genes: [urea, urec]
-    mlst_scheme: hpylori
+    mlst_scheme: hpylori_1
     snp_group: hpylori
   "Cronobacter sakazakii":
     display_name: 阪崎克罗诺杆菌
     marker_genes: [rpob-cs]
-    mlst_scheme: cronobacter
+    mlst_scheme: cronobacter_1
     snp_group: cronobacter
   "Yersinia enterocolitica":
     display_name: 小肠结肠炎耶尔森菌
     marker_genes: [ail]
-    mlst_scheme: yenterocolitica
+    mlst_scheme: yenterocolitica_5
     snp_group: yersinia
   "Aeromonas hydrophila":
     display_name: 嗜水气单胞菌
     marker_genes: [aera, ahh1]
-    mlst_scheme: ahydrophila
+    mlst_scheme: aeromonas_1
     snp_group: aeromonas
   "Streptococcus suis":
     display_name: 猪链球菌
     marker_genes: [gdh]
-    mlst_scheme: ssuis
+    mlst_scheme: ssuis_1
     snp_group: streptococcus
   "Corynebacterium diphtheriae":
     display_name: 白喉棒状杆菌
     marker_genes: [tox]
-    mlst_scheme: cdiphtheriae
+    mlst_scheme: cdiphtheriae_1
     snp_group: corynebacterium
 
   # ═══ 高后果/管制（默认禁用） ═══
   "Yersinia pestis":
     display_name: 鼠疫耶尔森菌
     marker_genes: [caf1, pla]
-    mlst_scheme: ypestis
+    mlst_scheme: ""
     snp_group: yersinia
     enabled: false
   "Bacillus anthracis":
     display_name: 炭疽芽胞杆菌
     marker_genes: [paga, capb]
-    mlst_scheme: banthracis
+    mlst_scheme: ""
     snp_group: bacillus
     enabled: false
   "Burkholderia pseudomallei":
     display_name: 类鼻疽伯克霍尔德菌
     marker_genes: [tts1, bimabp]
-    mlst_scheme: bpseudomallei
+    mlst_scheme: bpseudomallei_1
     snp_group: burkholderia
     enabled: false
   "Clostridium botulinum":
