@@ -68,22 +68,28 @@ mcp_servers:
 - Optional `gbrain serve` (MCP, only for direct LLM use of the full toolset)
 - Check: `gbrain call get_health '{}' | jq .missing_embeddings` (should be 0)
 
-### think model configuration
+### think model configuration (recommended: reuse your GLM key, nothing new)
 
-think needs a **chat** model (independent of embeddings); resolution chain
-`models.think → models.default → GBRAIN_MODEL → Anthropic default`:
+think needs a **chat** model (independent of embeddings). **Preferred: reuse
+your existing GLM API key** — gbrain ships a native zhipu provider and
+`glm-4-flash` is free (verified: works without balance):
 
 ```bash
-# Recommended (local, zh-friendly, pull first):
-ollama pull qwen2.5:7b-instruct      # ~4.7GB, no think-tags, good schema-following
-# or ollama pull glm4:9b
-export GBRAIN_MODEL="ollama:qwen2.5:7b-instruct"   # persistent: gbrain config set models.think ollama:qwen2.5:7b-instruct
+# Append to ~/.hermes/.env (same value as GLM_API_KEY):
+echo "ZHIPUAI_API_KEY=$GLM_API_KEY" >> ~/.hermes/.env
+
+# Persist the model choice:
+gbrain config set models.think zhipu:glm-4-flash
+gbrain config set models.default zhipu:glm-4-flash
 ```
 
-- Cloud alternative: `ANTHROPIC_API_KEY` (claude-sonnet default) or any
-  OpenAI-compatible key
-- ⚠️ qwen3 series emits thinking output / empty content via the OpenAI-compat
-  endpoint; 0.6b-class models lack schema-following — link-verification only
+- Resolution chain: `models.think → models.default → GBRAIN_MODEL → Anthropic default`
+- Offline alternative: `ollama pull qwen2.5:7b-instruct` then
+  `gbrain config set models.think ollama:qwen2.5:7b-instruct` (slower local inference)
+- Cloud alternative: `ANTHROPIC_API_KEY`
+- ⚠️ Pitfalls: GLM flagship models (glm-5.3 etc.) need balance on this endpoint;
+  the `openai:` provider prefix does NOT work against GLM (use `zhipu:`);
+  qwen3 series emits thinking output via the compat endpoint
 
 ### Daily operations
 
@@ -104,9 +110,8 @@ gbrain dream --dry-run                    # maintenance preview (dedup/contradic
 
 ## Known limitations
 
-- **`think` synthesis** needs a chat model configured (local
-  qwen2.5:7b-instruct recommended / cloud ANTHROPIC_API_KEY); GLM coding-plan
-  keys have an incompatible chat endpoint (embeddings work fine)
+- **`think` synthesis** works by reusing the GLM key (zhipu:glm-4-flash, free —
+  verified synthesizing grounded answers from the imported AMR knowledge)
 - Switching embedding models requires `gbrain init --force` and re-import
 - The knowledge store lives at `~/.gbrain/brain.pglite` (single file, backup
   by copying)

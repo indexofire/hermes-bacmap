@@ -63,21 +63,26 @@ mcp_servers:
 - 可选 `gbrain serve`（MCP，仅当让 LLM 直用 gbrain 全量工具时）
 - 检查：`gbrain call get_health '{}' | jq .missing_embeddings`（应为 0）
 
-### think 模型配置
+### think 模型配置（推荐：复用 GLM key，零新增）
 
-think 需要一个**聊天**模型（与 embedding 无关），解析链
-`models.think → models.default → GBRAIN_MODEL → Anthropic 默认`：
+think 需要一个**聊天**模型（与 embedding 无关）。**首选方案：直接复用你现有的
+GLM API key**——gbrain 内置 zhipu provider，`glm-4-flash` 免费（实测无需余额）：
 
 ```bash
-# 推荐（本地，中文友好，需先拉取）：
-ollama pull qwen2.5:7b-instruct      # ~4.7GB，无思考标签，schema 跟随好
-# 或 ollama pull glm4:9b
-export GBRAIN_MODEL="ollama:qwen2.5:7b-instruct"   # 或永久：gbrain config set models.think ollama:qwen2.5:7b-instruct
+# ~/.hermes/.env 追加（与 GLM_API_KEY 同值）：
+echo "ZHIPUAI_API_KEY=$GLM_API_KEY" >> ~/.hermes/.env
+
+# 持久化模型选择（已完成于本机）：
+gbrain config set models.think zhipu:glm-4-flash
+gbrain config set models.default zhipu:glm-4-flash
 ```
 
-- 云端替代：`ANTHROPIC_API_KEY`（默认 claude-sonnet）或任意 OpenAI 兼容 key
-- ⚠️ qwen3 系列经 OpenAI 兼容端点存在思考输出/空 content 问题；0.6b 级小模型
-  schema 跟随不足，仅可用于链路验证
+- 解析链：`models.think → models.default → GBRAIN_MODEL → Anthropic 默认`
+- 离线替代：`ollama pull qwen2.5:7b-instruct` 后
+  `gbrain config set models.think ollama:qwen2.5:7b-instruct`（本地推理较慢）
+- 云端替代：`ANTHROPIC_API_KEY`
+- ⚠️ 坑：GLM 旗舰模型（glm-5.3 等）在该端点需余额；`openai:` provider 前缀
+  对接 GLM 不通（须用 `zhipu:`）；qwen3 系列经兼容端点有思考输出问题
 
 ### 日常操作
 
@@ -98,7 +103,7 @@ gbrain dream --dry-run                 # 维护预览（去重/矛盾检测）
 
 ## 已知限制
 
-- **`think` 综合回答**需配置聊天模型（本地 qwen2.5:7b-instruct 推荐 / 云端
-  ANTHROPIC_API_KEY）；GLM coding 计划 key 的 chat 端点不兼容（embedding 正常）
+- **`think` 综合回答**已打通：复用 GLM key（zhipu:glm-4-flash 免费，实测综合
+  答案源自导入的 AMR 知识）
 - 切换 embedding 模型需 `gbrain init --force` 重建并重新导入
 - 知识库文件位于 `~/.gbrain/brain.pglite`（单文件，可直接备份）
