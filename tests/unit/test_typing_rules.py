@@ -40,7 +40,12 @@ def _scan_with_genes(genes: dict[str, float]):
 class TestListSchemes:
     def test_lists_all_four_schemes(self):
         schemes = list_schemes()
-        assert set(schemes) >= {"vcholerae_toxin", "lmono_serogroup", "cdiff_toxin", "bcereus_toxin"}
+        assert set(schemes) >= {
+            "vcholerae_toxin",
+            "lmono_serogroup",
+            "cdiff_toxin",
+            "bcereus_toxin",
+        }
 
 
 class TestVcholeraeToxin:
@@ -82,9 +87,7 @@ class TestCdiffToxin:
     def test_rt027_binary_toxin(self):
         with patch(
             f"{_MOD}.scan",
-            return_value=_scan_with_genes(
-                {"tcdA": 99.0, "tcdB": 98.0, "cdtA": 97.0, "cdtB": 96.0}
-            ),
+            return_value=_scan_with_genes({"tcdA": 99.0, "tcdB": 98.0, "cdtA": 97.0, "cdtB": 96.0}),
         ):
             r = type_by_rules("fake.fna", "cdiff_toxin")
         assert r.call.get("toxigenic") is True
