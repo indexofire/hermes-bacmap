@@ -63,26 +63,30 @@ mcp_servers:
 - 可选 `gbrain serve`（MCP，仅当让 LLM 直用 gbrain 全量工具时）
 - 检查：`gbrain call get_health '{}' | jq .missing_embeddings`（应为 0）
 
-### think 模型配置（推荐：复用 GLM key，零新增）
+### think 模型配置（推荐：复用 GLM 编程套餐，旗舰质量零额外费用）
 
-think 需要一个**聊天**模型（与 embedding 无关）。**首选方案：直接复用你现有的
-GLM API key**——gbrain 内置 zhipu provider，`glm-4-flash` 免费（实测无需余额）：
+think 需要一个**聊天**模型（与 embedding 无关）。**首选：复用你的 GLM 编程套餐
+key + 编程端点 + `glm-5.3-flash`**（套餐内旗舰 flash 档，实测输出带行内引用与
+缺口分析，质量远超免费档）：
 
 ```bash
-# ~/.hermes/.env 追加（与 GLM_API_KEY 同值）：
+# ① ~/.hermes/.env 追加（与 GLM_API_KEY 同值）：
 echo "ZHIPUAI_API_KEY=$GLM_API_KEY" >> ~/.hermes/.env
 
-# 持久化模型选择（已完成于本机）：
-gbrain config set models.think zhipu:glm-4-flash
-gbrain config set models.default zhipu:glm-4-flash
+# ② gbrain 持久配置（本机已完成）：
+gbrain config set provider_base_urls.zhipu https://open.bigmodel.cn/api/coding/paas/v4
+gbrain config set models.think   zhipu:glm-5.3-flash
+gbrain config set models.default zhipu:glm-5.3-flash
 ```
 
 - 解析链：`models.think → models.default → GBRAIN_MODEL → Anthropic 默认`
-- 离线替代：`ollama pull qwen2.5:7b-instruct` 后
-  `gbrain config set models.think ollama:qwen2.5:7b-instruct`（本地推理较慢）
+- 备选（免费档，标准端点，无需上述 base_url 覆盖）：`zhipu:glm-4.5-flash`
+- 离线替代：`ollama pull qwen2.5:7b-instruct` + `models.think ollama:qwen2.5:7b-instruct`
 - 云端替代：`ANTHROPIC_API_KEY`
-- ⚠️ 坑：GLM 旗舰模型（glm-5.3 等）在该端点需余额；`openai:` provider 前缀
-  对接 GLM 不通（须用 `zhipu:`）；qwen3 系列经兼容端点有思考输出问题
+- ⚠️ 关键坑（实测）：**旗舰/新模型（glm-5.3*）只在编程端点
+  `/api/coding/paas/v4` 套餐内开放**；标准端点 `/api/paas/v4` 上它们是按量付费
+  （无余额报 1113）。`openai:` provider 前缀对接 GLM 不通（须 `zhipu:`）；qwen3
+  系列经兼容端点有思考输出问题
 
 ### 日常操作
 
@@ -103,7 +107,7 @@ gbrain dream --dry-run                 # 维护预览（去重/矛盾检测）
 
 ## 已知限制
 
-- **`think` 综合回答**已打通：复用 GLM key（zhipu:glm-4-flash 免费，实测综合
-  答案源自导入的 AMR 知识）
+- **`think` 综合回答**已打通旗舰档：GLM 编程套餐 + 编程端点 + `zhipu:glm-5.3-flash`
+  （实测带行内引用与缺口分析；免费档 glm-4.5-flash 为备选）
 - 切换 embedding 模型需 `gbrain init --force` 重建并重新导入
 - 知识库文件位于 `~/.gbrain/brain.pglite`（单文件，可直接备份）

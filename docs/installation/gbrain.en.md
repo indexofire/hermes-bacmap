@@ -68,28 +68,33 @@ mcp_servers:
 - Optional `gbrain serve` (MCP, only for direct LLM use of the full toolset)
 - Check: `gbrain call get_health '{}' | jq .missing_embeddings` (should be 0)
 
-### think model configuration (recommended: reuse your GLM key, nothing new)
+### think model configuration (recommended: reuse the GLM coding plan, flagship quality at no extra cost)
 
-think needs a **chat** model (independent of embeddings). **Preferred: reuse
-your existing GLM API key** — gbrain ships a native zhipu provider and
-`glm-4-flash` is free (verified: works without balance):
+think needs a **chat** model (independent of embeddings). **Preferred: your
+GLM coding-plan key + the coding endpoint + `glm-5.3-flash`** (flagship flash
+tier included in the plan; verified output with inline citations and gap
+analysis, far beyond the free tier):
 
 ```bash
-# Append to ~/.hermes/.env (same value as GLM_API_KEY):
+# ① Append to ~/.hermes/.env (same value as GLM_API_KEY):
 echo "ZHIPUAI_API_KEY=$GLM_API_KEY" >> ~/.hermes/.env
 
-# Persist the model choice:
-gbrain config set models.think zhipu:glm-4-flash
-gbrain config set models.default zhipu:glm-4-flash
+# ② Persist in gbrain (already done on this machine):
+gbrain config set provider_base_urls.zhipu https://open.bigmodel.cn/api/coding/paas/v4
+gbrain config set models.think   zhipu:glm-5.3-flash
+gbrain config set models.default zhipu:glm-5.3-flash
 ```
 
 - Resolution chain: `models.think → models.default → GBRAIN_MODEL → Anthropic default`
-- Offline alternative: `ollama pull qwen2.5:7b-instruct` then
-  `gbrain config set models.think ollama:qwen2.5:7b-instruct` (slower local inference)
+- Fallback (free tier, standard endpoint, no base-url override needed):
+  `zhipu:glm-4.5-flash`
+- Offline alternative: `ollama pull qwen2.5:7b-instruct` + `models.think ollama:qwen2.5:7b-instruct`
 - Cloud alternative: `ANTHROPIC_API_KEY`
-- ⚠️ Pitfalls: GLM flagship models (glm-5.3 etc.) need balance on this endpoint;
-  the `openai:` provider prefix does NOT work against GLM (use `zhipu:`);
-  qwen3 series emits thinking output via the compat endpoint
+- ⚠️ Key pitfall (verified): **flagship/new models (glm-5.3*) are only included
+  via the coding endpoint `/api/coding/paas/v4`**; on the standard
+  `/api/paas/v4` they are pay-per-use (error 1113 without balance). The
+  `openai:` provider prefix does not work against GLM (use `zhipu:`); qwen3
+  series emits thinking output via the compat endpoint
 
 ### Daily operations
 
@@ -110,8 +115,9 @@ gbrain dream --dry-run                    # maintenance preview (dedup/contradic
 
 ## Known limitations
 
-- **`think` synthesis** works by reusing the GLM key (zhipu:glm-4-flash, free —
-  verified synthesizing grounded answers from the imported AMR knowledge)
+- **`think` synthesis** runs at flagship tier: GLM coding plan + coding endpoint
+  + `zhipu:glm-5.3-flash` (verified inline citations + gap analysis; free-tier
+  glm-4.5-flash as fallback)
 - Switching embedding models requires `gbrain init --force` and re-import
 - The knowledge store lives at `~/.gbrain/brain.pglite` (single file, backup
   by copying)
