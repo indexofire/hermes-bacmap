@@ -219,3 +219,73 @@ class TestDefaultMarkers:
             reg, None, v2_empty, legacy_markers=_write(tmp_path, "markers.fasta", MARKERS_WITH_TSTA)
         )
         assert findings == []
+
+
+class TestRuleRegistryReconciliation:
+    def _reg(self, tmp_path, enabled=True):
+        return _write(
+            tmp_path,
+            "pathogens.yaml",
+            textwrap.dedent(f"""\
+            pathogens:
+              Salmonella:
+                display_name: s
+                marker_genes: [tstA]
+                mlst_scheme: senterica_1
+                snp_group: tstgroup
+                enabled: {enabled}
+            snp_groups:
+              tstgroup:
+                ref: data/reference/genomes/salmonella_LT2.fasta
+                species: [Salmonella]
+                organism: Test
+            """),
+        )
+
+    def _rules(self, tmp_path, species):
+        return _write(
+            tmp_path,
+            "rules.yaml",
+            "rules:\n"
+            + "".join(
+                f"- species: {s}\n  genes: [tsta]\n  min_hits: 1\n  min_identity: 90\n"
+                for s in species
+            ),
+        )
+
+    def test_orphan_rule_is_warning(self, tmp_path):
+        reg = self._reg(tmp_path)
+        rules = self._rules(tmp_path, ["Salmonella", "Unknownus_futurus"])
+        findings = lint_pathogens.run_lint(
+            reg, None, _write(tmp_path, "m.fasta", MARKERS_WITH_TSTA), rules_path=rules
+        )
+        assert any("orphan rule" in f and "Unknownus" in f for f in findings)
+        assert lint_pathogens.is_warning(next(f for f in findings if "orphan rule" in f))
+
+    def test_alias_rule_not_flagged(self, tmp_path):
+        reg = _write(
+            tmp_path,
+            "pathogens.yaml",
+            textwrap.dedent("""\
+            pathogens:
+              "E.coli":
+                display_name: e
+                marker_genes: [uida]
+                mlst_scheme: ecoli_1
+                enabled: true
+            snp_groups: {}
+            """),
+        )
+        rules = self._rules(tmp_path, ["DEC"])
+        findings = lint_pathogens.run_lint(
+            reg, None, _write(tmp_path, "m.fasta", MARKERS_WITH_TSTA), rules_path=rules
+        )
+        assert not any("orphan" in f for f in findings)
+
+    def test_enabled_pathogen_without_rule_warns(self, tmp_path):
+        reg = self._reg(tmp_path)
+        rules = self._rules(tmp_path, ["Other_species"])
+        findings = lint_pathogens.run_lint(
+            reg, None, _write(tmp_path, "m.fasta", MARKERS_WITH_TSTA), rules_path=rules
+        )
+        assert any("no identification rule" in f and "Salmonella" in f for f in findings)
