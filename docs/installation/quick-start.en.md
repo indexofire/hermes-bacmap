@@ -173,3 +173,16 @@ To switch to a local LLM, see [Local LLM Configuration](local-llm.md).
 | `ModuleNotFoundError: hermes_bacmap` | Plugin not installed into the Hermes venv | Re-run step 6 `pip install -e .` |
 
 For more errors, see [Troubleshooting](../reference/troubleshooting.md).
+
+
+## (Optional) GBrain knowledge base
+
+Enable the knowledge layer (finding capture + semantic retrieval +
+pre-registration checks), see
+[GBrain knowledge base setup](gbrain.en.md):
+
+```bash
+bash scripts/setup_gbrain.sh
+```
+
+Without it the knowledge tools degrade gracefully; core analysis is unaffected.

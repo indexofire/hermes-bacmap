@@ -55,6 +55,7 @@ nav:
     - 环境准备: installation/environment.md
     - 快速安装: installation/quick-start.md
     - 本地 LLM 配置: installation/local-llm.md
+    - GBrain 知识库: installation/gbrain.md
   - 使用指南:
     - 命令行工具: usage/cli.md
     - Hermes Agent: usage/hermes-agent.md

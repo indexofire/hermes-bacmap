@@ -36,6 +36,14 @@ hermes plugins enable hermes_bacmap
 pixi run setup
 ```
 
+5. (Optional) Deploy the GBrain knowledge layer (finding capture + semantic
+retrieval, local bge-m3 embeddings — see
+[docs/installation/gbrain.md](docs/installation/gbrain.md))
+
+```bash
+bash scripts/setup_gbrain.sh
+```
+
 5. Start Hermes
 
 Once the `hermes agent` is running, interact with it and let the AI analyze foodborne pathogen genomes for you.
@@ -104,6 +112,10 @@ Beyond fixed pipelines, the AI agent can mine your own data and evolve the platf
   reports only after human sign-off
 - **Numeric provenance guard** — every number in an AI report must trace back to
   GOM/tool evidence (orphan-claim detection)
+- **Knowledge layer (GBrain)** — biologically significant findings (enriched
+  genes, novel clusters, marker registrations) are auto-captured as
+  evidence-linked knowledge pages; `bio_knowledge_search/think` power
+  pre-registration checks and interpretation (optional, degrades gracefully)
 
 ## Core Modules
 
@@ -170,6 +182,7 @@ hermes-bacmap/
 |------|---------|-------|
 | **pixi** | bioinformatics CLIs + Python runtime | fastp, Shovill, blast, bwa, samtools, bcftools, seqkit, iqtree, pyrodigal, snakemake, gmlst, mash, skani, kraken2, bracken, mmseqs2, duckdb, sourmash |
 | **uv** (optional) | Python dev tools | pytest, ruff, mypy (developers only) |
+| **GBrain + Ollama** (optional) | knowledge layer | git-clone install via `scripts/setup_gbrain.sh`; local bge-m3 embeddings; probed at runtime, analysis never blocked |
 | **Hermes Agent** | LLM orchestration | API-key mode (GLM via Z.AI, model-agnostic) |
 
 ## Daily Development

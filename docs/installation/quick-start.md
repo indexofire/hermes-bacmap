@@ -173,3 +173,15 @@ hermes chat
 | `ModuleNotFoundError: hermes_bacmap` | 插件未安装到 Hermes venv | 重跑第 6 步 `pip install -e .` |
 
 更多错误见[故障排查](../reference/troubleshooting.md)。
+
+
+## （可选）GBrain 知识库
+
+启用知识层（生物学发现记录 + 语义检索 + 注册前查证），见
+[GBrain 知识库安装](gbrain.md)：
+
+```bash
+bash scripts/setup_gbrain.sh
+```
+
+未安装时知识工具自动降级，不影响基础分析流程。

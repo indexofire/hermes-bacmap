@@ -32,6 +32,13 @@ hermes plugins enable hermes_bacmap
 pixi run setup
 ```
 
+5. （可选）部署 GBrain 知识层（发现记录 + 语义检索，本地 bge-m3 嵌入——见
+   [docs/installation/gbrain.md](docs/installation/gbrain.md)）
+
+```bash
+bash scripts/setup_gbrain.sh
+```
+
 5. 启动hermes
 
 启动`hermes agent`后，可以与其交互，开始让AI帮助进行食源性病原微生物的菌株基因组分析工作。
@@ -163,6 +170,7 @@ hermes-bacmap/
 |------|---------|------|
 | **pixi** | 生信 CLI + Python 运行时 | fastp, Shovill, blast, bwa, samtools, bcftools, seqkit, iqtree, pyrodigal, snakemake, gmlst, mash, skani, kraken2, bracken, biopython, pyrodigal, mappy, sourmash |
 | **uv** (可选) | Python 开发工具 | pytest, ruff, mypy（仅开发者需要） |
+| **GBrain + Ollama** (可选) | 知识层 | `scripts/setup_gbrain.sh` 一键部署；本地 bge-m3 嵌入；运行时探测，缺失不阻断分析 |
 | **Hermes Agent** | LLM 编排 | API-key 模式（GLM-5.2 via Z.AI） |
 
 ## 日常开发
