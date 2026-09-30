@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — 物种分类模块审计修复（V0.9.1）
+
+- **MLST scheme 全面对齐 gmlst 目录**：Salmonella→senterica_1（与 cgMLST senterica_2
+  同谱系，评审发现）+ 27 个臆想命名修正 + 3 个目录缺失置空；typing 规则默认值/测试同步
+- **恢复 5 条标记序列**（mapA/hipO/cadF/ceuE/speB，RefSeq 注释级来源）+ 弯曲菌双规则
+  排他守卫 + Cronobacter rpob-cs 交叉守卫 + 引擎 coverage 门槛 30→60；真实参考基因组
+  3/3 新物种判定正确、17/17 金标准无回归
+- **skani 解析器兼容新版输出表头**（Ref_file/Align_fraction_query 命名列）
+- **lint 双向对账**：孤儿规则/无规则物种/禁用物种规则分级告警 + 别名映射
+- **ANI 面板 +7 参考物种**（百日咳/白喉/流感嗜血杆菌/幽门螺杆菌/军团菌/肺炎支原体/
+  小肠结肠炎耶尔森，291 基因组，启用物种覆盖 30/30）
+
 ### Added — GBrain 知识层（V0.9）
 
 - `services/gbrain_client.py`：gbrain call 子进程桥（capture/search/think，pglite_busy
