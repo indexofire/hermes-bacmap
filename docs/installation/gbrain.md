@@ -52,9 +52,53 @@ mcp_servers:
     args: ["serve"]
 ```
 
+## 运行与维护
+
+### 进程模型：gbrain 无需常驻
+
+- **插件/CLI 使用（capture/search）：无需启动任何 gbrain 进程**——`gbrain call` 每次调用
+  自取 PGLite 锁，即用即走
+- **必须运行的是 Ollama**（查询期 embedding + think 本地模型）：
+  `systemctl --user status ollama`（部署脚本已设开机自启）
+- 可选 `gbrain serve`（MCP，仅当让 LLM 直用 gbrain 全量工具时）
+- 检查：`gbrain call get_health '{}' | jq .missing_embeddings`（应为 0）
+
+### think 模型配置
+
+think 需要一个**聊天**模型（与 embedding 无关），解析链
+`models.think → models.default → GBRAIN_MODEL → Anthropic 默认`：
+
+```bash
+# 推荐（本地，中文友好，需先拉取）：
+ollama pull qwen2.5:7b-instruct      # ~4.7GB，无思考标签，schema 跟随好
+# 或 ollama pull glm4:9b
+export GBRAIN_MODEL="ollama:qwen2.5:7b-instruct"   # 或永久：gbrain config set models.think ollama:qwen2.5:7b-instruct
+```
+
+- 云端替代：`ANTHROPIC_API_KEY`（默认 claude-sonnet）或任意 OpenAI 兼容 key
+- ⚠️ qwen3 系列经 OpenAI 兼容端点存在思考输出/空 content 问题；0.6b 级小模型
+  schema 跟随不足，仅可用于链路验证
+
+### 日常操作
+
+```bash
+gbrain capture "现场观察：..."          # 手动记录
+gbrain search "关键词/中文语义"          # 检索（中英均可）
+gbrain sweep --once                    # 批量捕获后补自动连线
+gbrain dream --dry-run                 # 维护预览（去重/矛盾检测）
+```
+
+### 故障排查
+
+| 现象 | 处置 |
+|---|---|
+| `pglite_busy` | 有 serve/迁移持锁——稍候重试（插件侧自动识别为可重试） |
+| 语义检索无结果 | ① ollama 是否 active；② `get_health` 的 missing_embeddings 是否 >0（重跑 `gbrain migrate embeddings --to ollama:bge-m3 --yes --max-cost-usd 1`） |
+| `gbrain self-upgrade` 后嵌入失败 | 升级覆盖补丁——重跑 `git apply scripts/patches/gbrain-ollama-text-embed.patch`（~/gbrain） |
+
 ## 已知限制
 
-- **`think` 综合回答**需要独立 LLM key（如 `ANTHROPIC_API_KEY`）；GLM coding
-  计划 key 的 chat 端点不兼容（embedding 端点正常）
+- **`think` 综合回答**需配置聊天模型（本地 qwen2.5:7b-instruct 推荐 / 云端
+  ANTHROPIC_API_KEY）；GLM coding 计划 key 的 chat 端点不兼容（embedding 正常）
 - 切换 embedding 模型需 `gbrain init --force` 重建并重新导入
 - 知识库文件位于 `~/.gbrain/brain.pglite`（单文件，可直接备份）

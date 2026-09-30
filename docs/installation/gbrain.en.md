@@ -57,11 +57,56 @@ mcp_servers:
     args: ["serve"]
 ```
 
+## Running and maintenance
+
+### Process model: no resident gbrain needed
+
+- **Plugin/CLI use (capture/search): no gbrain process to start** — `gbrain call`
+  acquires the PGLite lock per invocation
+- **Ollama must be running** (query-time embeddings + local think model):
+  `systemctl --user status ollama` (auto-enabled by the setup script)
+- Optional `gbrain serve` (MCP, only for direct LLM use of the full toolset)
+- Check: `gbrain call get_health '{}' | jq .missing_embeddings` (should be 0)
+
+### think model configuration
+
+think needs a **chat** model (independent of embeddings); resolution chain
+`models.think → models.default → GBRAIN_MODEL → Anthropic default`:
+
+```bash
+# Recommended (local, zh-friendly, pull first):
+ollama pull qwen2.5:7b-instruct      # ~4.7GB, no think-tags, good schema-following
+# or ollama pull glm4:9b
+export GBRAIN_MODEL="ollama:qwen2.5:7b-instruct"   # persistent: gbrain config set models.think ollama:qwen2.5:7b-instruct
+```
+
+- Cloud alternative: `ANTHROPIC_API_KEY` (claude-sonnet default) or any
+  OpenAI-compatible key
+- ⚠️ qwen3 series emits thinking output / empty content via the OpenAI-compat
+  endpoint; 0.6b-class models lack schema-following — link-verification only
+
+### Daily operations
+
+```bash
+gbrain capture "field observation: ..."   # manual note
+gbrain search "keyword or Chinese query"  # retrieval (zh/en)
+gbrain sweep --once                       # backfill auto-links after batch captures
+gbrain dream --dry-run                    # maintenance preview (dedup/contradictions)
+```
+
+### Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `pglite_busy` | A serve/migration holds the lock — retry shortly (plugin marks it retryable) |
+| Semantic search empty | ① is ollama active; ② `get_health` missing_embeddings >0 → re-run `gbrain migrate embeddings --to ollama:bge-m3 --yes --max-cost-usd 1` |
+| Embedding fails after `gbrain self-upgrade` | Upgrade overwrote the patch — re-apply `git apply scripts/patches/gbrain-ollama-text-embed.patch` (in ~/gbrain) |
+
 ## Known limitations
 
-- **`think` synthesis** requires a separate LLM key (e.g. `ANTHROPIC_API_KEY`);
-  GLM coding-plan keys have an incompatible chat endpoint (the embedding
-  endpoint works fine)
+- **`think` synthesis** needs a chat model configured (local
+  qwen2.5:7b-instruct recommended / cloud ANTHROPIC_API_KEY); GLM coding-plan
+  keys have an incompatible chat endpoint (embeddings work fine)
 - Switching embedding models requires `gbrain init --force` and re-import
 - The knowledge store lives at `~/.gbrain/brain.pglite` (single file, backup
   by copying)
