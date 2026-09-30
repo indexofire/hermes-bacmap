@@ -19,7 +19,7 @@ _MARKERS_V2_FASTA = REF_DIR / "species" / "markers_v2.fasta"
 _MARKER_RULES = REF_DIR / "species" / "marker_rules.yaml"
 
 _MIN_IDENTITY = 85.0
-_MIN_COVERAGE = 30.0
+_MIN_COVERAGE = 60.0
 _HIGH_CONF = 90.0
 
 

@@ -91,6 +91,9 @@ rules:
   - rpob-cs
   min_hits: 1
   min_identity: 90
+  exclude_genes: [speb]
+  note: rpoB fragment cross-reacts with S.pyogenes/dysgalactiae rpoB
+    (cross-reaction case study); speB present -> prefer Streptococcus.
 - species: Legionella_pneumophila
   genes:
   - mip
@@ -203,14 +206,18 @@ rules:
   - mapa
   - hipo
   - cadf
-  min_hits: 1
-  min_identity: 85
+  min_hits: 2
+  min_identity: 90
   min_coverage: 50
-  note: Short sequences, lowered threshold. cadF is genus-level; mapA/hipO are species-level.
+  note: Full-length RefSeq sequences (GCF_000009085.1); any 2 of 3 markers.
+    cadF is genus-level; mapA/hipO are species-level. ceuE ortholog exists in
+    jejuni — species split relies on the C_coli exclude guard.
 - species: Campylobacter_coli
   genes:
   - ceue
   min_hits: 1
-  min_identity: 85
+  min_identity: 90
   min_coverage: 50
-  note: Short sequence, lowered threshold.
+  exclude_genes: [mapa, hipo, cadf]
+  note: ceuE from C.coli reference (GCF_009730395.1); jejuni markers present
+    -> prefer C_jejuni (exclude guard).
